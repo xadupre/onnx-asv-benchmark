@@ -3,6 +3,10 @@ import onnx_light
 import onnxruntime
 
 
+def track_numpy():
+    return np.__version__
+
+
 def track_onnx():
     return onnx.__version__
 

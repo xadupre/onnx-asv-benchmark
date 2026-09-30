@@ -13,7 +13,9 @@ The benchmark suite groups operators by category:
 - `benchmarks/nn`: Relu
 
 The ASV environment name tracks the pinned dependency versions.
-`benchmarks/versions.py` also records the version reported by every runtime.
+`benchmarks/versions.py` records the installed NumPy and runtime versions.
+`benchmarks/machine.py` records the processor model, architecture, and logical
+CPU count with every benchmark result.
 All models are created and checked with onnx-light, then serialized for the
 ONNX reference evaluator and ONNX Runtime.
 
