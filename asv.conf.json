@@ -1,0 +1,28 @@
+{
+    "version": 1,
+    "project": "onnx-asv-benchmark",
+    "project_url": "https://github.com/xadupre/onnx-asv-benchmark",
+    "repo": ".",
+    "branches": ["main"],
+    "environment_type": "virtualenv",
+    "pythons": ["3.12"],
+    "matrix": {
+        "req": {
+            "numpy": ["2.5.3"],
+            "onnx": ["1.23.1"],
+            "onnxruntime": ["1.30.0"]
+        },
+        "env": {
+            "ONNX_LIGHT_VERSION": ["0.1.28"]
+        }
+    },
+    "build_command": [],
+    "uninstall_command": [],
+    "install_command": [
+        "python -m pip install https://github.com/xadupre/onnx-light/releases/download/0.1.28/onnx_light-0.1.28-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+    ],
+    "benchmark_dir": "benchmarks",
+    "env_dir": ".asv/env",
+    "results_dir": ".asv/results",
+    "html_dir": ".asv/html"
+}

@@ -1,0 +1,36 @@
+import numpy as np
+import onnx_light.onnx.helper as oh
+from onnx_light.onnx import TensorProto
+
+from benchmarks.common import BACKENDS, run_session, setup_session
+
+
+class Add:
+    params = BACKENDS
+    param_names = ("backend",)
+    number = 4
+    timeout = 10
+
+    def setup(self, backend):
+        model = oh.make_model(
+            oh.make_graph(
+                [oh.make_node("Add", ["X", "Y"], ["Z"])],
+                "add",
+                [
+                    oh.make_tensor_value_info("X", TensorProto.FLOAT, [1024, 1024]),
+                    oh.make_tensor_value_info("Y", TensorProto.FLOAT, [1024, 1024]),
+                ],
+                [oh.make_tensor_value_info("Z", TensorProto.FLOAT, [1024, 1024])],
+            ),
+            opset_imports=[oh.make_opsetid("", 18)],
+            ir_version=10,
+        )
+        rng = np.random.default_rng(2)
+        feeds = {
+            "X": rng.standard_normal((1024, 1024), dtype=np.float32),
+            "Y": rng.standard_normal((1024, 1024), dtype=np.float32),
+        }
+        setup_session(self, backend, model, feeds)
+
+    def time_run(self, backend):
+        run_session(self)
