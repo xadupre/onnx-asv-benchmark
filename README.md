@@ -70,7 +70,7 @@ To check that every benchmark runs on all three backends in an environment
 with the benchmark dependencies installed:
 
 ```bash
-python -m unittest discover -s tests -v
+python -m pytest tests
 ```
 
 ## Publish results
