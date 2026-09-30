@@ -1,0 +1,12 @@
+{
+    "version": 1,
+    "project": "onnx-asv-benchmark",
+    "project_url": "https://github.com/xadupre/onnx-asv-benchmark",
+    "repo": ".",
+    "branches": ["main"],
+    "environment_type": "existing",
+    "benchmark_dir": "benchmarks",
+    "env_dir": ".asv/env",
+    "results_dir": ".asv/results",
+    "html_dir": ".asv/html"
+}
