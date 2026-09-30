@@ -40,6 +40,12 @@ Run the complete comparison in the versioned environment:
 asv run
 ```
 
+Run against the currently active Python environment:
+
+```bash
+asv run --environment existing
+```
+
 For a quick smoke test:
 
 ```bash
