@@ -1,5 +1,6 @@
 import numpy as np
-from onnx_light.onnx import TensorProto, helper
+import onnx_light.onnx.helper as oh
+from onnx_light.onnx import TensorProto
 
 from benchmarks.common import BACKENDS, run_session, setup_session
 
@@ -9,14 +10,14 @@ class Relu:
     param_names = ("backend",)
 
     def setup(self, backend):
-        model = helper.make_model(
-            helper.make_graph(
-                [helper.make_node("Relu", ["X"], ["Y"])],
+        model = oh.make_model(
+            oh.make_graph(
+                [oh.make_node("Relu", ["X"], ["Y"])],
                 "relu",
-                [helper.make_tensor_value_info("X", TensorProto.FLOAT, [1024, 1024])],
-                [helper.make_tensor_value_info("Y", TensorProto.FLOAT, [1024, 1024])],
+                [oh.make_tensor_value_info("X", TensorProto.FLOAT, [1024, 1024])],
+                [oh.make_tensor_value_info("Y", TensorProto.FLOAT, [1024, 1024])],
             ),
-            opset_imports=[helper.make_opsetid("", 18)],
+            opset_imports=[oh.make_opsetid("", 18)],
             ir_version=10,
         )
         rng = np.random.default_rng(4)

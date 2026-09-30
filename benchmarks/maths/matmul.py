@@ -1,5 +1,6 @@
 import numpy as np
-from onnx_light.onnx import TensorProto, helper
+import onnx_light.onnx.helper as oh
+from onnx_light.onnx import TensorProto
 
 from benchmarks.common import BACKENDS, run_session, setup_session
 
@@ -9,17 +10,17 @@ class MatMul:
     param_names = ("backend",)
 
     def setup(self, backend):
-        model = helper.make_model(
-            helper.make_graph(
-                [helper.make_node("MatMul", ["X", "Y"], ["Z"])],
+        model = oh.make_model(
+            oh.make_graph(
+                [oh.make_node("MatMul", ["X", "Y"], ["Z"])],
                 "matmul",
                 [
-                    helper.make_tensor_value_info("X", TensorProto.FLOAT, [256, 256]),
-                    helper.make_tensor_value_info("Y", TensorProto.FLOAT, [256, 256]),
+                    oh.make_tensor_value_info("X", TensorProto.FLOAT, [256, 256]),
+                    oh.make_tensor_value_info("Y", TensorProto.FLOAT, [256, 256]),
                 ],
-                [helper.make_tensor_value_info("Z", TensorProto.FLOAT, [256, 256])],
+                [oh.make_tensor_value_info("Z", TensorProto.FLOAT, [256, 256])],
             ),
-            opset_imports=[helper.make_opsetid("", 18)],
+            opset_imports=[oh.make_opsetid("", 18)],
             ir_version=10,
         )
         rng = np.random.default_rng(3)

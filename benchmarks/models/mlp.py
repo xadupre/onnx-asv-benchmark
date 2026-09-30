@@ -1,5 +1,6 @@
 import numpy as np
-from onnx_light.onnx import TensorProto, helper, numpy_helper
+import onnx_light.onnx.helper as oh
+from onnx_light.onnx import TensorProto, numpy_helper
 
 from benchmarks.common import BACKENDS, run_session, setup_session
 
@@ -15,18 +16,18 @@ class MLP:
         bias1 = rng.standard_normal(256, dtype=np.float32)
         weights2 = rng.standard_normal((256, 64), dtype=np.float32)
         bias2 = rng.standard_normal(64, dtype=np.float32)
-        model = helper.make_model(
-            helper.make_graph(
+        model = oh.make_model(
+            oh.make_graph(
                 [
-                    helper.make_node("MatMul", ["X", "weights1"], ["hidden_matmul"]),
-                    helper.make_node("Add", ["hidden_matmul", "bias1"], ["hidden_bias"]),
-                    helper.make_node("Relu", ["hidden_bias"], ["hidden"]),
-                    helper.make_node("MatMul", ["hidden", "weights2"], ["output_matmul"]),
-                    helper.make_node("Add", ["output_matmul", "bias2"], ["Y"]),
+                    oh.make_node("MatMul", ["X", "weights1"], ["hidden_matmul"]),
+                    oh.make_node("Add", ["hidden_matmul", "bias1"], ["hidden_bias"]),
+                    oh.make_node("Relu", ["hidden_bias"], ["hidden"]),
+                    oh.make_node("MatMul", ["hidden", "weights2"], ["output_matmul"]),
+                    oh.make_node("Add", ["output_matmul", "bias2"], ["Y"]),
                 ],
                 "mlp",
-                [helper.make_tensor_value_info("X", TensorProto.FLOAT, [32, 128])],
-                [helper.make_tensor_value_info("Y", TensorProto.FLOAT, [32, 64])],
+                [oh.make_tensor_value_info("X", TensorProto.FLOAT, [32, 128])],
+                [oh.make_tensor_value_info("Y", TensorProto.FLOAT, [32, 64])],
                 [
                     numpy_helper.from_array(weights1, "weights1"),
                     numpy_helper.from_array(bias1, "bias1"),
@@ -34,7 +35,7 @@ class MLP:
                     numpy_helper.from_array(bias2, "bias2"),
                 ],
             ),
-            opset_imports=[helper.make_opsetid("", 18)],
+            opset_imports=[oh.make_opsetid("", 18)],
             ir_version=10,
         )
         feeds = {"X": rng.standard_normal((32, 128), dtype=np.float32)}
