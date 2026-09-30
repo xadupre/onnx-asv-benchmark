@@ -16,7 +16,9 @@ def setup_session(benchmark, backend, model, feeds):
     expected = OnnxReferenceEvaluator(onnx_model).run(None, feeds)
 
     if backend == "onnxruntime":
-        session = onnxruntime.InferenceSession(model_bytes, providers=["CPUExecutionProvider"])
+        session = onnxruntime.InferenceSession(
+            model_bytes, providers=["CPUExecutionProvider"]
+        )
     elif backend == "onnx-reference":
         session = OnnxReferenceEvaluator(onnx_model)
     else:

@@ -8,6 +8,8 @@ from benchmarks.common import BACKENDS, run_session, setup_session
 class Relu:
     params = BACKENDS
     param_names = ("backend",)
+    number = 5
+    timeout = 10
 
     def setup(self, backend):
         model = oh.make_model(

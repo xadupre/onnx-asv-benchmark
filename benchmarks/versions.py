@@ -1,3 +1,4 @@
+import numpy as np
 import onnx
 import onnx_light
 import onnxruntime

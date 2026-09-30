@@ -8,7 +8,8 @@ from benchmarks.common import BACKENDS, run_session, setup_session
 class MLP:
     params = BACKENDS
     param_names = ("backend",)
-    timeout = 120
+    number = 2
+    timeout = 10
 
     def setup(self, backend):
         rng = np.random.default_rng(1)

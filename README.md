@@ -52,6 +52,9 @@ For a quick smoke test:
 asv run --quick
 ```
 
+Each benchmark has its own `number` of timed calls per sample, from one for
+MatMul to five for Relu. Every benchmark has a 10-second timeout.
+
 ## Publish results
 
 Publish the raw `.asv/results` data to the `onnx-asv-benchmark` subdirectory

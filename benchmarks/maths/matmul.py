@@ -8,6 +8,8 @@ from benchmarks.common import BACKENDS, run_session, setup_session
 class MatMul:
     params = BACKENDS
     param_names = ("backend",)
+    number = 1
+    timeout = 10
 
     def setup(self, backend):
         model = oh.make_model(
