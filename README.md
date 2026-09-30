@@ -55,6 +55,13 @@ asv run --quick
 Each benchmark has its own `number` of timed calls per sample, from one for
 MatMul to five for Relu. Every benchmark has a 10-second timeout.
 
+To check that every benchmark runs on all three backends in an environment
+with the benchmark dependencies installed:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
 ## Publish results
 
 Publish the raw `.asv/results` data to the `onnx-asv-benchmark` subdirectory
