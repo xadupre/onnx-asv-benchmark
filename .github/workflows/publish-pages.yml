@@ -1,0 +1,63 @@
+name: Publish benchmark pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check out benchmark results
+        uses: actions/checkout@v4
+        with:
+          repository: xadupre/cache_data
+          path: cache-data
+          sparse-checkout: onnx-asv-benchmark
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build ASV site
+        run: |
+          test -d cache-data/onnx-asv-benchmark
+          mkdir -p .asv
+          cp -a cache-data/onnx-asv-benchmark .asv/results
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path(".asv/results/benchmarks.json")
+          benchmarks = json.loads(path.read_text(encoding="utf-8"))
+          benchmarks = {
+              name: benchmark
+              for name, benchmark in benchmarks.items()
+              if not isinstance(benchmark, dict)
+              or benchmark.get("type") != "track"
+          }
+          path.write_text(json.dumps(benchmarks), encoding="utf-8")
+          PY
+          python -m pip install asv
+          asv publish --no-pull
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: .asv/html
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

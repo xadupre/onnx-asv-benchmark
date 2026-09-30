@@ -12,10 +12,9 @@ The benchmark suite groups operators by category:
 - `benchmarks/maths`: Add and MatMul
 - `benchmarks/nn`: Relu
 
-The ASV environment name tracks the pinned dependency versions.
-`benchmarks/versions.py` records the installed NumPy and runtime versions.
-`benchmarks/machine.py` records the processor model, architecture, and logical
-CPU count with every benchmark result.
+The ASV environment name tracks the pinned dependency versions. ASV's machine
+profile records the processor model, architecture, logical CPU count, and
+memory with every benchmark result.
 All models are created and checked with onnx-light, then serialized for the
 ONNX reference evaluator and ONNX Runtime.
 
@@ -76,12 +75,19 @@ python -m pytest tests
 ## Publish results
 
 Publish the raw `.asv/results` data to the `onnx-asv-benchmark` subdirectory
-of [xadupre/cache_data](https://github.com/xadupre/cache_data):
+of [xadupre/cache_data](https://github.com/xadupre/cache_data), then trigger
+the GitHub Pages deployment:
 
 ```bash
 python tools/publish_results.py
 ```
 
 The command clones `cache_data`, merges the local ASV results into the shared
-subdirectory, commits any changes, and pushes them to its `main` branch. Git
-credentials with write access to `xadupre/cache_data` must be configured.
+subdirectory, commits any changes, and pushes them to its `main` branch. It
+then starts the `Publish benchmark pages` workflow, which builds the ASV site
+from the raw results and deploys it to
+[xadupre.github.io/onnx-asv-benchmark](https://xadupre.github.io/onnx-asv-benchmark/).
+
+Git credentials with write access to `xadupre/cache_data` and an authenticated
+[GitHub CLI](https://cli.github.com/) with Actions access to this repository
+must be configured. Pass `--skip-pages` to publish only the raw results.
