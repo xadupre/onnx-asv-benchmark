@@ -1,6 +1,7 @@
 import numpy as np
 import onnx_light.onnx.helper as oh
-from onnx_light.onnx import TensorProto, numpy_helper
+import onnx_light.onnx.numpy_helper as onh
+from onnx_light.onnx import TensorProto
 
 from benchmarks.common import BACKENDS, run_session, setup_session
 
@@ -30,10 +31,10 @@ class MLP:
                 [oh.make_tensor_value_info("X", TensorProto.FLOAT, [32, 128])],
                 [oh.make_tensor_value_info("Y", TensorProto.FLOAT, [32, 64])],
                 [
-                    numpy_helper.from_array(weights1, "weights1"),
-                    numpy_helper.from_array(bias1, "bias1"),
-                    numpy_helper.from_array(weights2, "weights2"),
-                    numpy_helper.from_array(bias2, "bias2"),
+                    onh.from_array(weights1, "weights1"),
+                    onh.from_array(bias1, "bias1"),
+                    onh.from_array(weights2, "weights2"),
+                    onh.from_array(bias2, "bias2"),
                 ],
             ),
             opset_imports=[oh.make_opsetid("", 18)],

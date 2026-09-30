@@ -1,6 +1,7 @@
 import numpy as np
 import onnx_light.onnx.helper as oh
-from onnx_light.onnx import TensorProto, numpy_helper
+import onnx_light.onnx.numpy_helper as onh
+from onnx_light.onnx import TensorProto
 
 from benchmarks.common import BACKENDS, run_session, setup_session
 
@@ -25,8 +26,8 @@ class MatMulAdd:
                 [oh.make_tensor_value_info("X", TensorProto.FLOAT, [64, 256])],
                 [oh.make_tensor_value_info("Y", TensorProto.FLOAT, [64, 256])],
                 [
-                    numpy_helper.from_array(weights, "weights"),
-                    numpy_helper.from_array(bias, "bias"),
+                    onh.from_array(weights, "weights"),
+                    onh.from_array(bias, "bias"),
                 ],
             ),
             opset_imports=[oh.make_opsetid("", 18)],
