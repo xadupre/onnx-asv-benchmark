@@ -1,0 +1,76 @@
+import argparse
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
+
+def run(command, cwd):
+    return subprocess.run(command, cwd=cwd, check=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Publish local ASV results to the shared cache_data repository."
+    )
+    parser.add_argument(
+        "--source",
+        type=Path,
+        default=Path(".asv/results"),
+        help="ASV results directory (default: .asv/results).",
+    )
+    parser.add_argument(
+        "--repository",
+        default="https://github.com/xadupre/cache_data.git",
+        help="Git repository receiving the results.",
+    )
+    parser.add_argument(
+        "--subdirectory",
+        default="onnx-asv-benchmark",
+        help="Destination subdirectory in the repository.",
+    )
+    args = parser.parse_args()
+
+    source = args.source.resolve()
+    if not source.is_dir():
+        raise FileNotFoundError(f"ASV results directory does not exist: {source}")
+
+    with tempfile.TemporaryDirectory(prefix="onnx-asv-publish-") as temporary:
+        checkout = Path(temporary) / "cache_data"
+        run(
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "--branch",
+                "main",
+                args.repository,
+                str(checkout),
+            ],
+            cwd=Path.cwd(),
+        )
+        destination = (checkout / args.subdirectory).resolve()
+        if checkout.resolve() not in destination.parents:
+            raise ValueError(
+                "--subdirectory must remain inside the cache_data checkout"
+            )
+        shutil.copytree(source, destination, dirs_exist_ok=True)
+
+        run(["git", "add", "--all", "--", args.subdirectory], cwd=checkout)
+        status = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"], cwd=checkout
+        ).returncode
+        if status == 0:
+            print("No benchmark result changes to publish.")
+            return
+        if status != 1:
+            raise subprocess.CalledProcessError(
+                status, ["git", "diff", "--cached", "--quiet"]
+            )
+        run(["git", "commit", "-m", "Update onnx-asv-benchmark results"], cwd=checkout)
+        run(["git", "push", "origin", "main"], cwd=checkout)
+
+
+if __name__ == "__main__":
+    main()

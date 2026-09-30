@@ -51,3 +51,16 @@ For a quick smoke test:
 ```bash
 asv run --quick
 ```
+
+## Publish results
+
+Publish the raw `.asv/results` data to the `onnx-asv-benchmark` subdirectory
+of [xadupre/cache_data](https://github.com/xadupre/cache_data):
+
+```bash
+python tools/publish_results.py
+```
+
+The command clones `cache_data`, merges the local ASV results into the shared
+subdirectory, commits any changes, and pushes them to its `main` branch. Git
+credentials with write access to `xadupre/cache_data` must be configured.
