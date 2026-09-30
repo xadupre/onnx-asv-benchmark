@@ -1,41 +1,34 @@
 # onnx-asv-benchmark
 
-ASV benchmarks comparing inference on two ONNX models with:
+ASV benchmarks comparing inference with:
 
 - ONNX Runtime
 - the ONNX reference evaluator
 - onnx-light
-- onnx-light with onnx-light-cpu kernels
 
-The benchmark models are generated in memory. They cover a matrix multiplication
-with a bias and a two-layer MLP.
+The benchmark suite follows ONNX's separation between model and node cases:
+
+- `benchmarks/models`: a matrix multiplication with bias and a two-layer MLP
+- `benchmarks/operators`: Add, MatMul, and Relu in isolation
+
+`benchmarks/versions.py` records the installed version of every runtime in each
+ASV result set.
 
 ## Setup
 
-The benchmarks use ASV's existing environment so that onnx-light-cpu can be
-built against the same onnx-light shared library used at runtime. Install ASV
-and the standard Python dependencies:
+The benchmarks use ASV's existing environment. Install ASV, ONNX, and ONNX
+Runtime from PyPI:
 
 ```bash
-python -m pip install asv numpy onnx onnxruntime
+python -m pip install -r requirements.txt
 ```
 
-Build both source checkouts in place, with the onnx-light-cpu integration
-enabled:
+Then install the onnx-light wheel for your Python version and platform from the
+[onnx-light 0.1.28 release page](https://github.com/xadupre/onnx-light/releases/tag/0.1.28).
+For CPython 3.12 on x86-64 Linux:
 
 ```bash
-cd ../onnx-light
-python setup.py build_ext --inplace
-cd ../onnx-light-cpu
-PYTHONPATH=../onnx-light python setup.py build_ext --inplace --onnx-light-source
-cd ../onnx-asv-benchmark
-export PYTHONPATH="../onnx-light:../onnx-light-cpu:${PYTHONPATH}"
-```
-
-Verify that the optimized kernels are available:
-
-```bash
-python -c "from onnx_light_cpu import has_cpu_kernels, register_kernels_global; assert has_cpu_kernels(); register_kernels_global()"
+python -m pip install https://github.com/xadupre/onnx-light/releases/download/0.1.28/onnx_light-0.1.28-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
 ```
 
 ## Run
