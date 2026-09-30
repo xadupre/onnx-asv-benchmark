@@ -11,36 +11,32 @@ The benchmark suite follows ONNX's separation between model and node cases:
 - `benchmarks/models`: a matrix multiplication with bias and a two-layer MLP
 - `benchmarks/operators`: Add, MatMul, and Relu in isolation
 
-`benchmarks/versions.py` records the installed version of every runtime in each
-ASV result set.
+The ASV environment name tracks the pinned dependency versions.
+`benchmarks/versions.py` also records the version reported by every runtime.
 
 ## Setup
 
-The benchmarks use ASV's existing environment. Install ASV, ONNX, and ONNX
-Runtime from PyPI:
+Install ASV:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install asv
 ```
 
-Then install the onnx-light wheel for your Python version and platform from the
-[onnx-light 0.1.28 release page](https://github.com/xadupre/onnx-light/releases/tag/0.1.28).
-For CPython 3.12 on x86-64 Linux:
-
-```bash
-python -m pip install https://github.com/xadupre/onnx-light/releases/download/0.1.28/onnx_light-0.1.28-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-```
+ASV creates a Python 3.12 virtual environment and installs the pinned NumPy,
+ONNX, and ONNX Runtime releases from PyPI. It installs onnx-light 0.1.28 from
+the wheel published on the
+[onnx-light release page](https://github.com/xadupre/onnx-light/releases/tag/0.1.28).
 
 ## Run
 
-Run the complete comparison in the active environment:
+Run the complete comparison in the versioned environment:
 
 ```bash
-asv run --environment existing
+asv run
 ```
 
 For a quick smoke test:
 
 ```bash
-asv run --environment existing --quick
+asv run --quick
 ```
