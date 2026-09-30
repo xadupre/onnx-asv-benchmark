@@ -34,6 +34,17 @@ the wheel published on the
 
 ## Run
 
+Before the first run on a machine, let ASV detect and store its machine
+information:
+
+```bash
+asv machine --yes
+```
+
+This creates the ASV machine profile (in `~/.asv-machine.json` by default).
+It is required even when the processor is visible to the operating system,
+including under WSL.
+
 Run the complete comparison in the versioned environment:
 
 ```bash
