@@ -29,6 +29,16 @@ def main():
         default="onnx-asv-benchmark",
         help="Destination subdirectory in the repository.",
     )
+    parser.add_argument(
+        "--pages-repository",
+        default="xadupre/onnx-asv-benchmark",
+        help="GitHub repository hosting the ASV website.",
+    )
+    parser.add_argument(
+        "--skip-pages",
+        action="store_true",
+        help="Do not trigger the GitHub Pages deployment workflow.",
+    )
     args = parser.parse_args()
 
     source = args.source.resolve()
@@ -63,13 +73,31 @@ def main():
         ).returncode
         if status == 0:
             print("No benchmark result changes to publish.")
-            return
-        if status != 1:
+        elif status == 1:
+            run(
+                ["git", "commit", "-m", "Update onnx-asv-benchmark results"],
+                cwd=checkout,
+            )
+            run(["git", "push", "origin", "main"], cwd=checkout)
+        else:
             raise subprocess.CalledProcessError(
                 status, ["git", "diff", "--cached", "--quiet"]
             )
-        run(["git", "commit", "-m", "Update onnx-asv-benchmark results"], cwd=checkout)
-        run(["git", "push", "origin", "main"], cwd=checkout)
+
+    if not args.skip_pages:
+        run(
+            [
+                "gh",
+                "workflow",
+                "run",
+                "publish-pages.yml",
+                "--repo",
+                args.pages_repository,
+                "--ref",
+                "main",
+            ],
+            cwd=Path.cwd(),
+        )
 
 
 if __name__ == "__main__":
