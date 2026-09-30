@@ -6,13 +6,16 @@ ASV benchmarks comparing inference with:
 - the ONNX reference evaluator
 - onnx-light
 
-The benchmark suite follows ONNX's separation between model and node cases:
+The benchmark suite groups operators by category:
 
 - `benchmarks/models`: a matrix multiplication with bias and a two-layer MLP
-- `benchmarks/operators`: Add, MatMul, and Relu in isolation
+- `benchmarks/maths`: Add and MatMul
+- `benchmarks/nn`: Relu
 
 The ASV environment name tracks the pinned dependency versions.
 `benchmarks/versions.py` also records the version reported by every runtime.
+All models are created and checked with onnx-light, then serialized for the
+ONNX reference evaluator and ONNX Runtime.
 
 ## Setup
 

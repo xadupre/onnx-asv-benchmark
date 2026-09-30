@@ -1,5 +1,5 @@
 import numpy as np
-from onnx import TensorProto, helper, numpy_helper
+from onnx_light.onnx import TensorProto, helper, numpy_helper
 
 from benchmarks.common import BACKENDS, run_session, setup_session
 

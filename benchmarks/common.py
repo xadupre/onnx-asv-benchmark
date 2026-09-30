@@ -1,6 +1,6 @@
 import numpy as np
 import onnx
-import onnx_light.onnx as onnx_light
+import onnx_light.onnx.checker as onnx_light_checker
 import onnxruntime
 from onnx.reference import ReferenceEvaluator as OnnxReferenceEvaluator
 from onnx_light.onnx.reference import ReferenceEvaluator as OnnxLightReferenceEvaluator
@@ -9,18 +9,18 @@ BACKENDS = ("onnxruntime", "onnx-reference", "onnx-light")
 
 
 def setup_session(benchmark, backend, model, feeds):
-    onnx.checker.check_model(model)
-    expected = OnnxReferenceEvaluator(model).run(None, feeds)
+    onnx_light_checker.check_model(model)
+    model_bytes = model.SerializeToString()
+    onnx_model = onnx.load_model_from_string(model_bytes)
+    onnx.checker.check_model(onnx_model)
+    expected = OnnxReferenceEvaluator(onnx_model).run(None, feeds)
 
     if backend == "onnxruntime":
-        session = onnxruntime.InferenceSession(
-            model.SerializeToString(), providers=["CPUExecutionProvider"]
-        )
+        session = onnxruntime.InferenceSession(model_bytes, providers=["CPUExecutionProvider"])
     elif backend == "onnx-reference":
-        session = OnnxReferenceEvaluator(model)
+        session = OnnxReferenceEvaluator(onnx_model)
     else:
-        light_model = onnx_light.load_model(model.SerializeToString())
-        session = OnnxLightReferenceEvaluator(light_model)
+        session = OnnxLightReferenceEvaluator(model)
 
     outputs = session.run(None, feeds)
     for output, expected_output in zip(outputs, expected, strict=True):
