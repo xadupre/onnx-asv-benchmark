@@ -10,7 +10,7 @@ from benchmarks._operator import (
 )
 from benchmarks.models.matmul_add import MatMulAdd
 from benchmarks.models.mlp import MLP
-from benchmarks.models.tiny_llm import TinyLLM
+from benchmarks.models.tiny_llm import TinyLLM, TinyLLMGenAI
 
 OPERATOR_COUNTS = {
     "generator": 10,
@@ -108,7 +108,7 @@ class TestBenchmarks(unittest.TestCase):
                 benchmark.time_run("onnx-light")
 
     def test_model_benchmarks(self):
-        for benchmark_type in (MatMulAdd, MLP, TinyLLM):
+        for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
             for backend in benchmark_type.params:
                 with self.subTest(
                     benchmark=benchmark_type.__name__,
@@ -116,7 +116,14 @@ class TestBenchmarks(unittest.TestCase):
                 ):
                     benchmark = benchmark_type()
                     benchmark.setup(backend)
-                    benchmark.time_run(backend)
+                    time_methods = [
+                        getattr(benchmark, name)
+                        for name in dir(benchmark)
+                        if name.startswith("time_")
+                    ]
+                    self.assertTrue(time_methods)
+                    for time_method in time_methods:
+                        time_method(backend)
                     teardown = getattr(benchmark, "teardown", None)
                     if teardown is not None:
                         teardown(backend)

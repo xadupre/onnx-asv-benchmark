@@ -3,14 +3,18 @@ import tempfile
 
 import numpy as np
 import onnxruntime
+import onnxruntime_genai as og
 import torch
 from modelbuilder.builder import create_model
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
+from tokenizers.pre_tokenizers import Whitespace
 from transformers import AutoModelForCausalLM, LlamaConfig, PreTrainedTokenizerFast
 
 MODEL_NAME = "arnir0/Tiny-LLM"
-SEQUENCE_LENGTH = 16
+CACHE_LENGTH = 128
+MAX_NEW_TOKENS = 8
+PROMPT = "The future of artificial intelligence is"
 
 
 def _initialize_weights(model):
@@ -29,12 +33,21 @@ def _initialize_weights(model):
 
 
 def _make_tokenizer():
+    vocabulary = {
+        "<unk>": 0,
+        "<s>": 1,
+        "</s>": 2,
+        "The": 3,
+        "future": 4,
+        "of": 5,
+        "artificial": 6,
+        "intelligence": 7,
+        "is": 8,
+    }
     tokenizer = Tokenizer(
-        WordLevel(
-            vocab={"<unk>": 0, "<s>": 1, "</s>": 2},
-            unk_token="<unk>",
-        )
+        WordLevel(vocab=vocabulary, unk_token="<unk>"),
     )
+    tokenizer.pre_tokenizer = Whitespace()
     return PreTrainedTokenizerFast(
         tokenizer_object=tokenizer,
         bos_token="<s>",
@@ -43,8 +56,7 @@ def _make_tokenizer():
     )
 
 
-class TinyLLM:
-    params = ("onnxruntime",)
+class _TinyLLMBase:
     param_names = ("backend",)
     number = 1
     timeout = 60
@@ -77,7 +89,9 @@ class TinyLLM:
         output_directory = os.path.join(self._temporary_directory.name, "output")
         cache_directory = os.path.join(self._temporary_directory.name, "cache")
         source_model.save_pretrained(source_directory)
-        _make_tokenizer().save_pretrained(source_directory)
+        tokenizer = _make_tokenizer()
+        tokenizer.save_pretrained(source_directory)
+        self.prompt_tokens = tokenizer.encode(PROMPT)
 
         create_model(
             model_name=MODEL_NAME,
@@ -94,13 +108,13 @@ class TinyLLM:
             model_path,
             providers=["CPUExecutionProvider"],
         )
-        self.feeds = {
-            "input_ids": np.arange(SEQUENCE_LENGTH, dtype=np.int64).reshape(
+        self.prefill_feeds = {
+            "input_ids": np.arange(CACHE_LENGTH, dtype=np.int64).reshape(
                 1,
-                SEQUENCE_LENGTH,
+                CACHE_LENGTH,
             ),
             "attention_mask": np.ones(
-                (1, SEQUENCE_LENGTH),
+                (1, CACHE_LENGTH),
                 dtype=np.int64,
             ),
             "past_key_values.0.key": np.empty(
@@ -112,13 +126,81 @@ class TinyLLM:
                 dtype=np.float32,
             ),
         }
-        outputs = self.session.run(["logits"], self.feeds)
-        if outputs[0].shape != (1, SEQUENCE_LENGTH, config.vocab_size):
-            raise AssertionError(f"Unexpected logits shape {outputs[0].shape!r}.")
+        output_names = [output.name for output in self.session.get_outputs()]
+        prefill_outputs = dict(
+            zip(
+                output_names,
+                self.session.run(output_names, self.prefill_feeds),
+                strict=True,
+            )
+        )
+        if prefill_outputs["logits"].shape != (
+            1,
+            CACHE_LENGTH,
+            config.vocab_size,
+        ):
+            raise AssertionError(
+                "Unexpected prefill logits shape "
+                f"{prefill_outputs['logits'].shape!r}."
+            )
+        self.decode_feeds = {
+            "input_ids": np.argmax(
+                prefill_outputs["logits"][:, -1:, :],
+                axis=-1,
+            ).astype(np.int64),
+            "attention_mask": np.ones((1, CACHE_LENGTH + 1), dtype=np.int64),
+            "past_key_values.0.key": prefill_outputs["present.0.key"],
+            "past_key_values.0.value": prefill_outputs["present.0.value"],
+        }
+        decode_outputs = self.session.run(["logits"], self.decode_feeds)
+        if decode_outputs[0].shape != (1, 1, config.vocab_size):
+            raise AssertionError(
+                f"Unexpected decode logits shape {decode_outputs[0].shape!r}."
+            )
+
+        self.genai_model = og.Model(output_directory)
+        if not self.prompt_tokens:
+            raise AssertionError("The generation prompt produced no tokens.")
+        self._generate()
 
     def teardown(self, backend):
+        del self.genai_model
         del self.session
         self._temporary_directory.cleanup()
 
-    def time_run(self, backend):
-        self.session.run(["logits"], self.feeds)
+    def _generate(self):
+        parameters = og.GeneratorParams(self.genai_model)
+        parameters.set_search_options(
+            do_sample=False,
+            max_length=len(self.prompt_tokens) + MAX_NEW_TOKENS,
+            temperature=1.0,
+            top_k=1,
+        )
+        generator = og.Generator(self.genai_model, parameters)
+        generator.append_tokens(
+            np.array([self.prompt_tokens], dtype=np.int64),
+        )
+        generated_tokens = []
+        while not generator.is_done():
+            generator.generate_next_token()
+            generated_tokens.append(int(generator.get_next_tokens()[0]))
+        if not generated_tokens:
+            raise AssertionError("ONNX Runtime GenAI produced no tokens.")
+        return generated_tokens
+
+
+class TinyLLM(_TinyLLMBase):
+    params = ("onnxruntime",)
+
+    def time_prefill(self, backend):
+        self.session.run(["logits"], self.prefill_feeds)
+
+    def time_decode(self, backend):
+        self.session.run(["logits"], self.decode_feeds)
+
+
+class TinyLLMGenAI(_TinyLLMBase):
+    params = ("onnxruntime-genai",)
+
+    def time_generate(self, backend):
+        self._generate()

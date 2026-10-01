@@ -105,9 +105,10 @@ Reference backend verified to support that case.
 The model benchmarks also include the one-layer `arnir0/Tiny-LLM`
 configuration used by `mbext` fast tests. The benchmark creates the random
 Hugging Face model and uses `mbext` to generate the ONNX model before timing
-it with ONNX Runtime. Its configuration uses hidden size 512, intermediate
-size 1376, eight attention heads, four key/value heads, and a 32,000-token
-vocabulary.
+ONNX Runtime prefill, single-token decode with a 128-token KV cache, and
+ONNX Runtime GenAI generation from a text prompt. Its configuration uses
+hidden size 512, intermediate size 1376, eight attention heads, four key/value
+heads, and a 32,000-token vocabulary.
 
 ## Publish results
 
