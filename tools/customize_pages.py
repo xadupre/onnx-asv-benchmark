@@ -57,6 +57,45 @@ def customize_pages(html_dir):
         "else if (params[axis-1].length > 1 || "
         "param_names[axis-1] == 'backend') {",
     )
+    graph = _replace_once(
+        graph,
+        "graph_label(labels, different)]);",
+        "graph_label(labels, different), labels]);",
+    )
+    graph = _replace_once(
+        graph,
+        "label: graph_content[1],\n"
+        "                        bars: { order: count, },",
+        "label: graph_content[1],\n"
+        "                        parameters: graph_content[2],\n"
+        "                        bars: { order: count, },",
+    )
+    graph = _replace_once(
+        graph,
+        "                    var y = item.datapoint[1];\n"
+        "                    var commit_hash = get_commit_hash(item.datapoint[0]);\n"
+        "                    if (commit_hash) {\n"
+        "                        var unit = $.asv.main_json.benchmarks[current_benchmark].unit;\n"
+        "                        showTooltip(\n"
+        "                            item.pageX, item.pageY,\n"
+        '                            $.asv.pretty_unit(y, unit) + " @ " + commit_hash);\n'
+        "                    }",
+        "                    var y = item.datapoint[1];\n"
+        "                    var unit = $.asv.main_json.benchmarks[current_benchmark].unit;\n"
+        "                    var contents = [\n"
+        '                        "<b>" + $.asv.pretty_unit(y, unit) + "</b>",\n'
+        "                        new Date(item.datapoint[0]).toLocaleString()\n"
+        "                    ];\n"
+        "                    $.each(item.series.parameters, function(key, value) {\n"
+        "                        if (key != 'commit' && key != 'cpu' &&\n"
+        "                                value !== null && value != 'anonymous') {\n"
+        "                            var name = key.replace(/^env-/, '');\n"
+        "                            var text = name + ': ' + value;\n"
+        '                            contents.push($("<span>").text(text).html());\n'
+        "                        }\n"
+        "                    });\n"
+        "                    showTooltip(item.pageX, item.pageY, contents.join('<br>'));",
+    )
     axis_font = "axisLabelFontSizePixels: 12"
     if graph.count(axis_font) != 2:
         raise ValueError(
@@ -82,11 +121,30 @@ def customize_pages(html_dir):
         "param != 'machine' && param != 'cpu'",
     )
 
+    grid_path = html_dir / "summarygrid.js"
+    grid = grid_path.read_text(encoding="utf-8")
+    grid = _replace_once(
+        grid,
+        "            var i = bm_name.indexOf('.');\n"
+        "            var group = bm_name.slice(0, i);\n"
+        "            var name = bm_name.slice(i + 1);",
+        "            var parts = bm_name.split('.');\n"
+        "            var group = parts.slice(0, 2).join(' / ');",
+    )
+    grid = _replace_once(
+        grid,
+        "var display_name = bm.pretty_name || "
+        "bm.name.slice(bm.name.indexOf('.') + 1);",
+        "var display_name = bm.pretty_name || "
+        "bm.name.split('.').slice(2).join('.');",
+    )
+
     stylesheet = Path(__file__).with_name("system_theme.css")
     shutil.copy2(stylesheet, html_dir / "system-theme.css")
     index_path.write_text(index, encoding="utf-8")
     graph_path.write_text(graph, encoding="utf-8")
     summary_path.write_text(summary, encoding="utf-8")
+    grid_path.write_text(grid, encoding="utf-8")
 
 
 if __name__ == "__main__":
