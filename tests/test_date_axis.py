@@ -18,6 +18,7 @@ class TestDateAxis(unittest.TestCase):
                 "    } else if (date_scale) {\n"
                 "        options.xaxis.axisLabel = 'commit date';\n"
                 "    }\n"
+                '    text = "commit";\n'
                 "}\n",
                 encoding="utf-8",
             )
@@ -41,6 +42,7 @@ class TestDateAxis(unittest.TestCase):
                 script,
             )
             self.assertIn("axisLabel = 'date';", script)
+            self.assertIn('text = "date";', script)
             self.assertIn(
                 "#even-spacing, #date-scale { display: none !important; }", page
             )
