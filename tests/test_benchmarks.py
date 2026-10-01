@@ -10,6 +10,7 @@ from benchmarks._operator import (
 )
 from benchmarks.models.matmul_add import MatMulAdd
 from benchmarks.models.mlp import MLP
+from benchmarks.models.tiny_llm import PRECISIONS, TinyLLM, TinyLLMGenAI
 
 OPERATOR_COUNTS = {
     "generator": 10,
@@ -107,15 +108,44 @@ class TestBenchmarks(unittest.TestCase):
                 benchmark.time_run("onnx-light")
 
     def test_model_benchmarks(self):
-        for benchmark_type in (MatMulAdd, MLP):
-            for backend in benchmark_type.params:
+        self.assertEqual(TinyLLM.params[0], PRECISIONS)
+        self.assertEqual(TinyLLMGenAI.params[0], PRECISIONS)
+        for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
+            params = benchmark_type.params
+            if len(benchmark_type.param_names) == 1:
+                params = ((value,) for value in params)
+            else:
+                precision_values, backend_values = params
+                params = (
+                    (precision, backend)
+                    for precision in precision_values
+                    for backend in backend_values
+                )
+            for parameter_values in params:
+                is_available = getattr(benchmark_type, "is_available", None)
+                if is_available is not None and not is_available(*parameter_values):
+                    benchmark = benchmark_type()
+                    with self.assertRaises(NotImplementedError):
+                        benchmark.setup(*parameter_values)
+                    benchmark.teardown(*parameter_values)
+                    continue
                 with self.subTest(
                     benchmark=benchmark_type.__name__,
-                    backend=backend,
+                    parameters=parameter_values,
                 ):
                     benchmark = benchmark_type()
-                    benchmark.setup(backend)
-                    benchmark.time_run(backend)
+                    benchmark.setup(*parameter_values)
+                    time_methods = [
+                        getattr(benchmark, name)
+                        for name in dir(benchmark)
+                        if name.startswith("time_")
+                    ]
+                    self.assertTrue(time_methods)
+                    for time_method in time_methods:
+                        time_method(*parameter_values)
+                    teardown = getattr(benchmark, "teardown", None)
+                    if teardown is not None:
+                        teardown(*parameter_values)
 
 
 if __name__ == "__main__":
