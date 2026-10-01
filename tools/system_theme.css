@@ -1,0 +1,117 @@
+:root {
+    color-scheme: light dark;
+    --asv-background: #ffffff;
+    --asv-muted: #666666;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --asv-background: #0d1117;
+        --asv-muted: #8b949e;
+    }
+
+    html,
+    body,
+    #summarygrid-display,
+    #summarylist-display,
+    #graph-display,
+    #regressions-display,
+    .modal-content {
+        color: #c9d1d9;
+        background-color: var(--asv-background);
+    }
+
+    a,
+    .navbar-default .navbar-link,
+    .nav-list > li > a,
+    #summarylist-body table tbody td.change a {
+        color: #58a6ff;
+    }
+
+    .navbar-default,
+    .panel,
+    .panel-default,
+    .modal-content {
+        background-color: #161b22;
+        border-color: #30363d;
+    }
+
+    .navbar-default .navbar-nav > li > a,
+    .navbar-default .navbar-nav > li > a:hover,
+    .navbar-default .navbar-brand,
+    .navbar-default .navbar-text {
+        color: #c9d1d9;
+    }
+
+    .navbar-default .navbar-nav > .active > a,
+    .navbar-default .navbar-nav > .active > a:hover,
+    nav li.active span.navbar-brand,
+    nav li.active span.navbar-brand:hover,
+    .panel-default > .panel-heading,
+    .panel-heading {
+        color: #f0f6fc;
+        background-color: #21262d;
+        border-color: #30363d;
+    }
+
+    .btn-default,
+    #range,
+    .form-control {
+        color: #c9d1d9;
+        background-color: #161b22;
+        border-color: #30363d;
+    }
+
+    .btn-default:hover,
+    .btn-default:focus,
+    .btn-default:active,
+    .btn-default.active,
+    .nav-list > li > a:focus {
+        color: #ffffff;
+        background-color: #1f6feb;
+    }
+
+    .benchmark-container:hover,
+    #regressions-body table.ignored,
+    #summarylist-body table.ignored {
+        background-color: #161b22;
+    }
+
+    .benchmark-text,
+    .flot-tick-label,
+    .axisLabels,
+    .legendLabel {
+        color: #c9d1d9;
+    }
+
+    .legend > div {
+        background-color: #161b22 !important;
+    }
+
+    .table > thead > tr > th,
+    .table > tbody > tr > th,
+    .table > tfoot > tr > th,
+    .table > thead > tr > td,
+    .table > tbody > tr > td,
+    .table > tfoot > tr > td,
+    .modal-header,
+    .modal-footer {
+        border-color: #30363d;
+    }
+
+    #summarylist-body table tbody td.positive-change {
+        background-color: #5a1e24;
+    }
+
+    #summarylist-body table tbody td.negative-change {
+        background-color: #164b2c;
+    }
+
+    .tooltip-inner,
+    .popover,
+    .popover-title {
+        color: #f0f6fc;
+        background-color: #21262d;
+        border-color: #30363d;
+    }
+}
