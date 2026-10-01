@@ -2,7 +2,13 @@ import numpy as np
 import onnx_light.onnx.helper as oh
 import onnx_light.onnx.numpy_helper as onh
 
-from benchmarks.common import BACKENDS, MODEL_DTYPES, run_session, setup_session
+from benchmarks.common import (
+    BACKENDS,
+    MODEL_DTYPES,
+    run_session,
+    setup_session,
+    standard_normal,
+)
 
 
 class MatMulAdd:
@@ -15,8 +21,8 @@ class MatMulAdd:
         numpy_dtype = np.dtype(dtype)
         tensor_dtype = oh.np_dtype_to_tensor_dtype(numpy_dtype)
         rng = np.random.default_rng(0)
-        weights = rng.standard_normal((256, 256), dtype=numpy_dtype)
-        bias = rng.standard_normal(256, dtype=numpy_dtype)
+        weights = standard_normal(rng, (256, 256), numpy_dtype)
+        bias = standard_normal(rng, 256, numpy_dtype)
         model = oh.make_model(
             oh.make_graph(
                 [
@@ -34,7 +40,7 @@ class MatMulAdd:
             opset_imports=[oh.make_opsetid("", 18)],
             ir_version=10,
         )
-        feeds = {"X": rng.standard_normal((64, 256), dtype=numpy_dtype)}
+        feeds = {"X": standard_normal(rng, (64, 256), numpy_dtype)}
         setup_session(self, backend, model, feeds)
 
     def time_run(self, dtype, backend):

@@ -7,7 +7,14 @@ from onnx_light.onnx.reference import ReferenceEvaluator as OnnxLightReferenceEv
 from onnx_light_cpu import register_kernels_for_session
 
 BACKENDS = ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu")
-MODEL_DTYPES = ("float32", "float64")
+MODEL_DTYPES = ("float16", "float32", "float64")
+
+
+def standard_normal(rng, shape, dtype):
+    dtype = np.dtype(dtype)
+    if dtype == np.float16:
+        return rng.standard_normal(shape, dtype=np.float32).astype(dtype)
+    return rng.standard_normal(shape, dtype=dtype)
 
 
 def setup_session(benchmark, backend, model, feeds):
@@ -33,7 +40,16 @@ def setup_session(benchmark, backend, model, feeds):
 
     outputs = session.run(None, feeds)
     for output, expected_output in zip(outputs, expected, strict=True):
-        np.testing.assert_allclose(output, expected_output, rtol=1e-4, atol=1e-4)
+        if expected_output.dtype == np.float16:
+            rtol, atol = 1e-2, 5e-1
+        else:
+            rtol, atol = 1e-4, 1e-4
+        np.testing.assert_allclose(
+            output,
+            expected_output,
+            rtol=rtol,
+            atol=atol,
+        )
 
     benchmark.session = session
     benchmark.feeds = feeds
