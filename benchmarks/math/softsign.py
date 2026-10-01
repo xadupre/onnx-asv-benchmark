@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Softsign(OperatorBenchmark):
+class Softsign(_OperatorBenchmark):
     operator = "Softsign"
     case_name = "test_cc_softsign_benchmark"
     case_mode = "BENCHMARK"

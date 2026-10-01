@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class ReduceMax(OperatorBenchmark):
+class ReduceMax(_OperatorBenchmark):
     operator = "ReduceMax"
     case_name = "test_cc_reducemax_default_axes_keepdims_benchmark"
     case_mode = "BENCHMARK"

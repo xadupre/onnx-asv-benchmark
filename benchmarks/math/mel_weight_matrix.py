@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class MelWeightMatrix(OperatorBenchmark):
+class MelWeightMatrix(_OperatorBenchmark):
     operator = "MelWeightMatrix"
     case_name = "test_cc_melweightmatrix_benchmark"
     case_mode = "BENCHMARK"

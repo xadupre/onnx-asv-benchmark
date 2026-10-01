@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Exp(OperatorBenchmark):
+class Exp(_OperatorBenchmark):
     operator = "Exp"
     case_name = "test_cc_exp_benchmark"
     case_mode = "BENCHMARK"

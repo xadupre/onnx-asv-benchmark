@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Adagrad(OperatorBenchmark):
+class Adagrad(_OperatorBenchmark):
     operator = "Adagrad"
     case_name = "test_adagrad_benchmark"
     case_mode = "BENCHMARK"

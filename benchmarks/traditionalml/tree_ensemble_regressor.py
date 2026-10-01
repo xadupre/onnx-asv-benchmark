@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class TreeEnsembleRegressor(OperatorBenchmark):
+class TreeEnsembleRegressor(_OperatorBenchmark):
     operator = "TreeEnsembleRegressor"
     case_name = "test_cc_treeensembleregressor_sum_single_target_benchmark"
     case_mode = "BENCHMARK"

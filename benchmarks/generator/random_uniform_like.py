@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class RandomUniformLike(OperatorBenchmark):
+class RandomUniformLike(_OperatorBenchmark):
     operator = "RandomUniformLike"
     case_name = "test_cc_randomuniformlike_benchmark"
     case_mode = "BENCHMARK"

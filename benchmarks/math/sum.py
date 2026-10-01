@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Sum(OperatorBenchmark):
+class Sum(_OperatorBenchmark):
     operator = "Sum"
     case_name = "test_cc_sum_benchmark"
     case_mode = "BENCHMARK"

@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class SVMRegressor(OperatorBenchmark):
+class SVMRegressor(_OperatorBenchmark):
     operator = "SVMRegressor"
     case_name = "test_cc_svmregressor_linear_benchmark"
     case_mode = "BENCHMARK"

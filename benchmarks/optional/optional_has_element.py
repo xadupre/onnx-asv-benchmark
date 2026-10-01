@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class OptionalHasElement(OperatorBenchmark):
+class OptionalHasElement(_OperatorBenchmark):
     operator = "OptionalHasElement"
     case_name = "test_cc_optional_has_element_benchmark"
     case_mode = "BENCHMARK"

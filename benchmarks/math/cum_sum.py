@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class CumSum(OperatorBenchmark):
+class CumSum(_OperatorBenchmark):
     operator = "CumSum"
     case_name = "test_cc_cumsum_benchmark"
     case_mode = "BENCHMARK"

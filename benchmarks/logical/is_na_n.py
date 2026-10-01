@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class IsNaN(OperatorBenchmark):
+class IsNaN(_OperatorBenchmark):
     operator = "IsNaN"
     case_name = "test_cc_isnan_benchmark"
     case_mode = "BENCHMARK"

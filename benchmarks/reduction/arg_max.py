@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class ArgMax(OperatorBenchmark):
+class ArgMax(_OperatorBenchmark):
     operator = "ArgMax"
     case_name = "test_cc_argmax_no_keepdims_example_benchmark"
     case_mode = "BENCHMARK"

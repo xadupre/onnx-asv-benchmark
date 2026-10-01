@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class BitwiseOr(OperatorBenchmark):
+class BitwiseOr(_OperatorBenchmark):
     operator = "BitwiseOr"
     case_name = "test_cc_bitwise_or_benchmark"
     case_mode = "BENCHMARK"

@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class LogSoftmax(OperatorBenchmark):
+class LogSoftmax(_OperatorBenchmark):
     operator = "LogSoftmax"
     case_name = "test_cc_logsoftmax_benchmark"
     case_mode = "BENCHMARK"
