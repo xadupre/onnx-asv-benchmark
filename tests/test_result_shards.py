@@ -5,6 +5,7 @@ from pathlib import Path
 
 from tools.result_shards import (
     benchmark_shard,
+    canonical_benchmark_name,
     merge_shards,
     migrate_legacy_results,
     write_shards,
@@ -25,7 +26,12 @@ class TestResultShards(unittest.TestCase):
     def make_results(self, root):
         benchmarks = {
             "version": 2,
+            "maths.add.Add.time_run": {"type": "time", "legacy": True},
             "ops.math.add.Add.time_run": {"type": "time"},
+            "models.tiny_llm.TinyLLM.time_prefill": {
+                "type": "time",
+                "legacy": True,
+            },
             "models.llm.tiny_llm.TinyLLM.time_prefill": {"type": "time"},
         }
         self.write_json(root / "benchmarks.json", benchmarks)
@@ -49,12 +55,16 @@ class TestResultShards(unittest.TestCase):
                 "env_vars": {},
                 "result_columns": ["result"],
                 "results": {
+                    "maths.add.Add.time_run": [0],
                     "ops.math.add.Add.time_run": [1],
+                    "models.tiny_llm.TinyLLM.time_prefill": [0],
                     "models.llm.tiny_llm.TinyLLM.time_prefill": [2],
                     "machine.track_processor": ["Example CPU"],
                 },
                 "durations": {
+                    "maths.add.Add.time_run": 1,
                     "ops.math.add.Add.time_run": 3,
+                    "models.tiny_llm.TinyLLM.time_prefill": 1,
                     "models.llm.tiny_llm.TinyLLM.time_prefill": 4,
                     "machine.track_processor": 5,
                 },
@@ -64,9 +74,28 @@ class TestResultShards(unittest.TestCase):
 
     def test_benchmark_shard(self):
         self.assertEqual(benchmark_shard("ops.math.add.Add.time_run"), "ops/math")
+        self.assertEqual(benchmark_shard("maths.add.Add.time_run"), "ops/math")
         self.assertEqual(
             benchmark_shard("models.llm.tiny_llm.TinyLLM.time_prefill"),
             "models/llm/tiny_llm",
+        )
+        self.assertEqual(
+            benchmark_shard("models.tiny_llm.TinyLLM.time_prefill"),
+            "models/llm/tiny_llm",
+        )
+
+    def test_canonical_benchmark_name(self):
+        self.assertEqual(
+            canonical_benchmark_name("math.add.Add.time_run"),
+            "ops.math.add.Add.time_run",
+        )
+        self.assertEqual(
+            canonical_benchmark_name("models.matmul_add.MatMulAdd.time_run"),
+            "models.dummies.matmul_add.MatMulAdd.time_run",
+        )
+        self.assertEqual(
+            canonical_benchmark_name("models.llm.tiny_llm.TinyLLM.time_prefill"),
+            "models.llm.tiny_llm.TinyLLM.time_prefill",
         )
 
     def test_write_and_merge_shards(self):
@@ -102,6 +131,8 @@ class TestResultShards(unittest.TestCase):
             (merged / "benchmarks.json").read_text(encoding="utf-8")
         )
         self.assertEqual(merged_benchmarks["version"], 2)
+        self.assertNotIn("maths.add.Add.time_run", merged_benchmarks)
+        self.assertNotIn("models.tiny_llm.TinyLLM.time_prefill", merged_benchmarks)
         self.assertEqual(
             set(results["results"]),
             {

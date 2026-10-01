@@ -6,7 +6,9 @@ on:
       - main
     paths:
       - .github/workflows/publish-data.yml
+      - tools/merge_results.py
       - tools/remove_track_benchmarks.py
+      - tools/result_shards.py
       - tools/site_data.py
   workflow_call:
     secrets:

@@ -8,9 +8,106 @@ ANONYMOUS_MACHINE_FIELDS = {
     "ram": "anonymous",
 }
 
+OPERATOR_CATEGORIES = frozenset(
+    {
+        "generator",
+        "image",
+        "logical",
+        "math",
+        "maths",
+        "nn",
+        "object_detection",
+        "optional",
+        "preview",
+        "quantization",
+        "reduction",
+        "rt",
+        "sequence",
+        "tensor",
+        "text",
+        "traditionalml",
+        "training",
+    }
+)
+MODEL_GROUPS = {
+    "matmul_add": "dummies",
+    "mlp": "dummies",
+    "tiny_llm": "llm",
+}
+
+
+def canonical_benchmark_name(name):
+    parts = name.split(".")
+    if parts[0] in OPERATOR_CATEGORIES:
+        category = "math" if parts[0] == "maths" else parts[0]
+        return ".".join(("ops", category, *parts[1:]))
+    if parts[0] == "models" and len(parts) > 1 and parts[1] in MODEL_GROUPS:
+        return ".".join(("models", MODEL_GROUPS[parts[1]], *parts[1:]))
+    return name
+
+
+def _benchmark_name_priority(name):
+    canonical = canonical_benchmark_name(name)
+    if name == canonical:
+        return canonical, 2
+    if name.startswith("maths."):
+        return canonical, 0
+    return canonical, 1
+
+
+def _canonicalize_mapping(mapping, description):
+    selected = {}
+    for name, value in mapping.items():
+        canonical, priority = _benchmark_name_priority(name)
+        if canonical not in selected or priority > selected[canonical][0]:
+            selected[canonical] = (priority, name, value)
+        elif priority == selected[canonical][0] and value != selected[canonical][2]:
+            other = selected[canonical][1]
+            raise ValueError(f"Conflicting {description} for {other!r} and {name!r}.")
+    return {name: value for name, (_, _, value) in selected.items()}
+
+
+def canonicalize_benchmark_hierarchy(results_root):
+    results_root = Path(results_root)
+    benchmarks_path = results_root / "benchmarks.json"
+    benchmarks = _load(benchmarks_path)
+    metadata = {
+        name: value for name, value in benchmarks.items() if not isinstance(value, dict)
+    }
+    benchmark_definitions = {
+        name: value for name, value in benchmarks.items() if isinstance(value, dict)
+    }
+    _save(
+        benchmarks_path,
+        {
+            **metadata,
+            **_canonicalize_mapping(
+                benchmark_definitions,
+                "benchmark metadata",
+            ),
+        },
+    )
+
+    for machine_directory in results_root.iterdir():
+        if not machine_directory.is_dir():
+            continue
+        for result_path in machine_directory.glob("*.json"):
+            if result_path.name == "machine.json":
+                continue
+            result = _load(result_path)
+            result["results"] = _canonicalize_mapping(
+                result.get("results", {}),
+                f"results in {result_path}",
+            )
+            result["durations"] = _canonicalize_mapping(
+                result.get("durations", {}),
+                f"durations in {result_path}",
+            )
+            _save(result_path, result)
+
 
 def benchmark_shard(name):
-    parts = name.split(".")
+    parts = canonical_benchmark_name(name).split(".")
     if parts[0] == "ops" and len(parts) > 1:
         return f"ops/{parts[1]}"
     if parts[0] == "models" and len(parts) > 2:
@@ -252,3 +349,4 @@ def merge_shards(shard_root, destination):
     _save(destination / "benchmarks.json", merged_benchmarks)
     for machine_id, machine in machines.items():
         _save(destination / machine_id / "machine.json", machine)
+    canonicalize_benchmark_hierarchy(destination)

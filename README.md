@@ -132,6 +132,11 @@ Model shards use `models/<group>/<module>`; operator shards use
 results. The first publication migrates legacy flat results, including the
 `xadupre2025` directory, to a processor-named layout.
 
+When the site data is generated, historical benchmark names are normalized to
+the same hierarchy. The HTML navigation therefore groups operators under
+`ops/<category>` and models under `models/<group>/<module>`, including results
+recorded before the source tree was reorganized.
+
 The command clones `cache_data`, merges only the requested local results,
 rebases concurrent shard updates, commits any changes, and pushes them to its
 `main` branch. The `Publish benchmark data` workflow merges all shards after
