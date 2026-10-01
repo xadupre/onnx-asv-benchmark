@@ -71,7 +71,7 @@ def _make_tokenizer():
 
 
 class _TinyLLMBase:
-    param_names = ("precision", "backend")
+    param_names = ("dtype", "backend")
     number = 1
     timeout = 60
 

@@ -9,6 +9,7 @@ from benchmarks._operator import (
     OperatorBenchmark,
     QuantizePagedCacheBenchmark,
 )
+from benchmarks.common import MODEL_DTYPES
 from benchmarks.models.dummies.matmul_add import MatMulAdd
 from benchmarks.models.dummies.mlp import MLP
 from benchmarks.models.llm.tiny_llm import PRECISIONS, TinyLLM, TinyLLMGenAI
@@ -172,6 +173,10 @@ class TestBenchmarks(unittest.TestCase):
         )
 
     def test_model_benchmarks(self):
+        self.assertEqual(MatMulAdd.params[0], MODEL_DTYPES)
+        self.assertEqual(MLP.params[0], MODEL_DTYPES)
+        for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
+            self.assertEqual(benchmark_type.param_names[0], "dtype")
         self.assertEqual(TinyLLM.params[0], PRECISIONS)
         self.assertEqual(TinyLLMGenAI.params[0], PRECISIONS)
         self.assertEqual(
@@ -180,15 +185,12 @@ class TestBenchmarks(unittest.TestCase):
         )
         for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
             params = benchmark_type.params
-            if len(benchmark_type.param_names) == 1:
-                params = ((value,) for value in params)
-            else:
-                precision_values, backend_values = params
-                params = (
-                    (precision, backend)
-                    for precision in precision_values
-                    for backend in backend_values
-                )
+            dtype_values, backend_values = params
+            params = (
+                (dtype_name, backend)
+                for dtype_name in dtype_values
+                for backend in backend_values
+            )
             for parameter_values in params:
                 backend = parameter_values[-1]
                 if backend == "onnx-light-cpu" or (
@@ -212,8 +214,8 @@ class TestBenchmarks(unittest.TestCase):
     @requires_onnx_light_cpu("0.1.17")
     def test_onnx_light_cpu_models(self):
         for benchmark_type, parameter_values in (
-            (MatMulAdd, ("onnx-light-cpu",)),
-            (MLP, ("onnx-light-cpu",)),
+            (MatMulAdd, ("float64", "onnx-light-cpu")),
+            (MLP, ("float64", "onnx-light-cpu")),
             *(
                 (TinyLLMGenAI, (precision, backend))
                 for precision in PRECISIONS
