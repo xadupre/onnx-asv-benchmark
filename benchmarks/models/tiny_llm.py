@@ -15,6 +15,13 @@ MODEL_NAME = "arnir0/Tiny-LLM"
 CACHE_LENGTH = 128
 MAX_NEW_TOKENS = 8
 PROMPT = "The future of artificial intelligence is"
+PRECISIONS = ("fp32", "fp16", "bf16", "int8", "int4", "int2")
+
+
+def _cache_dtype(precision):
+    if precision == "fp16":
+        return np.float16
+    return np.float32
 
 
 def _initialize_weights(model):
@@ -57,11 +64,20 @@ def _make_tokenizer():
 
 
 class _TinyLLMBase:
-    param_names = ("backend",)
+    param_names = ("precision", "backend")
     number = 1
     timeout = 60
 
-    def setup(self, backend):
+    @staticmethod
+    def is_available(precision, backend):
+        return precision != "bf16"
+
+    def setup(self, precision, backend):
+        if not self.is_available(precision, backend):
+            raise NotImplementedError(
+                "ONNX Runtime does not support the required BF16 kernels on CPU."
+            )
+
         config = LlamaConfig(
             architectures=["LlamaForCausalLM"],
             bos_token_id=1,
@@ -97,7 +113,7 @@ class _TinyLLMBase:
             model_name=MODEL_NAME,
             input_path=source_directory,
             output_dir=output_directory,
-            precision="fp32",
+            precision=precision,
             execution_provider="cpu",
             cache_dir=cache_directory,
             num_hidden_layers=1,
@@ -119,43 +135,43 @@ class _TinyLLMBase:
             ),
             "past_key_values.0.key": np.empty(
                 (1, 4, 0, 64),
-                dtype=np.float32,
+                dtype=_cache_dtype(precision),
             ),
             "past_key_values.0.value": np.empty(
                 (1, 4, 0, 64),
-                dtype=np.float32,
+                dtype=_cache_dtype(precision),
             ),
         }
         output_names = [output.name for output in self.session.get_outputs()]
-        prefill_outputs = dict(
+        self.prefill_outputs = dict(
             zip(
                 output_names,
                 self.session.run(output_names, self.prefill_feeds),
                 strict=True,
             )
         )
-        if prefill_outputs["logits"].shape != (
+        prefill_logits = self.prefill_outputs["logits"]
+        if prefill_logits.shape != (
             1,
             CACHE_LENGTH,
             config.vocab_size,
         ):
             raise AssertionError(
-                "Unexpected prefill logits shape "
-                f"{prefill_outputs['logits'].shape!r}."
+                f"Unexpected prefill logits shape {prefill_logits.shape!r}."
             )
         self.decode_feeds = {
             "input_ids": np.argmax(
-                prefill_outputs["logits"][:, -1:, :],
+                prefill_logits[:, -1:, :],
                 axis=-1,
             ).astype(np.int64),
             "attention_mask": np.ones((1, CACHE_LENGTH + 1), dtype=np.int64),
-            "past_key_values.0.key": prefill_outputs["present.0.key"],
-            "past_key_values.0.value": prefill_outputs["present.0.value"],
+            "past_key_values.0.key": self.prefill_outputs["present.0.key"],
+            "past_key_values.0.value": self.prefill_outputs["present.0.value"],
         }
-        decode_outputs = self.session.run(["logits"], self.decode_feeds)
-        if decode_outputs[0].shape != (1, 1, config.vocab_size):
+        decode_logits = self.session.run(["logits"], self.decode_feeds)[0]
+        if decode_logits.shape != (1, 1, config.vocab_size):
             raise AssertionError(
-                f"Unexpected decode logits shape {decode_outputs[0].shape!r}."
+                f"Unexpected decode logits shape {decode_logits.shape!r}."
             )
 
         self.genai_model = og.Model(output_directory)
@@ -163,10 +179,13 @@ class _TinyLLMBase:
             raise AssertionError("The generation prompt produced no tokens.")
         self._generate()
 
-    def teardown(self, backend):
-        del self.genai_model
-        del self.session
-        self._temporary_directory.cleanup()
+    def teardown(self, precision, backend):
+        if hasattr(self, "genai_model"):
+            del self.genai_model
+        if hasattr(self, "session"):
+            del self.session
+        if hasattr(self, "_temporary_directory"):
+            self._temporary_directory.cleanup()
 
     def _generate(self):
         parameters = og.GeneratorParams(self.genai_model)
@@ -190,17 +209,17 @@ class _TinyLLMBase:
 
 
 class TinyLLM(_TinyLLMBase):
-    params = ("onnxruntime",)
+    params = (PRECISIONS, ("onnxruntime",))
 
-    def time_prefill(self, backend):
+    def time_prefill(self, precision, backend):
         self.session.run(["logits"], self.prefill_feeds)
 
-    def time_decode(self, backend):
+    def time_decode(self, precision, backend):
         self.session.run(["logits"], self.decode_feeds)
 
 
 class TinyLLMGenAI(_TinyLLMBase):
-    params = ("onnxruntime-genai",)
+    params = (PRECISIONS, ("onnxruntime-genai",))
 
-    def time_generate(self, backend):
+    def time_generate(self, precision, backend):
         self._generate()
