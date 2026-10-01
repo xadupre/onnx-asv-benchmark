@@ -74,21 +74,27 @@ class TestResultShards(unittest.TestCase):
         shards = self.root / "shards"
         merged = self.root / "merged"
         self.make_results(source)
+        self.write_json(
+            shards / "math" / "cpu" / "machine.json",
+            {"machine": "cpu", "cpu": "anonymous"},
+        )
+        self.write_json(shards / "math" / "cpu" / "old.json", {})
 
         self.assertEqual(
             write_shards(source, shards),
             {"math", "models/tiny_llm"},
         )
-        self.assertTrue((shards / "math" / "cpu" / "result.json").is_file())
+        self.assertFalse((shards / "math" / "cpu").exists())
+        self.assertTrue((shards / "math" / "Example CPU" / "result.json").is_file())
         serialized = "\n".join(
             path.read_text(encoding="utf-8") for path in shards.rglob("*.json")
         )
         self.assertNotIn("xadupre2025", serialized)
-        self.assertNotIn("Example CPU", serialized)
+        self.assertIn("Example CPU", serialized)
 
         merge_shards(shards, merged)
         results = json.loads(
-            (merged / "cpu" / "result.json").read_text(encoding="utf-8")
+            (merged / "Example CPU" / "result.json").read_text(encoding="utf-8")
         )
         merged_benchmarks = json.loads(
             (merged / "benchmarks.json").read_text(encoding="utf-8")
@@ -101,7 +107,25 @@ class TestResultShards(unittest.TestCase):
                 "models.tiny_llm.TinyLLM.time_prefill",
             },
         )
-        self.assertEqual(results["params"]["machine"], "cpu")
+        self.assertEqual(results["params"]["machine"], "Example CPU")
+        self.assertEqual(results["params"]["cpu"], "Example CPU")
+
+        second_source = self.root / "second-source"
+        self.make_results(second_source)
+        machine_path = second_source / "xadupre2025" / "machine.json"
+        machine = json.loads(machine_path.read_text(encoding="utf-8"))
+        machine["cpu"] = "Other CPU"
+        self.write_json(machine_path, machine)
+        result_path = second_source / "xadupre2025" / "result.json"
+        second_results = json.loads(result_path.read_text(encoding="utf-8"))
+        second_results["params"]["cpu"] = "Other CPU"
+        self.write_json(result_path, second_results)
+
+        write_shards(second_source, shards)
+        merge_shards(shards, merged)
+
+        self.assertTrue((merged / "Other CPU" / "result.json").is_file())
+        self.assertTrue((merged / "Example CPU" / "result.json").is_file())
 
     def test_migrate_legacy_results(self):
         destination = self.root / "cache-data"
@@ -114,7 +138,12 @@ class TestResultShards(unittest.TestCase):
         self.assertFalse((destination / "xadupre2025").exists())
         self.assertTrue(
             (
-                destination / "shards" / "models" / "tiny_llm" / "cpu" / "result.json"
+                destination
+                / "shards"
+                / "models"
+                / "tiny_llm"
+                / "Example CPU"
+                / "result.json"
             ).is_file()
         )
 
