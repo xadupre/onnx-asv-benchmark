@@ -117,6 +117,9 @@ class TestBenchmarks(unittest.TestCase):
                     benchmark = benchmark_type()
                     benchmark.setup(backend)
                     benchmark.time_run(backend)
+                    teardown = getattr(benchmark, "teardown", None)
+                    if teardown is not None:
+                        teardown(backend)
 
 
 if __name__ == "__main__":
