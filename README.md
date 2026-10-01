@@ -33,25 +33,18 @@ the wheel published on the
 
 ## Run
 
-Before the first run, use ASV's detected CPU description as the machine name
-instead of the hostname, and store its machine information:
+Before the first run, set up the ASV machine profile using the detected
+processor description instead of the hostname:
 
 ```bash
-processor="$(python - <<'PY'
-from asv.machine import Machine, MachineCollection
-
-profile = Machine.get_defaults()
-profile["machine"] = profile["cpu"]
-MachineCollection.save(profile["machine"], profile)
-print(profile["machine"])
-PY
-)"
+processor="$(python tools/setup_machine.py)"
 ```
 
-This creates the ASV machine profile (in `~/.asv-machine.json` by default).
-It is required even when the processor is visible to the operating system,
-including under WSL. Keep `processor` set in the shell for the following
-commands so ASV selects that profile rather than the hostname.
+The script creates or corrects the profile in `~/.asv-machine.json` and prints
+its name. It can be run again without changing a correct profile. To verify
+the current setup without modifying it, use
+`python tools/setup_machine.py --check`. Keep `processor` set in the shell for
+the following commands so ASV selects that profile rather than the hostname.
 
 Run the complete comparison in the versioned environment:
 
