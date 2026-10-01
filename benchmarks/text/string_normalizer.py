@@ -1,0 +1,8 @@
+from benchmarks._operator import OperatorBenchmark
+
+
+class StringNormalizer(OperatorBenchmark):
+    operator = "StringNormalizer"
+    case_name = "test_cc_string_normalizer_lower_benchmark"
+    case_mode = "BENCHMARK"
+    backends = ("onnxruntime", "onnx-reference", "onnx-light")
