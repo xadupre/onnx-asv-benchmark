@@ -8,11 +8,8 @@ on:
     paths:
       - .github/workflows/publish-pages.yml
       - asv.conf.json
-      - tools/date_axis.py
-      - tools/hide_redundant_cpu.py
-      - tools/show_backend_labels.py
+      - tools/customize_pages.py
       - tools/system_theme.css
-      - tools/system_theme.py
       - tools/site_data.py
 
 permissions:
@@ -54,10 +51,7 @@ jobs:
           python tools/remove_track_benchmarks.py .asv/results/benchmarks.json
           python -m pip install asv==0.6.6
           asv publish --no-pull
-          python tools/date_axis.py .asv/html
-          python -m tools.hide_redundant_cpu .asv/html
-          python -m tools.show_backend_labels .asv/html
-          python -m tools.system_theme .asv/html
+          python -m tools.customize_pages .asv/html
           python tools/site_data.py configure \
             .asv/html \
             https://raw.githubusercontent.com/xadupre/cache_data/main/onnx-asv-benchmark/site-data/
