@@ -18,7 +18,6 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   prepare:
@@ -110,13 +109,4 @@ jobs:
           gh auth setup-git
           git config --global user.name github-actions[bot]
           git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
-          python tools/publish_results.py --shard "$SHARD" --skip-pages
-
-  publish-pages:
-    needs: benchmark
-    runs-on: ubuntu-latest
-    steps:
-      - name: Build updated benchmark pages
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run publish-pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+          python tools/publish_results.py --shard "$SHARD"

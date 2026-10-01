@@ -112,8 +112,7 @@ kernels.
 
 Publish the raw `.asv/results` data as independent shards under the
 `onnx-asv-benchmark` subdirectory of
-[xadupre/cache_data](https://github.com/xadupre/cache_data), then trigger the
-GitHub Pages deployment:
+[xadupre/cache_data](https://github.com/xadupre/cache_data):
 
 ```bash
 python tools/publish_results.py --shard models/tiny_llm
@@ -127,17 +126,20 @@ results. The first publication migrates legacy flat results, including the
 
 The command clones `cache_data`, merges only the requested local results,
 rebases concurrent shard updates, commits any changes, and pushes them to its
-`main` branch. It then starts the `Publish benchmark pages` workflow, which
-merges all shards into a temporary ASV results tree and deploys it to
+`main` branch. The weekly `Publish benchmark pages` workflow merges all shards
+into a temporary ASV results tree and deploys it to
 [xadupre.github.io/onnx-asv-benchmark](https://xadupre.github.io/onnx-asv-benchmark/).
-Published graphs use dates, rather than commit positions, on the time axis.
+It runs on Monday at 00:30 UTC, after the final Sunday shard and before the
+next weekly cycle starts. Published graphs use dates, rather than commit
+positions, on the time axis.
 
 Git credentials with write access to `xadupre/cache_data` and an authenticated
 [GitHub CLI](https://cli.github.com/) with Actions access to this repository
-must be configured. Pass `--skip-pages` to publish only the raw results.
+must be configured. Pass `--publish-pages` to request an exceptional immediate
+Pages rebuild; the workflow can also be started manually from GitHub Actions.
 
 The `Weekly benchmark shards` workflow assigns every operator category and
 model module to one of seven daily schedule buckets, so every shard runs once
 per week and finishes independently. Configure a `CACHE_DATA_TOKEN` Actions
-secret with write access to `xadupre/cache_data`; the built-in workflow token
-triggers the final Pages rebuild after all shards in that day's bucket finish.
+secret with write access to `xadupre/cache_data`. Shard completion does not
+trigger a Pages deployment.
