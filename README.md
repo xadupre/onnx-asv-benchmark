@@ -126,20 +126,25 @@ results. The first publication migrates legacy flat results, including the
 
 The command clones `cache_data`, merges only the requested local results,
 rebases concurrent shard updates, commits any changes, and pushes them to its
-`main` branch. The weekly `Publish benchmark pages` workflow merges all shards
-into a temporary ASV results tree and deploys it to
-[xadupre.github.io/onnx-asv-benchmark](https://xadupre.github.io/onnx-asv-benchmark/).
-It runs on Monday at 00:30 UTC, after the final Sunday shard and before the
-next weekly cycle starts. Published graphs use dates, rather than commit
-positions, on the time axis.
+`main` branch. The `Publish benchmark data` workflow merges all shards after
+each daily benchmark bucket and stores the generated ASV JSON under
+`onnx-asv-benchmark/site-data` in `cache_data`. The static HTML deployed to
+[xadupre.github.io/onnx-asv-benchmark](https://xadupre.github.io/onnx-asv-benchmark/)
+loads `info.json`, `index.json`, and graph data directly from that directory
+through `raw.githubusercontent.com`. New benchmark data therefore appears
+without rebuilding or redeploying the HTML. Published graphs use dates,
+rather than commit positions, on the time axis.
 
 Git credentials with write access to `xadupre/cache_data` and an authenticated
 [GitHub CLI](https://cli.github.com/) with Actions access to this repository
-must be configured. Pass `--publish-pages` to request an exceptional immediate
-Pages rebuild; the workflow can also be started manually from GitHub Actions.
+must be configured. Pass `--publish-pages` to rebuild the static HTML after
+changing its presentation; the workflow can also be started manually from
+GitHub Actions.
 
 The `Weekly benchmark shards` workflow assigns every operator category and
 model module to one of seven daily schedule buckets, so every shard runs once
 per week and finishes independently. Configure a `CACHE_DATA_TOKEN` Actions
 secret with write access to `xadupre/cache_data`. Shard completion does not
-trigger a Pages deployment.
+trigger a Pages deployment; it refreshes only the remote JSON data. The static
+Pages workflow runs when its presentation files change or when started
+manually.

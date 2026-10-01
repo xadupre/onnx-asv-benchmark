@@ -1,0 +1,64 @@
+name: Publish benchmark data
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-data.yml
+      - tools/remove_track_benchmarks.py
+      - tools/site_data.py
+  workflow_call:
+    secrets:
+      CACHE_DATA_TOKEN:
+        required: true
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    concurrency:
+      group: benchmark-site-data
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build and publish JSON data
+        env:
+          GH_TOKEN: ${{ secrets.CACHE_DATA_TOKEN }}
+        run: |
+          gh auth setup-git
+          git config --global user.name github-actions[bot]
+          git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git clone --depth 1 https://github.com/xadupre/cache_data.git cache-data
+          test -d cache-data/onnx-asv-benchmark/shards
+          python tools/merge_results.py \
+            cache-data/onnx-asv-benchmark/shards \
+            .asv/results
+          python tools/remove_track_benchmarks.py .asv/results/benchmarks.json
+          python -m pip install asv==0.6.6
+          asv publish --no-pull
+          python tools/site_data.py extract \
+            .asv/html \
+            cache-data/onnx-asv-benchmark/site-data
+          git -C cache-data add --all -- onnx-asv-benchmark/site-data
+          if ! git -C cache-data diff --cached --quiet; then
+            git -C cache-data commit -m "Update onnx-asv-benchmark site data"
+            for attempt in 1 2 3; do
+              git -C cache-data pull --rebase origin main
+              if git -C cache-data push origin main; then
+                break
+              fi
+              if [[ "$attempt" == 3 ]]; then
+                exit 1
+              fi
+            done
+          fi

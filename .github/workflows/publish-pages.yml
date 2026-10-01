@@ -2,8 +2,14 @@ name: Publish benchmark pages
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "30 0 * * 1"
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-pages.yml
+      - asv.conf.json
+      - tools/date_axis.py
+      - tools/site_data.py
 
 permissions:
   contents: read
@@ -41,23 +47,13 @@ jobs:
           python tools/merge_results.py \
             cache-data/onnx-asv-benchmark/shards \
             .asv/results
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          path = Path(".asv/results/benchmarks.json")
-          benchmarks = json.loads(path.read_text(encoding="utf-8"))
-          benchmarks = {
-              name: benchmark
-              for name, benchmark in benchmarks.items()
-              if not isinstance(benchmark, dict)
-              or benchmark.get("type") != "track"
-          }
-          path.write_text(json.dumps(benchmarks), encoding="utf-8")
-          PY
-          python -m pip install asv
+          python tools/remove_track_benchmarks.py .asv/results/benchmarks.json
+          python -m pip install asv==0.6.6
           asv publish --no-pull
           python tools/date_axis.py .asv/html
+          python tools/site_data.py configure \
+            .asv/html \
+            https://raw.githubusercontent.com/xadupre/cache_data/main/onnx-asv-benchmark/site-data/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

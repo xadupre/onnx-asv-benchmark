@@ -110,3 +110,8 @@ jobs:
           git config --global user.name github-actions[bot]
           git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
           python tools/publish_results.py --shard "$SHARD"
+
+  publish-data:
+    needs: benchmark
+    uses: ./.github/workflows/publish-data.yml
+    secrets: inherit
