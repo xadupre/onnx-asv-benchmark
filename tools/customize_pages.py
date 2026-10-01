@@ -121,11 +121,30 @@ def customize_pages(html_dir):
         "param != 'machine' && param != 'cpu'",
     )
 
+    grid_path = html_dir / "summarygrid.js"
+    grid = grid_path.read_text(encoding="utf-8")
+    grid = _replace_once(
+        grid,
+        "            var i = bm_name.indexOf('.');\n"
+        "            var group = bm_name.slice(0, i);\n"
+        "            var name = bm_name.slice(i + 1);",
+        "            var parts = bm_name.split('.');\n"
+        "            var group = parts.slice(0, 2).join(' / ');",
+    )
+    grid = _replace_once(
+        grid,
+        "var display_name = bm.pretty_name || "
+        "bm.name.slice(bm.name.indexOf('.') + 1);",
+        "var display_name = bm.pretty_name || "
+        "bm.name.split('.').slice(2).join('.');",
+    )
+
     stylesheet = Path(__file__).with_name("system_theme.css")
     shutil.copy2(stylesheet, html_dir / "system-theme.css")
     index_path.write_text(index, encoding="utf-8")
     graph_path.write_text(graph, encoding="utf-8")
     summary_path.write_text(summary, encoding="utf-8")
+    grid_path.write_text(grid, encoding="utf-8")
 
 
 if __name__ == "__main__":

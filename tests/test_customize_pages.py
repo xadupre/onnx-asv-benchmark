@@ -13,13 +13,19 @@ class TestCustomizePages(unittest.TestCase):
         source = Path(asv.__file__).parent / "www"
         with tempfile.TemporaryDirectory() as directory:
             html = Path(directory)
-            for name in ("index.html", "graphdisplay.js", "summarylist.js"):
+            for name in (
+                "index.html",
+                "graphdisplay.js",
+                "summarygrid.js",
+                "summarylist.js",
+            ):
                 shutil.copy2(source / name, html / name)
 
             customize_pages(html)
 
             page = (html / "index.html").read_text(encoding="utf-8")
             graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+            grid = (html / "summarygrid.js").read_text(encoding="utf-8")
             summary = (html / "summarylist.js").read_text(encoding="utf-8")
             stylesheet = (html / "system-theme.css").read_text(encoding="utf-8")
             self.assertIn('name="color-scheme" content="light dark"', page)
@@ -43,6 +49,8 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("parameters: graph_content[2]", graph)
             self.assertIn("new Date(item.datapoint[0]).toLocaleString()", graph)
             self.assertIn("item.series.parameters", graph)
+            self.assertIn("parts.slice(0, 2).join(' / ')", grid)
+            self.assertIn("bm.name.split('.').slice(2).join('.')", grid)
             self.assertNotIn(
                 '$.asv.pretty_unit(y, unit) + " @ " + commit_hash',
                 graph,
@@ -54,15 +62,18 @@ class TestCustomizePages(unittest.TestCase):
             html = Path(directory)
             index = html / "index.html"
             graph = html / "graphdisplay.js"
+            grid = html / "summarygrid.js"
             summary = html / "summarylist.js"
             index.write_text("<head></head>", encoding="utf-8")
             graph.write_text("unexpected", encoding="utf-8")
+            grid.write_text("unexpected", encoding="utf-8")
             summary.write_text("unexpected", encoding="utf-8")
 
             with self.assertRaises(ValueError):
                 customize_pages(html)
             self.assertEqual(index.read_text(encoding="utf-8"), "<head></head>")
             self.assertEqual(graph.read_text(encoding="utf-8"), "unexpected")
+            self.assertEqual(grid.read_text(encoding="utf-8"), "unexpected")
             self.assertEqual(summary.read_text(encoding="utf-8"), "unexpected")
 
 
