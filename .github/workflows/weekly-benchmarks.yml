@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       shard:
-        description: Shard to run, for example math or models/tiny_llm
+        description: Shard to run, for example ops/math or models/llm/tiny_llm
         required: true
         type: string
 

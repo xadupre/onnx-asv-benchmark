@@ -9,9 +9,10 @@ class TestScheduledShards(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         shards = discover_shards(root)
 
-        self.assertIn("math", shards)
-        self.assertIn("nn", shards)
-        self.assertIn("models/tiny_llm", shards)
+        self.assertIn("ops/math", shards)
+        self.assertIn("ops/nn", shards)
+        self.assertIn("models/llm/tiny_llm", shards)
+        self.assertIn("models/dummies/mlp", shards)
         self.assertNotIn("__pycache__", shards)
         self.assertEqual(len(shards), len(set(shards)))
 

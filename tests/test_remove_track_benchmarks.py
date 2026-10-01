@@ -14,7 +14,7 @@ class TestRemoveTrackBenchmarks(unittest.TestCase):
                 json.dumps(
                     {
                         "version": 2,
-                        "math.add.Add.time_run": {"type": "time"},
+                        "ops.math.add.Add.time_run": {"type": "time"},
                         "machine.track_processor": {"type": "track"},
                     }
                 ),
@@ -27,7 +27,7 @@ class TestRemoveTrackBenchmarks(unittest.TestCase):
                 json.loads(path.read_text(encoding="utf-8")),
                 {
                     "version": 2,
-                    "math.add.Add.time_run": {"type": "time"},
+                    "ops.math.add.Add.time_run": {"type": "time"},
                 },
             )
 

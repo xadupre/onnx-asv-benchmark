@@ -147,7 +147,7 @@ def main():
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path(__file__).resolve().parents[1] / "benchmarks",
+        default=Path(__file__).resolve().parents[1] / "benchmarks" / "ops",
     )
     args = parser.parse_args()
 
