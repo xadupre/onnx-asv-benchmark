@@ -40,6 +40,13 @@ class TestCustomizePages(unittest.TestCase):
                 summary,
             )
             self.assertIn("param_names[axis-1] == 'backend'", graph)
+            self.assertIn("parameters: graph_content[2]", graph)
+            self.assertIn("new Date(item.datapoint[0]).toLocaleString()", graph)
+            self.assertIn("item.series.parameters", graph)
+            self.assertNotIn(
+                '$.asv.pretty_unit(y, unit) + " @ " + commit_hash',
+                graph,
+            )
             self.assertIn("@media (prefers-color-scheme: dark)", stylesheet)
 
     def test_unexpected_asv_output_is_not_modified(self):
