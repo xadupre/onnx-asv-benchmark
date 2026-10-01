@@ -1,23 +1,30 @@
 import numpy as np
 import onnx_light.onnx.helper as oh
 import onnx_light.onnx.numpy_helper as onh
-from onnx_light.onnx import TensorProto
 
-from benchmarks.common import BACKENDS, run_session, setup_session
+from benchmarks.common import (
+    BACKENDS,
+    MODEL_DTYPES,
+    run_session,
+    setup_session,
+    standard_normal,
+)
 
 
 class MLP:
-    params = BACKENDS
-    param_names = ("backend",)
+    params = (MODEL_DTYPES, BACKENDS)
+    param_names = ("dtype", "backend")
     number = 2
     timeout = 10
 
-    def setup(self, backend):
+    def setup(self, dtype, backend):
+        numpy_dtype = np.dtype(dtype)
+        tensor_dtype = oh.np_dtype_to_tensor_dtype(numpy_dtype)
         rng = np.random.default_rng(1)
-        weights1 = rng.standard_normal((128, 256), dtype=np.float32)
-        bias1 = rng.standard_normal(256, dtype=np.float32)
-        weights2 = rng.standard_normal((256, 64), dtype=np.float32)
-        bias2 = rng.standard_normal(64, dtype=np.float32)
+        weights1 = standard_normal(rng, (128, 256), numpy_dtype)
+        bias1 = standard_normal(rng, 256, numpy_dtype)
+        weights2 = standard_normal(rng, (256, 64), numpy_dtype)
+        bias2 = standard_normal(rng, 64, numpy_dtype)
         model = oh.make_model(
             oh.make_graph(
                 [
@@ -28,8 +35,8 @@ class MLP:
                     oh.make_node("Add", ["output_matmul", "bias2"], ["Y"]),
                 ],
                 "mlp",
-                [oh.make_tensor_value_info("X", TensorProto.FLOAT, [32, 128])],
-                [oh.make_tensor_value_info("Y", TensorProto.FLOAT, [32, 64])],
+                [oh.make_tensor_value_info("X", tensor_dtype, [32, 128])],
+                [oh.make_tensor_value_info("Y", tensor_dtype, [32, 64])],
                 [
                     onh.from_array(weights1, "weights1"),
                     onh.from_array(bias1, "bias1"),
@@ -40,8 +47,8 @@ class MLP:
             opset_imports=[oh.make_opsetid("", 18)],
             ir_version=10,
         )
-        feeds = {"X": rng.standard_normal((32, 128), dtype=np.float32)}
+        feeds = {"X": standard_normal(rng, (32, 128), numpy_dtype)}
         setup_session(self, backend, model, feeds)
 
-    def time_run(self, backend):
+    def time_run(self, dtype, backend):
         run_session(self)

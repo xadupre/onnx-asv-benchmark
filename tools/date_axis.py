@@ -20,6 +20,7 @@ def use_date_axis(html_dir):
         "        even_spacing = false;\n",
     )
     source = replace_once(source, "axisLabel = 'commit date';", "axisLabel = 'date';")
+    source = replace_once(source, 'text = "commit";', 'text = "date";')
 
     index = html_dir / "index.html"
     page = index.read_text(encoding="utf-8")
