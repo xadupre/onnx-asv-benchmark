@@ -5,19 +5,17 @@ from pathlib import Path
 
 def discover_shards(root):
     benchmark_root = Path(root) / "benchmarks"
-    categories = sorted(
-        path.name
-        for path in benchmark_root.iterdir()
-        if path.is_dir()
-        and path.name not in {"__pycache__", "models"}
-        and not path.name.startswith(".")
+    operators = sorted(
+        f"ops/{path.name}"
+        for path in (benchmark_root / "ops").iterdir()
+        if path.is_dir() and not path.name.startswith((".", "__"))
     )
     models = sorted(
-        f"models/{path.stem}"
-        for path in (benchmark_root / "models").glob("*.py")
-        if path.stem != "__init__"
+        path.relative_to(benchmark_root).with_suffix("").as_posix()
+        for path in (benchmark_root / "models").glob("*/*.py")
+        if path.name != "__init__.py"
     )
-    return categories + models
+    return operators + models
 
 
 def main():

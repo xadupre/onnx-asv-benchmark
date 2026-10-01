@@ -7,8 +7,9 @@ ASV benchmarks comparing inference with:
 - onnx-light
 - onnx-light-cpu
 
-The benchmark suite groups operators using the same category directories as
-onnx-light. Model benchmarks live under `benchmarks/models`.
+Operator benchmarks live under `benchmarks/ops` and use the same category
+directories as onnx-light. Model benchmarks live under `benchmarks/models`,
+split between `llm` and `dummies`.
 
 The ASV environment name tracks the pinned dependency versions. ASV's machine
 profile records the processor model, architecture, logical CPU count, and
@@ -122,12 +123,12 @@ Publish the raw `.asv/results` data as independent shards under the
 [xadupre/cache_data](https://github.com/xadupre/cache_data):
 
 ```bash
-python tools/publish_results.py --shard models/tiny_llm
-python tools/publish_results.py --shard math
+python tools/publish_results.py --shard models/llm/tiny_llm
+python tools/publish_results.py --shard ops/math
 ```
 
-Model shards use `models/<module>`; operator shards use their category
-directory. Omitting `--shard` publishes every shard found in the local
+Model shards use `models/<group>/<module>`; operator shards use
+`ops/<category>`. Omitting `--shard` publishes every shard found in the local
 results. The first publication migrates legacy flat results, including the
 `xadupre2025` directory, to a processor-named layout.
 

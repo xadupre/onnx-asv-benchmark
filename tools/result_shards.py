@@ -11,8 +11,10 @@ ANONYMOUS_MACHINE_FIELDS = {
 
 def benchmark_shard(name):
     parts = name.split(".")
-    if parts[0] == "models" and len(parts) > 1:
-        return f"models/{parts[1]}"
+    if parts[0] == "ops" and len(parts) > 1:
+        return f"ops/{parts[1]}"
+    if parts[0] == "models" and len(parts) > 2:
+        return f"models/{parts[1]}/{parts[2]}"
     return parts[0]
 
 

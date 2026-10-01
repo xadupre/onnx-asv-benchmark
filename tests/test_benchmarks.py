@@ -9,9 +9,9 @@ from benchmarks._operator import (
     OperatorBenchmark,
     QuantizePagedCacheBenchmark,
 )
-from benchmarks.models.matmul_add import MatMulAdd
-from benchmarks.models.mlp import MLP
-from benchmarks.models.tiny_llm import PRECISIONS, TinyLLM, TinyLLMGenAI
+from benchmarks.models.dummies.matmul_add import MatMulAdd
+from benchmarks.models.dummies.mlp import MLP
+from benchmarks.models.llm.tiny_llm import PRECISIONS, TinyLLM, TinyLLMGenAI
 from onnx_light_cpu import (
     registered_kernel_names,
     set_kernel_usage_recording,
@@ -68,10 +68,10 @@ def requires_onnx_light_cpu(minimum_version):
 
 
 def operator_benchmarks():
-    root = Path(__file__).resolve().parents[1] / "benchmarks"
+    root = Path(__file__).resolve().parents[1] / "benchmarks" / "ops"
     benchmarks = {}
     for category in OPERATOR_COUNTS:
-        package = importlib.import_module(f"benchmarks.{category}")
+        package = importlib.import_module(f"benchmarks.ops.{category}")
         category_benchmarks = {}
         for module_info in pkgutil.iter_modules(
             package.__path__,
@@ -109,7 +109,7 @@ def operator_benchmarks():
             category_benchmarks[classes[0].__name__] = classes[0]
         benchmarks[category] = category_benchmarks
         if not (root / category / "__init__.py").exists():
-            raise AssertionError(f"Missing package benchmarks.{category}.")
+            raise AssertionError(f"Missing package benchmarks.ops.{category}.")
     return benchmarks
 
 

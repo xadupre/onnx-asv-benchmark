@@ -34,7 +34,10 @@ def main():
         "--shard",
         action="append",
         default=[],
-        help="Publish only this shard, for example models/tiny_llm; may be repeated.",
+        help=(
+            "Publish only this shard, for example models/llm/tiny_llm; "
+            "may be repeated."
+        ),
     )
     parser.add_argument(
         "--pages-repository",

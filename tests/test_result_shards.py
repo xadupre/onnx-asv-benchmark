@@ -25,8 +25,8 @@ class TestResultShards(unittest.TestCase):
     def make_results(self, root):
         benchmarks = {
             "version": 2,
-            "math.add.Add.time_run": {"type": "time"},
-            "models.tiny_llm.TinyLLM.time_prefill": {"type": "time"},
+            "ops.math.add.Add.time_run": {"type": "time"},
+            "models.llm.tiny_llm.TinyLLM.time_prefill": {"type": "time"},
         }
         self.write_json(root / "benchmarks.json", benchmarks)
         self.write_json(
@@ -49,13 +49,13 @@ class TestResultShards(unittest.TestCase):
                 "env_vars": {},
                 "result_columns": ["result"],
                 "results": {
-                    "math.add.Add.time_run": [1],
-                    "models.tiny_llm.TinyLLM.time_prefill": [2],
+                    "ops.math.add.Add.time_run": [1],
+                    "models.llm.tiny_llm.TinyLLM.time_prefill": [2],
                     "machine.track_processor": ["Example CPU"],
                 },
                 "durations": {
-                    "math.add.Add.time_run": 3,
-                    "models.tiny_llm.TinyLLM.time_prefill": 4,
+                    "ops.math.add.Add.time_run": 3,
+                    "models.llm.tiny_llm.TinyLLM.time_prefill": 4,
                     "machine.track_processor": 5,
                 },
                 "version": 2,
@@ -63,10 +63,10 @@ class TestResultShards(unittest.TestCase):
         )
 
     def test_benchmark_shard(self):
-        self.assertEqual(benchmark_shard("math.add.Add.time_run"), "math")
+        self.assertEqual(benchmark_shard("ops.math.add.Add.time_run"), "ops/math")
         self.assertEqual(
-            benchmark_shard("models.tiny_llm.TinyLLM.time_prefill"),
-            "models/tiny_llm",
+            benchmark_shard("models.llm.tiny_llm.TinyLLM.time_prefill"),
+            "models/llm/tiny_llm",
         )
 
     def test_write_and_merge_shards(self):
@@ -75,17 +75,19 @@ class TestResultShards(unittest.TestCase):
         merged = self.root / "merged"
         self.make_results(source)
         self.write_json(
-            shards / "math" / "cpu" / "machine.json",
+            shards / "ops" / "math" / "cpu" / "machine.json",
             {"machine": "cpu", "cpu": "anonymous"},
         )
-        self.write_json(shards / "math" / "cpu" / "old.json", {})
+        self.write_json(shards / "ops" / "math" / "cpu" / "old.json", {})
 
         self.assertEqual(
             write_shards(source, shards),
-            {"math", "models/tiny_llm"},
+            {"ops/math", "models/llm/tiny_llm"},
         )
-        self.assertFalse((shards / "math" / "cpu").exists())
-        self.assertTrue((shards / "math" / "Example CPU" / "result.json").is_file())
+        self.assertFalse((shards / "ops" / "math" / "cpu").exists())
+        self.assertTrue(
+            (shards / "ops" / "math" / "Example CPU" / "result.json").is_file()
+        )
         serialized = "\n".join(
             path.read_text(encoding="utf-8") for path in shards.rglob("*.json")
         )
@@ -103,8 +105,8 @@ class TestResultShards(unittest.TestCase):
         self.assertEqual(
             set(results["results"]),
             {
-                "math.add.Add.time_run",
-                "models.tiny_llm.TinyLLM.time_prefill",
+                "ops.math.add.Add.time_run",
+                "models.llm.tiny_llm.TinyLLM.time_prefill",
             },
         )
         self.assertEqual(results["params"]["machine"], "Example CPU")
@@ -133,7 +135,7 @@ class TestResultShards(unittest.TestCase):
 
         migrated = migrate_legacy_results(destination)
 
-        self.assertEqual(migrated, {"math", "models/tiny_llm"})
+        self.assertEqual(migrated, {"ops/math", "models/llm/tiny_llm"})
         self.assertFalse((destination / "benchmarks.json").exists())
         self.assertFalse((destination / "xadupre2025").exists())
         self.assertTrue(
@@ -141,6 +143,7 @@ class TestResultShards(unittest.TestCase):
                 destination
                 / "shards"
                 / "models"
+                / "llm"
                 / "tiny_llm"
                 / "Example CPU"
                 / "result.json"
