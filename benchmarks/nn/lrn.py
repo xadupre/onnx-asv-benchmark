@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class LRN(OperatorBenchmark):
+class LRN(_OperatorBenchmark):
     operator = "LRN"
     case_name = "test_cc_lrn_benchmark"
     case_mode = "BENCHMARK"

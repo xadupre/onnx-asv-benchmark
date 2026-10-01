@@ -62,6 +62,21 @@ def operator_benchmarks():
             f"{package.__name__}.",
         ):
             module = importlib.import_module(module_info.name)
+            public_imports = [
+                name
+                for name, value in inspect.getmembers(module, inspect.isclass)
+                if not name.startswith("_")
+                and value.__module__ != module.__name__
+                and issubclass(
+                    value,
+                    (OperatorBenchmark, QuantizePagedCacheBenchmark),
+                )
+            ]
+            if public_imports:
+                raise AssertionError(
+                    f"{module_info.name} publicly imports benchmark classes "
+                    f"{public_imports}, which ASV would discover twice."
+                )
             classes = [
                 value
                 for _, value in inspect.getmembers(module, inspect.isclass)

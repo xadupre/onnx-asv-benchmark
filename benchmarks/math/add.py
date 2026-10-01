@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Add(OperatorBenchmark):
+class Add(_OperatorBenchmark):
     operator = "Add"
     case_name = "test_cc_add_benchmark"
     case_mode = "BENCHMARK"

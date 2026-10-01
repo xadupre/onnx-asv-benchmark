@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class NonZero(OperatorBenchmark):
+class NonZero(_OperatorBenchmark):
     operator = "NonZero"
     case_name = "test_cc_nonzero_2d_benchmark"
     case_mode = "BENCHMARK"

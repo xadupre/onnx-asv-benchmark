@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class ScatterElements(OperatorBenchmark):
+class ScatterElements(_OperatorBenchmark):
     operator = "ScatterElements"
     case_name = "test_cc_scatter_elements_without_axis_benchmark"
     case_mode = "BENCHMARK"

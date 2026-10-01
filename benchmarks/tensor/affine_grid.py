@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class AffineGrid(OperatorBenchmark):
+class AffineGrid(_OperatorBenchmark):
     operator = "AffineGrid"
     case_name = "test_affine_grid_2d_benchmark"
     case_mode = "BENCHMARK"

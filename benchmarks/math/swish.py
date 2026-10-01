@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Swish(OperatorBenchmark):
+class Swish(_OperatorBenchmark):
     operator = "Swish"
     case_name = "test_cc_swish_benchmark"
     case_mode = "BENCHMARK"

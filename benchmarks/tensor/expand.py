@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Expand(OperatorBenchmark):
+class Expand(_OperatorBenchmark):
     operator = "Expand"
     case_name = "test_cc_expand_dim_changed_benchmark"
     case_mode = "BENCHMARK"

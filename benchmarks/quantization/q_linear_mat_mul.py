@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class QLinearMatMul(OperatorBenchmark):
+class QLinearMatMul(_OperatorBenchmark):
     operator = "QLinearMatMul"
     case_name = "test_cc_qlinearmatmul_2D_uint8_float32_benchmark"
     case_mode = "BENCHMARK"

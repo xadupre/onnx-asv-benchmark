@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Ceil(OperatorBenchmark):
+class Ceil(_OperatorBenchmark):
     operator = "Ceil"
     case_name = "test_cc_ceil_benchmark"
     case_mode = "BENCHMARK"

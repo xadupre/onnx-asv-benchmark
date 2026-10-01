@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Transpose(OperatorBenchmark):
+class Transpose(_OperatorBenchmark):
     operator = "Transpose"
     case_name = "test_cc_transpose_default_perm_benchmark"
     case_mode = "BENCHMARK"

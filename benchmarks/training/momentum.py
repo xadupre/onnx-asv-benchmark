@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Momentum(OperatorBenchmark):
+class Momentum(_OperatorBenchmark):
     operator = "Momentum"
     case_name = "test_momentum_benchmark"
     case_mode = "BENCHMARK"

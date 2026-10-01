@@ -109,8 +109,9 @@ def _case(operator):
 def _write_module(path, class_name, case_name, case_mode, domain):
     if class_name == "QuantizePagedCache":
         path.write_text(
-            "from benchmarks._operator import QuantizePagedCacheBenchmark\n\n\n"
-            "class QuantizePagedCache(QuantizePagedCacheBenchmark):\n"
+            "from benchmarks._operator import "
+            "QuantizePagedCacheBenchmark as _QuantizePagedCacheBenchmark\n\n\n"
+            "class QuantizePagedCache(_QuantizePagedCacheBenchmark):\n"
             "    pass\n",
             encoding="utf-8",
         )
@@ -130,8 +131,8 @@ def _write_module(path, class_name, case_name, case_mode, domain):
     quoted_backends = ", ".join(f'"{backend}"' for backend in selected)
     backends = f"({quoted_backends}{',' if len(selected) == 1 else ''})"
     path.write_text(
-        "from benchmarks._operator import OperatorBenchmark\n\n\n"
-        f"class {class_name}(OperatorBenchmark):\n"
+        "from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark\n\n\n"
+        f"class {class_name}(_OperatorBenchmark):\n"
         f'    operator = "{class_name}"\n'
         f'    case_name = "{case_name}"\n'
         f'    case_mode = "{case_mode}"\n'

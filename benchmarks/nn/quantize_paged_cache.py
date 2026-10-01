@@ -1,5 +1,5 @@
-from benchmarks._operator import QuantizePagedCacheBenchmark
+from benchmarks._operator import QuantizePagedCacheBenchmark as _QuantizePagedCacheBenchmark
 
 
-class QuantizePagedCache(QuantizePagedCacheBenchmark):
+class QuantizePagedCache(_QuantizePagedCacheBenchmark):
     pass

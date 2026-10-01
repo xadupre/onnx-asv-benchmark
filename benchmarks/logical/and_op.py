@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class And(OperatorBenchmark):
+class And(_OperatorBenchmark):
     operator = "And"
     case_name = "test_cc_and_benchmark"
     case_mode = "BENCHMARK"

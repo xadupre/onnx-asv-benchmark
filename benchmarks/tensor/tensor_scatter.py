@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class TensorScatter(OperatorBenchmark):
+class TensorScatter(_OperatorBenchmark):
     operator = "TensorScatter"
     case_name = "test_cc_tensorscatter_benchmark"
     case_mode = "BENCHMARK"

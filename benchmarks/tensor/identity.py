@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Identity(OperatorBenchmark):
+class Identity(_OperatorBenchmark):
     operator = "Identity"
     case_name = "test_cc_identity_benchmark"
     case_mode = "BENCHMARK"

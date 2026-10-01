@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Atan(OperatorBenchmark):
+class Atan(_OperatorBenchmark):
     operator = "Atan"
     case_name = "test_cc_atan_benchmark"
     case_mode = "BENCHMARK"

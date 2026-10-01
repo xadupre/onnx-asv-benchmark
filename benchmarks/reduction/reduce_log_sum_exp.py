@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class ReduceLogSumExp(OperatorBenchmark):
+class ReduceLogSumExp(_OperatorBenchmark):
     operator = "ReduceLogSumExp"
     case_name = "test_cc_reducelogsumexp_default_axes_keepdims_benchmark"
     case_mode = "BENCHMARK"

@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class ReduceL1(OperatorBenchmark):
+class ReduceL1(_OperatorBenchmark):
     operator = "ReduceL1"
     case_name = "test_cc_reducel1_default_axes_keepdims_benchmark"
     case_mode = "BENCHMARK"

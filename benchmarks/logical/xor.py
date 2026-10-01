@@ -1,7 +1,7 @@
-from benchmarks._operator import OperatorBenchmark
+from benchmarks._operator import OperatorBenchmark as _OperatorBenchmark
 
 
-class Xor(OperatorBenchmark):
+class Xor(_OperatorBenchmark):
     operator = "Xor"
     case_name = "test_cc_xor_benchmark"
     case_mode = "BENCHMARK"
