@@ -3,14 +3,14 @@ import unittest
 import numpy as np
 
 from benchmarks.common import BACKENDS
-from benchmarks.maths.add import Add
-from benchmarks.maths.and_op import And
-from benchmarks.maths.binary import Binary, OPERATORS
-from benchmarks.maths.gemm import Gemm
-from benchmarks.maths.matmul import MatMul
-from benchmarks.maths.reciprocal import Reciprocal
-from benchmarks.maths.reduce_sum import ReduceSum
-from benchmarks.maths.where import Where
+from benchmarks.logical.and_op import And
+from benchmarks.math.add import Add
+from benchmarks.math.binary import Binary, OPERATORS
+from benchmarks.math.gemm import Gemm
+from benchmarks.math.matmul import MatMul
+from benchmarks.math.reciprocal import Reciprocal
+from benchmarks.math.reduce_sum import ReduceSum
+from benchmarks.math.where import Where
 from benchmarks.models.matmul_add import MatMulAdd
 from benchmarks.models.mlp import MLP
 from benchmarks.nn.affine_grid import AffineGrid
