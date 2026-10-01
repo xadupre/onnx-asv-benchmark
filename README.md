@@ -98,9 +98,10 @@ PYTHONPATH=../onnx-light python tools/generate_operator_benchmarks.py ../onnx-li
 
 Each generated benchmark uses the corresponding native `onnx-light` backend
 benchmark case. It runs on `onnx-light` and on every ONNX Runtime or ONNX
-Reference backend verified to support that case. Operators implemented by
-onnx-light-cpu also run with its optimized kernels registered only on the
-benchmark session, keeping the regular onnx-light measurements unchanged.
+Reference backend verified to support that case. Every operator also runs
+through onnx-light-cpu: optimized kernels are registered only on that benchmark
+session, while operators without one fall back to onnx-light. This keeps the
+regular onnx-light measurements unchanged.
 
 The model benchmarks also include the one-layer `arnir0/Tiny-LLM`
 configuration used by `mbext` fast tests. The benchmark creates the random

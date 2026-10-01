@@ -122,8 +122,7 @@ class TestBenchmarks(unittest.TestCase):
                         "onnx-light-cpu",
                     }
                 )
-                if getattr(benchmark, "operator", None) in {"Add", "MatMul", "Gemm"}:
-                    self.assertIn("onnx-light-cpu", benchmark.params)
+                self.assertIn("onnx-light-cpu", benchmark.params)
         self.assertEqual(len(operators), 225)
 
     def test_one_operator_per_category(self):
