@@ -33,33 +33,42 @@ the wheel published on the
 
 ## Run
 
-Before the first run on a machine, let ASV detect and store its machine
-information:
+Before the first run, use ASV's detected CPU description as the machine name
+instead of the hostname, and store its machine information:
 
 ```bash
-asv machine --yes
+processor="$(python - <<'PY'
+from asv.machine import Machine, MachineCollection
+
+profile = Machine.get_defaults()
+profile["machine"] = profile["cpu"]
+MachineCollection.save(profile["machine"], profile)
+print(profile["machine"])
+PY
+)"
 ```
 
 This creates the ASV machine profile (in `~/.asv-machine.json` by default).
 It is required even when the processor is visible to the operating system,
-including under WSL.
+including under WSL. Keep `processor` set in the shell for the following
+commands so ASV selects that profile rather than the hostname.
 
 Run the complete comparison in the versioned environment:
 
 ```bash
-asv run
+asv run --machine "$processor"
 ```
 
 Run against the currently active Python environment:
 
 ```bash
-asv run --environment existing
+asv run --environment existing --machine "$processor"
 ```
 
 For a quick smoke test:
 
 ```bash
-asv run --quick
+asv run --quick --machine "$processor"
 ```
 
 Each benchmark has its own `number` of timed calls per sample, from one for
