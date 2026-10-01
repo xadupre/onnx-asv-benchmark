@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   publish:
@@ -35,9 +35,10 @@ jobs:
           python-version: "3.12"
       - name: Build ASV site
         run: |
-          test -d cache-data/onnx-asv-benchmark
-          mkdir -p .asv
-          cp -a cache-data/onnx-asv-benchmark .asv/results
+          test -d cache-data/onnx-asv-benchmark/shards
+          python tools/merge_results.py \
+            cache-data/onnx-asv-benchmark/shards \
+            .asv/results
           python - <<'PY'
           import json
           from pathlib import Path
