@@ -1,0 +1,227 @@
+import json
+import shutil
+from pathlib import Path
+
+MACHINE_ID = "cpu"
+ANONYMOUS_MACHINE_FIELDS = {
+    "machine": MACHINE_ID,
+    "cpu": "anonymous",
+    "num_cpu": "anonymous",
+    "os": "anonymous",
+    "ram": "anonymous",
+}
+
+
+def benchmark_shard(name):
+    parts = name.split(".")
+    if parts[0] == "models" and len(parts) > 1:
+        return f"models/{parts[1]}"
+    return parts[0]
+
+
+def _is_legacy_track(name):
+    return name.startswith(("machine.track_", "versions.track_"))
+
+
+def _load(path):
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _save(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(value, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _merge_mapping(target, source, description):
+    overlap = target.keys() & source.keys()
+    if overlap:
+        names = ", ".join(sorted(overlap))
+        raise ValueError(f"Duplicate {description}: {names}")
+    target.update(source)
+
+
+def _merge_result_file(path, incoming):
+    if not path.is_file():
+        _save(path, incoming)
+        return
+
+    current = _load(path)
+    for key in (
+        "commit_hash",
+        "env_name",
+        "python",
+        "requirements",
+        "env_vars",
+        "result_columns",
+        "version",
+    ):
+        if current.get(key) != incoming.get(key):
+            raise ValueError(f"Incompatible ASV result field {key!r} in {path}.")
+    if current.get("params") != incoming.get("params"):
+        raise ValueError(f"Incompatible ASV machine parameters in {path}.")
+
+    current["date"] = max(current.get("date", 0), incoming.get("date", 0))
+    current.setdefault("results", {}).update(incoming.get("results", {}))
+    current.setdefault("durations", {}).update(incoming.get("durations", {}))
+    _save(path, current)
+
+
+def write_shards(source, shard_root, selected_shards=None):
+    source = Path(source)
+    shard_root = Path(shard_root)
+    benchmarks = _load(source / "benchmarks.json")
+    machine_directories = [
+        path
+        for path in source.iterdir()
+        if path.is_dir() and (path / "machine.json").is_file()
+    ]
+    anonymous_machine = source / MACHINE_ID
+    if (anonymous_machine / "machine.json").is_file():
+        machine_directory = anonymous_machine
+    elif len(machine_directories) == 1:
+        machine_directory = machine_directories[0]
+    else:
+        raise ValueError(
+            f"Expected one ASV machine directory in {source}, "
+            f"found {len(machine_directories)}."
+        )
+
+    machine = {
+        **_load(machine_directory / "machine.json"),
+        **ANONYMOUS_MACHINE_FIELDS,
+    }
+    benchmark_metadata = {
+        name: value for name, value in benchmarks.items() if not isinstance(value, dict)
+    }
+    selected = set(selected_shards) if selected_shards is not None else None
+    written = set()
+
+    for result_path in sorted(machine_directory.glob("*.json")):
+        if result_path.name == "machine.json":
+            continue
+        result = _load(result_path)
+        grouped = {}
+        for name, value in result.get("results", {}).items():
+            if name not in benchmarks:
+                if _is_legacy_track(name):
+                    continue
+                raise KeyError(f"Missing benchmark metadata for {name!r}.")
+            shard = benchmark_shard(name)
+            if selected is None or shard in selected:
+                grouped.setdefault(shard, {})[name] = value
+
+        for shard, shard_results in grouped.items():
+            destination = shard_root / shard
+            shard_benchmarks_path = destination / "benchmarks.json"
+            shard_benchmarks = (
+                _load(shard_benchmarks_path)
+                if shard_benchmarks_path.is_file()
+                else benchmark_metadata.copy()
+            )
+            shard_benchmarks.update(benchmark_metadata)
+            for name in shard_results:
+                shard_benchmarks[name] = benchmarks[name]
+            _save(shard_benchmarks_path, shard_benchmarks)
+            _save(destination / MACHINE_ID / "machine.json", machine)
+
+            shard_result = {
+                **result,
+                "params": {
+                    **result.get("params", {}),
+                    **ANONYMOUS_MACHINE_FIELDS,
+                },
+                "results": shard_results,
+                "durations": {
+                    name: duration
+                    for name, duration in result.get("durations", {}).items()
+                    if name in shard_results
+                },
+            }
+            _merge_result_file(
+                destination / MACHINE_ID / result_path.name,
+                shard_result,
+            )
+            written.add(shard)
+
+    if selected is not None:
+        missing = selected - written
+        if missing:
+            raise ValueError(
+                "No benchmark results found for shards: " + ", ".join(sorted(missing))
+            )
+    return written
+
+
+def migrate_legacy_results(results_root):
+    results_root = Path(results_root)
+    benchmarks_path = results_root / "benchmarks.json"
+    if not benchmarks_path.is_file():
+        return set()
+
+    written = write_shards(results_root, results_root / "shards")
+    machine_directories = [
+        path
+        for path in results_root.iterdir()
+        if path.is_dir() and (path / "machine.json").is_file()
+    ]
+    benchmarks_path.unlink()
+    for machine_directory in machine_directories:
+        shutil.rmtree(machine_directory)
+    return written
+
+
+def merge_shards(shard_root, destination):
+    shard_root = Path(shard_root)
+    destination = Path(destination)
+    benchmark_files = sorted(shard_root.rglob("benchmarks.json"))
+    if not benchmark_files:
+        raise FileNotFoundError(f"No result shards found in {shard_root}.")
+
+    merged_benchmarks = {}
+    machine = None
+    for benchmark_path in benchmark_files:
+        shard_directory = benchmark_path.parent
+        shard_benchmarks = _load(benchmark_path)
+        metadata = {
+            name: value
+            for name, value in shard_benchmarks.items()
+            if not isinstance(value, dict)
+        }
+        for name, value in metadata.items():
+            if name in merged_benchmarks and merged_benchmarks[name] != value:
+                raise ValueError(
+                    f"Incompatible benchmark metadata field {name!r} "
+                    f"in {benchmark_path}."
+                )
+            merged_benchmarks[name] = value
+        shard_benchmarks = {
+            name: value
+            for name, value in shard_benchmarks.items()
+            if isinstance(value, dict)
+        }
+        _merge_mapping(
+            merged_benchmarks,
+            shard_benchmarks,
+            "benchmark metadata",
+        )
+
+        machine_path = shard_directory / MACHINE_ID / "machine.json"
+        shard_machine = _load(machine_path)
+        if machine is None:
+            machine = shard_machine
+        elif machine != shard_machine:
+            raise ValueError(f"Incompatible machine metadata in {machine_path}.")
+
+        for result_path in sorted((shard_directory / MACHINE_ID).glob("*.json")):
+            if result_path.name == "machine.json":
+                continue
+            _merge_result_file(
+                destination / MACHINE_ID / result_path.name,
+                _load(result_path),
+            )
+
+    _save(destination / "benchmarks.json", merged_benchmarks)
+    _save(destination / MACHINE_ID / "machine.json", machine)

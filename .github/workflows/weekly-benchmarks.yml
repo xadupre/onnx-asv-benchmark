@@ -1,0 +1,122 @@
+name: Weekly benchmark shards
+
+on:
+  schedule:
+    - cron: "17 1 * * 1"
+    - cron: "17 5 * * 2"
+    - cron: "17 9 * * 3"
+    - cron: "17 13 * * 4"
+    - cron: "17 17 * * 5"
+    - cron: "17 21 * * 6"
+    - cron: "17 23 * * 0"
+  workflow_dispatch:
+    inputs:
+      shard:
+        description: Shard to run, for example math or models/tiny_llm
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select shards
+        id: matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_SHARD: ${{ inputs.shard }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            matrix="$(python -c 'import json, sys; print(json.dumps({"shard": [sys.argv[1]]}))' "$REQUESTED_SHARD")"
+          else
+            case "$SCHEDULE" in
+              "17 1 * * 1") bucket=0 ;;
+              "17 5 * * 2") bucket=1 ;;
+              "17 9 * * 3") bucket=2 ;;
+              "17 13 * * 4") bucket=3 ;;
+              "17 17 * * 5") bucket=4 ;;
+              "17 21 * * 6") bucket=5 ;;
+              "17 23 * * 0") bucket=6 ;;
+              *) echo "Unknown schedule: $SCHEDULE" >&2; exit 1 ;;
+            esac
+            matrix="$(python tools/scheduled_shards.py "$bucket")"
+          fi
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  migrate-cache:
+    needs: prepare
+    concurrency:
+      group: benchmark-cache-migration
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrate legacy results
+        env:
+          GH_TOKEN: ${{ secrets.CACHE_DATA_TOKEN }}
+        run: |
+          gh auth setup-git
+          git config --global user.name github-actions[bot]
+          git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git clone --depth 1 https://github.com/xadupre/cache_data.git cache-data
+          python tools/migrate_results.py cache-data/onnx-asv-benchmark
+          git -C cache-data add --all -- onnx-asv-benchmark
+          if ! git -C cache-data diff --cached --quiet; then
+            git -C cache-data commit -m "Migrate onnx-asv-benchmark result shards"
+            git -C cache-data push origin main
+          fi
+
+  benchmark:
+    needs:
+      - prepare
+      - migrate-cache
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    concurrency:
+      group: benchmark-shard-${{ matrix.shard }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install asv==0.6.6
+      - name: Run shard
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          regex="$(python -c 'import re, sys; print("^" + re.escape(sys.argv[1].replace("/", ".")) + r"\.")' "$SHARD")"
+          machine="$(python tools/setup_machine.py)"
+          python -m asv run --machine "$machine" --bench "$regex" HEAD^!
+      - name: Publish shard
+        env:
+          GH_TOKEN: ${{ secrets.CACHE_DATA_TOKEN }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          gh auth setup-git
+          git config --global user.name github-actions[bot]
+          git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
+          python tools/publish_results.py --shard "$SHARD" --skip-pages
+
+  publish-pages:
+    needs: benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build updated benchmark pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-pages.yml --repo "$GITHUB_REPOSITORY" --ref main

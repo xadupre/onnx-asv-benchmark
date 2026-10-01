@@ -6,12 +6,8 @@ ASV benchmarks comparing inference with:
 - the ONNX reference evaluator
 - onnx-light
 
-The benchmark suite groups operators by category:
-
-- `benchmarks/models`: a matrix multiplication with bias and a two-layer MLP
-- `benchmarks/maths`: Add, And, Gemm, MatMul, Reciprocal, ReduceSum, Where,
-  and elementwise binary operators (arithmetic, comparisons, logical, and bitwise operations)
-- `benchmarks/nn`: AffineGrid, Conv, GRU, Relu, and RMSNormalization
+The benchmark suite groups operators using the same category directories as
+onnx-light. Model benchmarks live under `benchmarks/models`.
 
 The ASV environment name tracks the pinned dependency versions. ASV's machine
 profile records the processor model, architecture, logical CPU count, and
@@ -34,24 +30,23 @@ the wheel published on the
 
 ## Run
 
-Before the first run, set up the ASV machine profile using the detected
-processor description instead of the hostname:
+Before the first run, set up the anonymous `cpu` ASV machine profile:
 
 ```bash
-processor="$(python tools/setup_machine.py)"
+machine="$(python tools/setup_machine.py)"
 ```
 
 The script creates or corrects the profile in `~/.asv-machine.json`, reports
-what it did on stderr, and prints only the processor name on stdout for shell
-capture. It can be run again without changing a correct profile. To verify
-the current setup without modifying it, use
-`python tools/setup_machine.py --check`. Keep `processor` set in the shell for
-the following commands so ASV selects that profile rather than the hostname.
+what it did on stderr, and prints only `cpu` on stdout for shell capture. The
+profile retains the processor and memory metadata but does not expose the
+hostname in result paths. It can be run again without changing a correct
+profile. To verify the current setup without modifying it, use
+`python tools/setup_machine.py --check`.
 
 Run the complete comparison in the versioned environment:
 
 ```bash
-asv run --machine "$processor"
+asv run --machine "$machine"
 ```
 
 Run against the currently active Python environment:
@@ -77,7 +72,7 @@ python tools/run_asv.py --bench MatMul main^!
 For a quick smoke test in the versioned environment:
 
 ```bash
-asv run --quick --machine "$processor"
+asv run --quick --machine "$machine"
 ```
 
 Each benchmark has its own `number` of timed calls per sample, from one for
@@ -115,21 +110,34 @@ kernels.
 
 ## Publish results
 
-Publish the raw `.asv/results` data to the `onnx-asv-benchmark` subdirectory
-of [xadupre/cache_data](https://github.com/xadupre/cache_data), then trigger
-the GitHub Pages deployment:
+Publish the raw `.asv/results` data as independent shards under the
+`onnx-asv-benchmark` subdirectory of
+[xadupre/cache_data](https://github.com/xadupre/cache_data), then trigger the
+GitHub Pages deployment:
 
 ```bash
-python tools/publish_results.py
+python tools/publish_results.py --shard models/tiny_llm
+python tools/publish_results.py --shard math
 ```
 
-The command clones `cache_data`, merges the local ASV results into the shared
-subdirectory, commits any changes, and pushes them to its `main` branch. It
-then starts the `Publish benchmark pages` workflow, which builds the ASV site
-from the raw results and deploys it to
+Model shards use `models/<module>`; operator shards use their category
+directory. Omitting `--shard` publishes every shard found in the local
+results. The first publication migrates legacy flat results, including the
+`xadupre2025` directory, to the anonymous `cpu` layout.
+
+The command clones `cache_data`, merges only the requested local results,
+rebases concurrent shard updates, commits any changes, and pushes them to its
+`main` branch. It then starts the `Publish benchmark pages` workflow, which
+merges all shards into a temporary ASV results tree and deploys it to
 [xadupre.github.io/onnx-asv-benchmark](https://xadupre.github.io/onnx-asv-benchmark/).
 Published graphs use dates, rather than commit positions, on the time axis.
 
 Git credentials with write access to `xadupre/cache_data` and an authenticated
 [GitHub CLI](https://cli.github.com/) with Actions access to this repository
 must be configured. Pass `--skip-pages` to publish only the raw results.
+
+The `Weekly benchmark shards` workflow assigns every operator category and
+model module to one of seven daily schedule buckets, so every shard runs once
+per week and finishes independently. Configure a `CACHE_DATA_TOKEN` Actions
+secret with write access to `xadupre/cache_data`; the built-in workflow token
+triggers the final Pages rebuild after all shards in that day's bucket finish.
