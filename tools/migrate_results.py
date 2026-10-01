@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from result_shards import migrate_legacy_results
+from result_shards import migrate_legacy_results, migrate_shard_hierarchy
 
 
 def main():
@@ -11,6 +11,7 @@ def main():
     parser.add_argument("results", type=Path, help="Published ASV results directory.")
     args = parser.parse_args()
     migrated = migrate_legacy_results(args.results)
+    migrated.update(migrate_shard_hierarchy(args.results / "shards"))
     if migrated:
         print("\n".join(sorted(migrated)))
     else:

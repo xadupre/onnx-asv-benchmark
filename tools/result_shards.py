@@ -1,5 +1,6 @@
 import json
 import shutil
+import tempfile
 from pathlib import Path
 
 ANONYMOUS_MACHINE_FIELDS = {
@@ -77,14 +78,18 @@ def canonicalize_benchmark_hierarchy(results_root):
     benchmark_definitions = {
         name: value for name, value in benchmarks.items() if isinstance(value, dict)
     }
+    benchmark_definitions = _canonicalize_mapping(
+        benchmark_definitions,
+        "benchmark metadata",
+    )
+    for name, definition in benchmark_definitions.items():
+        if "name" in definition:
+            definition["name"] = name
     _save(
         benchmarks_path,
         {
             **metadata,
-            **_canonicalize_mapping(
-                benchmark_definitions,
-                "benchmark metadata",
-            ),
+            **benchmark_definitions,
         },
     )
 
@@ -286,6 +291,42 @@ def migrate_legacy_results(results_root):
     for machine_directory in machine_directories:
         shutil.rmtree(machine_directory)
     return written
+
+
+def migrate_shard_hierarchy(shard_root):
+    shard_root = Path(shard_root)
+    if not shard_root.is_dir():
+        return set()
+
+    with tempfile.TemporaryDirectory(
+        prefix=".shard-migration-",
+        dir=shard_root.parent,
+    ) as temporary:
+        temporary = Path(temporary)
+        merged = temporary / "merged"
+        rebuilt = temporary / "rebuilt"
+        merge_shards(shard_root, merged)
+
+        benchmarks_path = merged / "benchmarks.json"
+        machine_directories = [
+            path
+            for path in merged.iterdir()
+            if path.is_dir() and (path / "machine.json").is_file()
+        ]
+        for index, machine_directory in enumerate(machine_directories):
+            source = temporary / f"source-{index}"
+            source.mkdir()
+            shutil.copy2(benchmarks_path, source / "benchmarks.json")
+            shutil.copytree(machine_directory, source / machine_directory.name)
+            write_shards(source, rebuilt)
+
+        migrated = {
+            path.parent.relative_to(rebuilt).as_posix()
+            for path in rebuilt.rglob("benchmarks.json")
+        }
+        shutil.rmtree(shard_root)
+        shutil.copytree(rebuilt, shard_root)
+        return migrated
 
 
 def merge_shards(shard_root, destination):

@@ -8,6 +8,7 @@ from tools.result_shards import (
     canonical_benchmark_name,
     merge_shards,
     migrate_legacy_results,
+    migrate_shard_hierarchy,
     write_shards,
 )
 
@@ -26,8 +27,15 @@ class TestResultShards(unittest.TestCase):
     def make_results(self, root):
         benchmarks = {
             "version": 2,
-            "maths.add.Add.time_run": {"type": "time", "legacy": True},
-            "ops.math.add.Add.time_run": {"type": "time"},
+            "maths.add.Add.time_run": {
+                "type": "time",
+                "legacy": True,
+                "name": "maths.add.Add.time_run",
+            },
+            "ops.math.add.Add.time_run": {
+                "type": "time",
+                "name": "ops.math.add.Add.time_run",
+            },
             "models.tiny_llm.TinyLLM.time_prefill": {
                 "type": "time",
                 "legacy": True,
@@ -179,6 +187,33 @@ class TestResultShards(unittest.TestCase):
                 / "Example CPU"
                 / "result.json"
             ).is_file()
+        )
+
+    def test_migrate_shard_hierarchy(self):
+        source = self.root / "source"
+        shards = self.root / "shards"
+        self.make_results(source)
+        write_shards(source, shards)
+        (shards / "ops" / "math").rename(shards / "maths")
+        (shards / "models" / "llm" / "tiny_llm").rename(shards / "models" / "tiny_llm")
+
+        migrated = migrate_shard_hierarchy(shards)
+
+        self.assertEqual(migrated, {"ops/math", "models/llm/tiny_llm"})
+        self.assertFalse((shards / "maths").exists())
+        self.assertFalse((shards / "models" / "tiny_llm").exists())
+        self.assertTrue((shards / "ops" / "math" / "benchmarks.json").is_file())
+        self.assertTrue(
+            (shards / "models" / "llm" / "tiny_llm" / "benchmarks.json").is_file()
+        )
+        benchmarks = json.loads(
+            (shards / "ops" / "math" / "benchmarks.json").read_text(encoding="utf-8")
+        )
+        self.assertIn("ops.math.add.Add.time_run", benchmarks)
+        self.assertNotIn("maths.add.Add.time_run", benchmarks)
+        self.assertEqual(
+            benchmarks["ops.math.add.Add.time_run"]["name"],
+            "ops.math.add.Add.time_run",
         )
 
 
