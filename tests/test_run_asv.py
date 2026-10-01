@@ -20,8 +20,16 @@ class TestRunAsv(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("usage: asv run", result.stdout)
-        self.assertIn("Created ASV profile", result.stderr)
+        self.assertIn("usage: run_asv.py", result.stdout)
+        self.assertIn("--bench REGEX", result.stdout)
+        self.assertIn("--quick", result.stdout)
+        self.assertIn("python tools/run_asv.py --quick", result.stdout)
+        self.assertIn(
+            "python tools/run_asv.py --bench MatMul main^!",
+            result.stdout,
+        )
+        self.assertNotIn("--environment", result.stdout)
+        self.assertEqual(result.stderr, "")
 
 
 if __name__ == "__main__":

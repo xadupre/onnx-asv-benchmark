@@ -62,13 +62,19 @@ python tools/run_asv.py
 
 This command creates or updates the machine profile, selects the current
 Python interpreter, and preserves `PYTHONPATH` for dependencies used directly
-from source checkouts. Extra ASV arguments are forwarded, for example:
+from source checkouts. Use `--quick` for a smoke test:
 
 ```bash
 python tools/run_asv.py --quick
 ```
 
-For a quick smoke test:
+Use `--bench` to select benchmarks, optionally at a specific revision:
+
+```bash
+python tools/run_asv.py --bench MatMul main^!
+```
+
+For a quick smoke test in the versioned environment:
 
 ```bash
 asv run --quick --machine "$processor"
