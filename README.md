@@ -102,6 +102,11 @@ Each generated benchmark uses the corresponding native `onnx-light` backend
 benchmark case. It runs on `onnx-light` and on every ONNX Runtime or ONNX
 Reference backend verified to support that case.
 
+The model benchmarks also include the one-layer `arnir0/Tiny-LLM`
+configuration used by `mbext` fast tests: hidden size 512, intermediate size
+1376, eight attention heads, four key/value heads, and a 32,000-token
+vocabulary.
+
 ## Publish results
 
 Publish the raw `.asv/results` data to the `onnx-asv-benchmark` subdirectory

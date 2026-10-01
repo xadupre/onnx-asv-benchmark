@@ -10,6 +10,7 @@ from benchmarks._operator import (
 )
 from benchmarks.models.matmul_add import MatMulAdd
 from benchmarks.models.mlp import MLP
+from benchmarks.models.tiny_llm import TinyLLM
 
 OPERATOR_COUNTS = {
     "generator": 10,
@@ -107,7 +108,7 @@ class TestBenchmarks(unittest.TestCase):
                 benchmark.time_run("onnx-light")
 
     def test_model_benchmarks(self):
-        for benchmark_type in (MatMulAdd, MLP):
+        for benchmark_type in (MatMulAdd, MLP, TinyLLM):
             for backend in benchmark_type.params:
                 with self.subTest(
                     benchmark=benchmark_type.__name__,
