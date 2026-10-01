@@ -87,6 +87,7 @@ subdirectory, commits any changes, and pushes them to its `main` branch. It
 then starts the `Publish benchmark pages` workflow, which builds the ASV site
 from the raw results and deploys it to
 [xadupre.github.io/onnx-asv-benchmark](https://xadupre.github.io/onnx-asv-benchmark/).
+Published graphs use dates, rather than commit positions, on the time axis.
 
 Git credentials with write access to `xadupre/cache_data` and an authenticated
 [GitHub CLI](https://cli.github.com/) with Actions access to this repository

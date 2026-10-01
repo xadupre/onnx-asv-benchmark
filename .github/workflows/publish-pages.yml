@@ -54,6 +54,7 @@ jobs:
           PY
           python -m pip install asv
           asv publish --no-pull
+          python tools/date_axis.py .asv/html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
