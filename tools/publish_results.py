@@ -42,9 +42,9 @@ def main():
         help="GitHub repository hosting the ASV website.",
     )
     parser.add_argument(
-        "--skip-pages",
+        "--publish-pages",
         action="store_true",
-        help="Do not trigger the GitHub Pages deployment workflow.",
+        help="Trigger the GitHub Pages deployment workflow after publishing.",
     )
     args = parser.parse_args()
 
@@ -115,7 +115,7 @@ def main():
                 status, ["git", "diff", "--cached", "--quiet"]
             )
 
-    if not args.skip_pages:
+    if args.publish_pages:
         run(
             [
                 "gh",
