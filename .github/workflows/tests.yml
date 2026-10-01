@@ -23,6 +23,7 @@ jobs:
         run: |
           python -m pip install \
             pytest \
+            asv==0.6.6 \
             numpy==2.5.3 \
             onnx==1.23.1 \
             onnxruntime==1.30.0 \
