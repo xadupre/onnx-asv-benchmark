@@ -4,6 +4,7 @@ import pkgutil
 import unittest
 from pathlib import Path
 
+import onnx_light_cpu
 from benchmarks._operator import (
     OperatorBenchmark,
     QuantizePagedCacheBenchmark,
@@ -56,6 +57,16 @@ SMOKE_TESTS = {
 }
 
 
+def requires_onnx_light_cpu(minimum_version):
+    current = tuple(int(part) for part in onnx_light_cpu.__version__.split("."))
+    minimum = tuple(int(part) for part in minimum_version.split("."))
+    return unittest.skipUnless(
+        current >= minimum,
+        f"onnx-light-cpu>={minimum_version} is required; found "
+        f"{onnx_light_cpu.__version__}.",
+    )
+
+
 def operator_benchmarks():
     root = Path(__file__).resolve().parents[1] / "benchmarks"
     benchmarks = {}
@@ -103,6 +114,21 @@ def operator_benchmarks():
 
 
 class TestBenchmarks(unittest.TestCase):
+    def run_benchmark(self, benchmark_type, parameter_values):
+        benchmark = benchmark_type()
+        benchmark.setup(*parameter_values)
+        time_methods = [
+            getattr(benchmark, name)
+            for name in dir(benchmark)
+            if name.startswith("time_")
+        ]
+        self.assertTrue(time_methods)
+        for time_method in time_methods:
+            time_method(*parameter_values)
+        teardown = getattr(benchmark, "teardown", None)
+        if teardown is not None:
+            teardown(*parameter_values)
+
     def test_operator_coverage(self):
         benchmarks = operator_benchmarks()
         operators = set()
@@ -133,6 +159,8 @@ class TestBenchmarks(unittest.TestCase):
                 benchmark.setup("onnx-light")
                 benchmark.time_run("onnx-light")
 
+    # 0.1.16 omitted the compiled _cpuregister extension; see onnx-light-cpu#827.
+    @requires_onnx_light_cpu("0.1.17")
     def test_onnx_light_cpu_operator(self):
         benchmark = operator_benchmarks()["math"]["Add"]()
         benchmark.setup("onnx-light-cpu")
@@ -162,6 +190,11 @@ class TestBenchmarks(unittest.TestCase):
                     for backend in backend_values
                 )
             for parameter_values in params:
+                backend = parameter_values[-1]
+                if backend == "onnx-light-cpu" or (
+                    benchmark_type is TinyLLMGenAI and backend == "onnx-light"
+                ):
+                    continue
                 is_available = getattr(benchmark_type, "is_available", None)
                 if is_available is not None and not is_available(*parameter_values):
                     benchmark = benchmark_type()
@@ -173,19 +206,25 @@ class TestBenchmarks(unittest.TestCase):
                     benchmark=benchmark_type.__name__,
                     parameters=parameter_values,
                 ):
-                    benchmark = benchmark_type()
-                    benchmark.setup(*parameter_values)
-                    time_methods = [
-                        getattr(benchmark, name)
-                        for name in dir(benchmark)
-                        if name.startswith("time_")
-                    ]
-                    self.assertTrue(time_methods)
-                    for time_method in time_methods:
-                        time_method(*parameter_values)
-                    teardown = getattr(benchmark, "teardown", None)
-                    if teardown is not None:
-                        teardown(*parameter_values)
+                    self.run_benchmark(benchmark_type, parameter_values)
+
+    # Generation exposes the missing 0.1.16 registration extension and kernels.
+    @requires_onnx_light_cpu("0.1.17")
+    def test_onnx_light_cpu_models(self):
+        for benchmark_type, parameter_values in (
+            (MatMulAdd, ("onnx-light-cpu",)),
+            (MLP, ("onnx-light-cpu",)),
+            *(
+                (TinyLLMGenAI, (precision, backend))
+                for precision in PRECISIONS
+                for backend in ("onnx-light", "onnx-light-cpu")
+            ),
+        ):
+            with self.subTest(
+                benchmark=benchmark_type.__name__,
+                parameters=parameter_values,
+            ):
+                self.run_benchmark(benchmark_type, parameter_values)
 
 
 if __name__ == "__main__":
