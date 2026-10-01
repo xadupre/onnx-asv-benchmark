@@ -9,9 +9,9 @@ ASV benchmarks comparing inference with:
 The benchmark suite groups operators by category:
 
 - `benchmarks/models`: a matrix multiplication with bias and a two-layer MLP
-- `benchmarks/maths`: Add, MatMul, and elementwise binary operators (arithmetic,
-  comparisons, logical, and bitwise operations)
-- `benchmarks/nn`: Relu
+- `benchmarks/maths`: Add, And, Gemm, MatMul, Reciprocal, ReduceSum, Where,
+  and elementwise binary operators (arithmetic, comparisons, logical, and bitwise operations)
+- `benchmarks/nn`: AffineGrid, Conv, GRU, Relu, and RMSNormalization
 
 The ASV environment name tracks the pinned dependency versions. ASV's machine
 profile records the processor model, architecture, logical CPU count, and
