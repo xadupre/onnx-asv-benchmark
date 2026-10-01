@@ -10,6 +10,7 @@ on:
       - asv.conf.json
       - tools/date_axis.py
       - tools/hide_redundant_cpu.py
+      - tools/show_backend_labels.py
       - tools/system_theme.css
       - tools/system_theme.py
       - tools/site_data.py
@@ -55,6 +56,7 @@ jobs:
           asv publish --no-pull
           python tools/date_axis.py .asv/html
           python -m tools.hide_redundant_cpu .asv/html
+          python -m tools.show_backend_labels .asv/html
           python -m tools.system_theme .asv/html
           python tools/site_data.py configure \
             .asv/html \
