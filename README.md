@@ -57,7 +57,15 @@ asv run --machine "$processor"
 Run against the currently active Python environment:
 
 ```bash
-asv run --environment existing --machine "$processor"
+python tools/run_asv.py
+```
+
+This command creates or updates the machine profile, selects the current
+Python interpreter, and preserves `PYTHONPATH` for dependencies used directly
+from source checkouts. Extra ASV arguments are forwarded, for example:
+
+```bash
+python tools/run_asv.py --quick
 ```
 
 For a quick smoke test:
