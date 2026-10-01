@@ -100,7 +100,12 @@ jobs:
         run: |
           regex="$(python -c 'import re, sys; print("^" + re.escape(sys.argv[1].replace("/", ".")) + r"\.")' "$SHARD")"
           machine="$(python tools/setup_machine.py)"
-          python -m asv run --machine "$machine" --bench "$regex" HEAD^!
+          status=0
+          python -m asv run --machine "$machine" --bench "$regex" HEAD^! || status=$?
+          if [[ "$status" -ne 0 && "$status" -ne 2 ]]; then
+            exit "$status"
+          fi
+          python -m tools.check_results .asv/results "$SHARD"
       - name: Publish shard
         env:
           GH_TOKEN: ${{ secrets.CACHE_DATA_TOKEN }}
