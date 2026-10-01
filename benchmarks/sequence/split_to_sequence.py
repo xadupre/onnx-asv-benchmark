@@ -1,0 +1,8 @@
+from benchmarks._operator import OperatorBenchmark
+
+
+class SplitToSequence(OperatorBenchmark):
+    operator = "SplitToSequence"
+    case_name = "test_cc_split_to_sequence_1_benchmark"
+    case_mode = "BENCHMARK"
+    backends = ("onnxruntime", "onnx-reference", "onnx-light")

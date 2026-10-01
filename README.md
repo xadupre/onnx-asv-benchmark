@@ -90,6 +90,18 @@ with the benchmark dependencies installed:
 python -m pytest tests
 ```
 
+The operator benchmarks mirror the `onnx-light` kernel categories and contain
+one module for each registered operator. Regenerate them from a neighboring
+`onnx-light` source checkout after its kernel registry changes:
+
+```bash
+PYTHONPATH=../onnx-light python tools/generate_operator_benchmarks.py ../onnx-light
+```
+
+Each generated benchmark uses the corresponding native `onnx-light` backend
+benchmark case. It runs on `onnx-light` and on every ONNX Runtime or ONNX
+Reference backend verified to support that case.
+
 ## Publish results
 
 Publish the raw `.asv/results` data to the `onnx-asv-benchmark` subdirectory
