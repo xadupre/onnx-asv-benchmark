@@ -78,14 +78,18 @@ def canonicalize_benchmark_hierarchy(results_root):
     benchmark_definitions = {
         name: value for name, value in benchmarks.items() if isinstance(value, dict)
     }
+    benchmark_definitions = _canonicalize_mapping(
+        benchmark_definitions,
+        "benchmark metadata",
+    )
+    for name, definition in benchmark_definitions.items():
+        if "name" in definition:
+            definition["name"] = name
     _save(
         benchmarks_path,
         {
             **metadata,
-            **_canonicalize_mapping(
-                benchmark_definitions,
-                "benchmark metadata",
-            ),
+            **benchmark_definitions,
         },
     )
 

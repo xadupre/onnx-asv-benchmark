@@ -27,8 +27,15 @@ class TestResultShards(unittest.TestCase):
     def make_results(self, root):
         benchmarks = {
             "version": 2,
-            "maths.add.Add.time_run": {"type": "time", "legacy": True},
-            "ops.math.add.Add.time_run": {"type": "time"},
+            "maths.add.Add.time_run": {
+                "type": "time",
+                "legacy": True,
+                "name": "maths.add.Add.time_run",
+            },
+            "ops.math.add.Add.time_run": {
+                "type": "time",
+                "name": "ops.math.add.Add.time_run",
+            },
             "models.tiny_llm.TinyLLM.time_prefill": {
                 "type": "time",
                 "legacy": True,
@@ -204,6 +211,10 @@ class TestResultShards(unittest.TestCase):
         )
         self.assertIn("ops.math.add.Add.time_run", benchmarks)
         self.assertNotIn("maths.add.Add.time_run", benchmarks)
+        self.assertEqual(
+            benchmarks["ops.math.add.Add.time_run"]["name"],
+            "ops.math.add.Add.time_run",
+        )
 
 
 if __name__ == "__main__":
