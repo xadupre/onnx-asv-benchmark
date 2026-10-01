@@ -1,7 +1,6 @@
 import numpy as np
 import onnx_light.onnx.helper as oh
 import onnx_light.onnx.numpy_helper as onh
-from onnx_light.onnx import TensorProto
 
 from benchmarks.common import BACKENDS, MODEL_DTYPES, run_session, setup_session
 
@@ -14,6 +13,7 @@ class MLP:
 
     def setup(self, dtype, backend):
         numpy_dtype = np.dtype(dtype)
+        tensor_dtype = oh.np_dtype_to_tensor_dtype(numpy_dtype)
         rng = np.random.default_rng(1)
         weights1 = rng.standard_normal((128, 256), dtype=numpy_dtype)
         bias1 = rng.standard_normal(256, dtype=numpy_dtype)
@@ -29,8 +29,8 @@ class MLP:
                     oh.make_node("Add", ["output_matmul", "bias2"], ["Y"]),
                 ],
                 "mlp",
-                [oh.make_tensor_value_info("X", TensorProto.DOUBLE, [32, 128])],
-                [oh.make_tensor_value_info("Y", TensorProto.DOUBLE, [32, 64])],
+                [oh.make_tensor_value_info("X", tensor_dtype, [32, 128])],
+                [oh.make_tensor_value_info("Y", tensor_dtype, [32, 64])],
                 [
                     onh.from_array(weights1, "weights1"),
                     onh.from_array(bias1, "bias1"),

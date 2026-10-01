@@ -7,7 +7,7 @@ from onnx_light.onnx.reference import ReferenceEvaluator as OnnxLightReferenceEv
 from onnx_light_cpu import register_kernels_for_session
 
 BACKENDS = ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu")
-MODEL_DTYPES = ("float64",)
+MODEL_DTYPES = ("float32", "float64")
 
 
 def setup_session(benchmark, backend, model, feeds):

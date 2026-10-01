@@ -214,8 +214,11 @@ class TestBenchmarks(unittest.TestCase):
     @requires_onnx_light_cpu("0.1.17")
     def test_onnx_light_cpu_models(self):
         for benchmark_type, parameter_values in (
-            (MatMulAdd, ("float64", "onnx-light-cpu")),
-            (MLP, ("float64", "onnx-light-cpu")),
+            *(
+                (benchmark_type, (dtype_name, "onnx-light-cpu"))
+                for benchmark_type in (MatMulAdd, MLP)
+                for dtype_name in MODEL_DTYPES
+            ),
             *(
                 (TinyLLMGenAI, (precision, backend))
                 for precision in PRECISIONS

@@ -1,7 +1,6 @@
 import numpy as np
 import onnx_light.onnx.helper as oh
 import onnx_light.onnx.numpy_helper as onh
-from onnx_light.onnx import TensorProto
 
 from benchmarks.common import BACKENDS, MODEL_DTYPES, run_session, setup_session
 
@@ -14,6 +13,7 @@ class MatMulAdd:
 
     def setup(self, dtype, backend):
         numpy_dtype = np.dtype(dtype)
+        tensor_dtype = oh.np_dtype_to_tensor_dtype(numpy_dtype)
         rng = np.random.default_rng(0)
         weights = rng.standard_normal((256, 256), dtype=numpy_dtype)
         bias = rng.standard_normal(256, dtype=numpy_dtype)
@@ -24,8 +24,8 @@ class MatMulAdd:
                     oh.make_node("Add", ["matmul", "bias"], ["Y"]),
                 ],
                 "matmul_add",
-                [oh.make_tensor_value_info("X", TensorProto.DOUBLE, [64, 256])],
-                [oh.make_tensor_value_info("Y", TensorProto.DOUBLE, [64, 256])],
+                [oh.make_tensor_value_info("X", tensor_dtype, [64, 256])],
+                [oh.make_tensor_value_info("Y", tensor_dtype, [64, 256])],
                 [
                     onh.from_array(weights, "weights"),
                     onh.from_array(bias, "bias"),
