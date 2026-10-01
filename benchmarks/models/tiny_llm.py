@@ -5,6 +5,9 @@ import numpy as np
 import onnxruntime
 import onnxruntime_genai as og
 import torch
+from onnx_light import onnx as onnx_light
+from onnx_light.onnx.reference import ReferenceEvaluator as OnnxLightReferenceEvaluator
+from onnx_light_cpu import register_kernels_for_session
 from modelbuilder.builder import create_model
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
@@ -21,6 +24,10 @@ PRECISIONS = ("fp32", "fp16", "bf16", "int8", "int4", "int2")
 def _cache_dtype(precision):
     if precision == "fp16":
         return np.float16
+    if precision == "bf16":
+        import ml_dtypes
+
+        return ml_dtypes.bfloat16
     return np.float32
 
 
@@ -70,7 +77,7 @@ class _TinyLLMBase:
 
     @staticmethod
     def is_available(precision, backend):
-        return precision != "bf16"
+        return backend in {"onnx-light", "onnx-light-cpu"} or precision != "bf16"
 
     def setup(self, precision, backend):
         if not self.is_available(precision, backend):
@@ -108,6 +115,8 @@ class _TinyLLMBase:
         tokenizer = _make_tokenizer()
         tokenizer.save_pretrained(source_directory)
         self.prompt_tokens = tokenizer.encode(PROMPT)
+        if not self.prompt_tokens:
+            raise AssertionError("The generation prompt produced no tokens.")
 
         create_model(
             model_name=MODEL_NAME,
@@ -120,6 +129,36 @@ class _TinyLLMBase:
         )
 
         model_path = os.path.join(output_directory, "model.onnx")
+        if backend == "onnxruntime":
+            self._setup_onnxruntime(model_path, precision, config)
+        elif backend == "onnxruntime-genai":
+            self.genai_model = og.Model(output_directory)
+            self._generate_genai()
+        elif backend in {"onnx-light", "onnx-light-cpu"}:
+            model = onnx_light.load(model_path, load_external_data=True)
+            self.session = OnnxLightReferenceEvaluator(model)
+            if backend == "onnx-light-cpu":
+                register_kernels_for_session(self.session)
+            self.generation_feeds = {
+                "input_ids": np.array([self.prompt_tokens], dtype=np.int64),
+                "attention_mask": np.ones(
+                    (1, len(self.prompt_tokens)),
+                    dtype=np.int64,
+                ),
+                "past_key_values.0.key": np.empty(
+                    (1, 4, 0, 64),
+                    dtype=_cache_dtype(precision),
+                ),
+                "past_key_values.0.value": np.empty(
+                    (1, 4, 0, 64),
+                    dtype=_cache_dtype(precision),
+                ),
+            }
+            self._generate_onnx_light()
+        else:
+            raise ValueError(f"Unexpected backend {backend!r}.")
+
+    def _setup_onnxruntime(self, model_path, precision, config):
         self.session = onnxruntime.InferenceSession(
             model_path,
             providers=["CPUExecutionProvider"],
@@ -174,11 +213,6 @@ class _TinyLLMBase:
                 f"Unexpected decode logits shape {decode_logits.shape!r}."
             )
 
-        self.genai_model = og.Model(output_directory)
-        if not self.prompt_tokens:
-            raise AssertionError("The generation prompt produced no tokens.")
-        self._generate()
-
     def teardown(self, precision, backend):
         if hasattr(self, "genai_model"):
             del self.genai_model
@@ -187,7 +221,7 @@ class _TinyLLMBase:
         if hasattr(self, "_temporary_directory"):
             self._temporary_directory.cleanup()
 
-    def _generate(self):
+    def _generate_genai(self):
         parameters = og.GeneratorParams(self.genai_model)
         parameters.set_search_options(
             do_sample=False,
@@ -207,6 +241,19 @@ class _TinyLLMBase:
             raise AssertionError("ONNX Runtime GenAI produced no tokens.")
         return generated_tokens
 
+    def _generate_onnx_light(self):
+        tokens = self.session.generate(
+            self.generation_feeds,
+            max_new_tokens=MAX_NEW_TOKENS,
+            temperature=0.0,
+            eos_token_id=2,
+            pad_token_id=2,
+        )
+        generated_tokens = tokens[0, len(self.prompt_tokens) :].tolist()
+        if not generated_tokens:
+            raise AssertionError("onnx-light produced no tokens.")
+        return generated_tokens
+
 
 class TinyLLM(_TinyLLMBase):
     params = (PRECISIONS, ("onnxruntime",))
@@ -219,7 +266,13 @@ class TinyLLM(_TinyLLMBase):
 
 
 class TinyLLMGenAI(_TinyLLMBase):
-    params = (PRECISIONS, ("onnxruntime-genai",))
+    params = (
+        PRECISIONS,
+        ("onnxruntime-genai", "onnx-light", "onnx-light-cpu"),
+    )
 
     def time_generate(self, precision, backend):
-        self._generate()
+        if backend == "onnxruntime-genai":
+            self._generate_genai()
+        else:
+            self._generate_onnx_light()

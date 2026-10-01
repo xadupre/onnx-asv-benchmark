@@ -146,6 +146,10 @@ class TestBenchmarks(unittest.TestCase):
     def test_model_benchmarks(self):
         self.assertEqual(TinyLLM.params[0], PRECISIONS)
         self.assertEqual(TinyLLMGenAI.params[0], PRECISIONS)
+        self.assertEqual(
+            TinyLLMGenAI.params[1],
+            ("onnxruntime-genai", "onnx-light", "onnx-light-cpu"),
+        )
         for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
             params = benchmark_type.params
             if len(benchmark_type.param_names) == 1:
