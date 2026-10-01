@@ -2,10 +2,7 @@ import json
 import shutil
 from pathlib import Path
 
-MACHINE_ID = "cpu"
 ANONYMOUS_MACHINE_FIELDS = {
-    "machine": MACHINE_ID,
-    "cpu": "anonymous",
     "num_cpu": "anonymous",
     "os": "anonymous",
     "ram": "anonymous",
@@ -33,6 +30,20 @@ def _save(path, value):
         json.dumps(value, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _publishable_machine(machine):
+    processor = machine.get("cpu")
+    if not isinstance(processor, str) or not processor or processor == "anonymous":
+        raise ValueError("ASV machine metadata does not contain a processor name.")
+    if Path(processor).name != processor or processor in {".", ".."}:
+        raise ValueError(f"Processor name is not a safe directory name: {processor!r}.")
+    return processor, {
+        **machine,
+        **ANONYMOUS_MACHINE_FIELDS,
+        "machine": processor,
+        "cpu": processor,
+    }
 
 
 def _merge_mapping(target, source, description):
@@ -78,10 +89,7 @@ def write_shards(source, shard_root, selected_shards=None):
         for path in source.iterdir()
         if path.is_dir() and (path / "machine.json").is_file()
     ]
-    anonymous_machine = source / MACHINE_ID
-    if (anonymous_machine / "machine.json").is_file():
-        machine_directory = anonymous_machine
-    elif len(machine_directories) == 1:
+    if len(machine_directories) == 1:
         machine_directory = machine_directories[0]
     else:
         raise ValueError(
@@ -89,10 +97,9 @@ def write_shards(source, shard_root, selected_shards=None):
             f"found {len(machine_directories)}."
         )
 
-    machine = {
-        **_load(machine_directory / "machine.json"),
-        **ANONYMOUS_MACHINE_FIELDS,
-    }
+    machine_id, machine = _publishable_machine(
+        _load(machine_directory / "machine.json")
+    )
     benchmark_metadata = {
         name: value for name, value in benchmarks.items() if not isinstance(value, dict)
     }
@@ -115,6 +122,13 @@ def write_shards(source, shard_root, selected_shards=None):
 
         for shard, shard_results in grouped.items():
             destination = shard_root / shard
+            legacy_machine = destination / "cpu"
+            legacy_metadata = legacy_machine / "machine.json"
+            if (
+                legacy_metadata.is_file()
+                and _load(legacy_metadata).get("cpu") == "anonymous"
+            ):
+                shutil.rmtree(legacy_machine)
             shard_benchmarks_path = destination / "benchmarks.json"
             shard_benchmarks = (
                 _load(shard_benchmarks_path)
@@ -125,13 +139,15 @@ def write_shards(source, shard_root, selected_shards=None):
             for name in shard_results:
                 shard_benchmarks[name] = benchmarks[name]
             _save(shard_benchmarks_path, shard_benchmarks)
-            _save(destination / MACHINE_ID / "machine.json", machine)
+            _save(destination / machine_id / "machine.json", machine)
 
             shard_result = {
                 **result,
                 "params": {
                     **result.get("params", {}),
                     **ANONYMOUS_MACHINE_FIELDS,
+                    "machine": machine_id,
+                    "cpu": machine_id,
                 },
                 "results": shard_results,
                 "durations": {
@@ -141,7 +157,7 @@ def write_shards(source, shard_root, selected_shards=None):
                 },
             }
             _merge_result_file(
-                destination / MACHINE_ID / result_path.name,
+                destination / machine_id / result_path.name,
                 shard_result,
             )
             written.add(shard)
@@ -181,7 +197,7 @@ def merge_shards(shard_root, destination):
         raise FileNotFoundError(f"No result shards found in {shard_root}.")
 
     merged_benchmarks = {}
-    machine = None
+    machines = {}
     for benchmark_path in benchmark_files:
         shard_directory = benchmark_path.parent
         shard_benchmarks = _load(benchmark_path)
@@ -208,20 +224,29 @@ def merge_shards(shard_root, destination):
             "benchmark metadata",
         )
 
-        machine_path = shard_directory / MACHINE_ID / "machine.json"
-        shard_machine = _load(machine_path)
-        if machine is None:
-            machine = shard_machine
-        elif machine != shard_machine:
-            raise ValueError(f"Incompatible machine metadata in {machine_path}.")
+        machine_directories = sorted(
+            path
+            for path in shard_directory.iterdir()
+            if path.is_dir() and (path / "machine.json").is_file()
+        )
+        if not machine_directories:
+            raise FileNotFoundError(f"No ASV machines found in {shard_directory}.")
+        for machine_directory in machine_directories:
+            machine_path = machine_directory / "machine.json"
+            shard_machine = _load(machine_path)
+            machine_id = machine_directory.name
+            if machine_id in machines and machines[machine_id] != shard_machine:
+                raise ValueError(f"Incompatible machine metadata in {machine_path}.")
+            machines[machine_id] = shard_machine
 
-        for result_path in sorted((shard_directory / MACHINE_ID).glob("*.json")):
-            if result_path.name == "machine.json":
-                continue
-            _merge_result_file(
-                destination / MACHINE_ID / result_path.name,
-                _load(result_path),
-            )
+            for result_path in sorted(machine_directory.glob("*.json")):
+                if result_path.name == "machine.json":
+                    continue
+                _merge_result_file(
+                    destination / machine_id / result_path.name,
+                    _load(result_path),
+                )
 
     _save(destination / "benchmarks.json", merged_benchmarks)
-    _save(destination / MACHINE_ID / "machine.json", machine)
+    for machine_id, machine in machines.items():
+        _save(destination / machine_id / "machine.json", machine)

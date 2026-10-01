@@ -19,7 +19,7 @@ class TestSetupMachine(unittest.TestCase):
         self.env = {**os.environ, "HOME": self.home.name}
         self.profile = Machine.get_defaults()
         self.processor = self.profile["cpu"]
-        self.machine = "cpu"
+        self.machine = self.processor
         self.profile["machine"] = self.machine
 
     def run_setup(self, *args):

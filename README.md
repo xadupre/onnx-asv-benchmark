@@ -30,17 +30,17 @@ the wheel published on the
 
 ## Run
 
-Before the first run, set up the anonymous `cpu` ASV machine profile:
+Before the first run, set up the processor-named ASV machine profile:
 
 ```bash
 machine="$(python tools/setup_machine.py)"
 ```
 
 The script creates or corrects the profile in `~/.asv-machine.json`, reports
-what it did on stderr, and prints only `cpu` on stdout for shell capture. The
-profile retains the processor and memory metadata but does not expose the
-hostname in result paths. It can be run again without changing a correct
-profile. To verify the current setup without modifying it, use
+what it did on stderr, and prints only the processor name on stdout for shell
+capture. The processor name identifies the machine in results so performance
+can be compared across processors, without exposing the hostname. It can be
+run again without changing a correct profile. To verify the current setup, use
 `python tools/setup_machine.py --check`.
 
 Run the complete comparison in the versioned environment:
@@ -122,7 +122,7 @@ python tools/publish_results.py --shard math
 Model shards use `models/<module>`; operator shards use their category
 directory. Omitting `--shard` publishes every shard found in the local
 results. The first publication migrates legacy flat results, including the
-`xadupre2025` directory, to the anonymous `cpu` layout.
+`xadupre2025` directory, to a processor-named layout.
 
 The command clones `cache_data`, merges only the requested local results,
 rebases concurrent shard updates, commits any changes, and pushes them to its
