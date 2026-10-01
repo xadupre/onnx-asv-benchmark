@@ -40,8 +40,9 @@ processor description instead of the hostname:
 processor="$(python tools/setup_machine.py)"
 ```
 
-The script creates or corrects the profile in `~/.asv-machine.json` and prints
-its name. It can be run again without changing a correct profile. To verify
+The script creates or corrects the profile in `~/.asv-machine.json`, reports
+what it did on stderr, and prints only the processor name on stdout for shell
+capture. It can be run again without changing a correct profile. To verify
 the current setup without modifying it, use
 `python tools/setup_machine.py --check`. Keep `processor` set in the shell for
 the following commands so ASV selects that profile rather than the hostname.

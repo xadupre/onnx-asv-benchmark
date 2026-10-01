@@ -1,4 +1,5 @@
 import argparse
+import sys
 from pathlib import Path
 
 from asv import util
@@ -30,12 +31,17 @@ def main():
     if args.check:
         if not matches:
             raise SystemExit(
-                f"ASV profile for {processor!r} is missing or outdated; "
+                f"ASV profile for {processor!r} in {path} is missing or outdated; "
                 "run python tools/setup_machine.py to set it up."
             )
+        action = "Verified"
     elif not matches:
         MachineCollection.save(processor, {**current, **profile})
+        action = "Updated" if processor in machines else "Created"
+    else:
+        action = "Already correct"
 
+    print(f"{action} ASV profile for {processor!r} in {path}.", file=sys.stderr)
     print(processor)
 
 

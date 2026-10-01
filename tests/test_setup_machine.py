@@ -34,14 +34,18 @@ class TestSetupMachine(unittest.TestCase):
         result = self.run_setup()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), self.processor)
+        self.assertIn(f"Created ASV profile for {self.processor!r} in {self.path}", result.stderr)
         self.assertEqual(json.loads(self.path.read_text())[self.processor], self.profile)
 
         original = self.path.read_bytes()
         result = self.run_setup("--check")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), self.processor)
+        self.assertIn(f"Verified ASV profile for {self.processor!r} in {self.path}", result.stderr)
         self.assertEqual(self.path.read_bytes(), original)
-        self.assertEqual(self.run_setup().returncode, 0)
+        result = self.run_setup()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"Already correct ASV profile for {self.processor!r}", result.stderr)
         self.assertEqual(self.path.read_bytes(), original)
 
     def test_repair_incorrect_profile_without_touching_other_machines(self):
@@ -63,6 +67,7 @@ class TestSetupMachine(unittest.TestCase):
 
         result = self.run_setup()
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"Updated ASV profile for {self.processor!r} in {self.path}", result.stderr)
         machines = json.loads(self.path.read_text())
         self.assertEqual(machines[self.processor], self.profile)
         self.assertEqual(machines["other"], other)
@@ -70,6 +75,7 @@ class TestSetupMachine(unittest.TestCase):
     def test_check_missing_profile_does_not_create_file(self):
         result = self.run_setup("--check")
         self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"in {self.path} is missing or outdated", result.stderr)
         self.assertFalse(self.path.exists())
 
     def test_repair_malformed_processor_entry(self):
