@@ -4,8 +4,9 @@ import onnx_light.onnx.checker as onnx_light_checker
 import onnxruntime
 from onnx.reference import ReferenceEvaluator as OnnxReferenceEvaluator
 from onnx_light.onnx.reference import ReferenceEvaluator as OnnxLightReferenceEvaluator
+from onnx_light_cpu import register_kernels_for_session
 
-BACKENDS = ("onnxruntime", "onnx-reference", "onnx-light")
+BACKENDS = ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu")
 
 
 def setup_session(benchmark, backend, model, feeds):
@@ -21,8 +22,13 @@ def setup_session(benchmark, backend, model, feeds):
         )
     elif backend == "onnx-reference":
         session = OnnxReferenceEvaluator(onnx_model)
-    else:
+    elif backend == "onnx-light":
         session = OnnxLightReferenceEvaluator(model)
+    elif backend == "onnx-light-cpu":
+        session = OnnxLightReferenceEvaluator(model)
+        register_kernels_for_session(session)
+    else:
+        raise ValueError(f"Unexpected backend {backend!r}.")
 
     outputs = session.run(None, feeds)
     for output, expected_output in zip(outputs, expected, strict=True):

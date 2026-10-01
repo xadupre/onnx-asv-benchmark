@@ -11,6 +11,11 @@ from benchmarks._operator import (
 from benchmarks.models.matmul_add import MatMulAdd
 from benchmarks.models.mlp import MLP
 from benchmarks.models.tiny_llm import PRECISIONS, TinyLLM, TinyLLMGenAI
+from onnx_light_cpu import (
+    registered_kernel_names,
+    set_kernel_usage_recording,
+    used_kernel_names,
+)
 
 OPERATOR_COUNTS = {
     "generator": 10,
@@ -110,8 +115,15 @@ class TestBenchmarks(unittest.TestCase):
                 self.assertIn("onnx-light", benchmark.params)
                 self.assertTrue(
                     set(benchmark.params)
-                    <= {"onnxruntime", "onnx-reference", "onnx-light"}
+                    <= {
+                        "onnxruntime",
+                        "onnx-reference",
+                        "onnx-light",
+                        "onnx-light-cpu",
+                    }
                 )
+                if getattr(benchmark, "operator", None) in {"Add", "MatMul", "Gemm"}:
+                    self.assertIn("onnx-light-cpu", benchmark.params)
         self.assertEqual(len(operators), 225)
 
     def test_one_operator_per_category(self):
@@ -121,6 +133,16 @@ class TestBenchmarks(unittest.TestCase):
                 benchmark = benchmarks[category][operator]()
                 benchmark.setup("onnx-light")
                 benchmark.time_run("onnx-light")
+
+    def test_onnx_light_cpu_operator(self):
+        benchmark = operator_benchmarks()["math"]["Add"]()
+        benchmark.setup("onnx-light-cpu")
+        set_kernel_usage_recording(benchmark.session, True)
+        benchmark.time_run("onnx-light-cpu")
+        self.assertIn(
+            registered_kernel_names()["Add"],
+            used_kernel_names(benchmark.session),
+        )
 
     def test_model_benchmarks(self):
         self.assertEqual(TinyLLM.params[0], PRECISIONS)

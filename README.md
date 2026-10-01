@@ -5,6 +5,7 @@ ASV benchmarks comparing inference with:
 - ONNX Runtime
 - the ONNX reference evaluator
 - onnx-light
+- onnx-light-cpu
 
 The benchmark suite groups operators using the same category directories as
 onnx-light. Model benchmarks live under `benchmarks/models`.
@@ -26,7 +27,9 @@ python -m pip install asv
 ASV creates a Python 3.12 virtual environment and installs the pinned NumPy,
 ONNX, and ONNX Runtime releases from PyPI. It installs onnx-light 0.1.28 from
 the wheel published on the
-[onnx-light release page](https://github.com/xadupre/onnx-light/releases/tag/0.1.28).
+[onnx-light release page](https://github.com/xadupre/onnx-light/releases/tag/0.1.28)
+and onnx-light-cpu 0.1.16 from its
+[first release](https://github.com/xadupre/onnx-light-cpu/releases/tag/0.1.16).
 
 ## Run
 
@@ -95,7 +98,9 @@ PYTHONPATH=../onnx-light python tools/generate_operator_benchmarks.py ../onnx-li
 
 Each generated benchmark uses the corresponding native `onnx-light` backend
 benchmark case. It runs on `onnx-light` and on every ONNX Runtime or ONNX
-Reference backend verified to support that case.
+Reference backend verified to support that case. Operators implemented by
+onnx-light-cpu also run with its optimized kernels registered only on the
+benchmark session, keeping the regular onnx-light measurements unchanged.
 
 The model benchmarks also include the one-layer `arnir0/Tiny-LLM`
 configuration used by `mbext` fast tests. The benchmark creates the random

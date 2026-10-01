@@ -14,6 +14,7 @@ from onnx_light.onnx_py._onnxpykernels.runtime import (
     RuntimeSession,
     tensor_from_proto,
 )
+from onnx_light_cpu import registered_kernels, register_kernels_for_session
 
 NONDETERMINISTIC_OPERATORS = {
     "Bernoulli",
@@ -23,6 +24,7 @@ NONDETERMINISTIC_OPERATORS = {
     "RandomUniform",
     "RandomUniformLike",
 }
+CPU_OPERATORS = frozenset(kernel.op_type for kernel in registered_kernels())
 
 
 def _tensor_to_array(tensor):
@@ -128,6 +130,12 @@ class OperatorBenchmark:
 
     def __init_subclass__(cls):
         super().__init_subclass__()
+        if (
+            cls.operator in CPU_OPERATORS
+            and "onnx-light" in cls.backends
+            and "onnx-light-cpu" not in cls.backends
+        ):
+            cls.backends = (*cls.backends, "onnx-light-cpu")
         cls.params = cls.backends
 
     def setup(self, backend):
@@ -142,6 +150,9 @@ class OperatorBenchmark:
             session = OnnxReferenceEvaluator(onnx.load_model_from_string(model_bytes))
         elif backend == "onnx-light":
             session = OnnxLightReferenceEvaluator(case.model)
+        elif backend == "onnx-light-cpu":
+            session = OnnxLightReferenceEvaluator(case.model)
+            register_kernels_for_session(session)
         else:
             raise ValueError(f"Unexpected backend {backend!r}.")
 
