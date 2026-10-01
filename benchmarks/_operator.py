@@ -14,6 +14,7 @@ from onnx_light.onnx_py._onnxpykernels.runtime import (
     RuntimeSession,
     tensor_from_proto,
 )
+from onnx_light_cpu import register_kernels_for_session
 
 NONDETERMINISTIC_OPERATORS = {
     "Bernoulli",
@@ -128,6 +129,8 @@ class OperatorBenchmark:
 
     def __init_subclass__(cls):
         super().__init_subclass__()
+        if "onnx-light" in cls.backends and "onnx-light-cpu" not in cls.backends:
+            cls.backends = (*cls.backends, "onnx-light-cpu")
         cls.params = cls.backends
 
     def setup(self, backend):
@@ -142,6 +145,9 @@ class OperatorBenchmark:
             session = OnnxReferenceEvaluator(onnx.load_model_from_string(model_bytes))
         elif backend == "onnx-light":
             session = OnnxLightReferenceEvaluator(case.model)
+        elif backend == "onnx-light-cpu":
+            session = OnnxLightReferenceEvaluator(case.model)
+            register_kernels_for_session(session)
         else:
             raise ValueError(f"Unexpected backend {backend!r}.")
 
@@ -165,7 +171,7 @@ class OperatorBenchmark:
 
 
 class QuantizePagedCacheBenchmark:
-    params = ("onnx-light",)
+    params = ("onnx-light", "onnx-light-cpu")
     param_names = ("backend",)
     number = 1
     timeout = 60
