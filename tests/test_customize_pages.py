@@ -66,6 +66,9 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("@media (prefers-color-scheme: dark)", stylesheet)
             self.assertIn(".runtime-grid", stylesheet)
             self.assertIn("#benchmark-navigation", stylesheet)
+            self.assertIn("background-color: var(--asv-hover)", stylesheet)
+            self.assertIn("background-color: var(--asv-selection)", stylesheet)
+            self.assertIn(".btn-default.active:hover", stylesheet)
 
     def test_unexpected_asv_output_is_not_modified(self):
         with tempfile.TemporaryDirectory() as directory:
