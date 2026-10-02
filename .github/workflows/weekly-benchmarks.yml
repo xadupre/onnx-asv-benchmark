@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       shard:
-        description: Shard to run, for example ops/math or models/llm/tiny_llm
+        description: Shards to run, comma-separated (for example ops/math,models/llm/tiny_llm)
         required: true
         type: string
 
@@ -34,7 +34,7 @@ jobs:
           SCHEDULE: ${{ github.event.schedule }}
         run: |
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            matrix="$(python -c 'import json, sys; print(json.dumps({"shard": [sys.argv[1]]}))' "$REQUESTED_SHARD")"
+            matrix="$(python -c 'import json, sys; shards = [s.strip() for s in sys.argv[1].split(",") if s.strip()]; assert shards, "No shards requested"; print(json.dumps({"shard": shards}))' "$REQUESTED_SHARD")"
           else
             case "$SCHEDULE" in
               "17 1 * * 1") bucket=0 ;;
@@ -66,6 +66,7 @@ jobs:
           git config --global user.name github-actions[bot]
           git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
           git clone --depth 1 https://github.com/xadupre/cache_data.git cache-data
+          mkdir -p cache-data/onnx-asv-benchmark
           python tools/migrate_results.py cache-data/onnx-asv-benchmark
           git -C cache-data add --all -- onnx-asv-benchmark
           if ! git -C cache-data diff --cached --quiet; then
