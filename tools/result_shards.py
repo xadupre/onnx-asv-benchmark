@@ -160,6 +160,32 @@ def _merge_mapping(target, source, description):
     target.update(source)
 
 
+def _merge_machine_params(path, current, incoming):
+    if not isinstance(current, dict) or not isinstance(incoming, dict):
+        raise ValueError(f"Incompatible ASV machine parameters in {path}.")
+
+    merged = current.copy()
+    for key in ("instruction_sets", "num_cpu"):
+        current_value = current.get(key)
+        incoming_value = incoming.get(key)
+        if current_value == incoming_value:
+            continue
+        if not isinstance(current_value, str) or not isinstance(incoming_value, str):
+            raise ValueError(f"Incompatible ASV machine parameters in {path}.")
+        variants = set(current_value.split("; "))
+        variants.update(incoming_value.split("; "))
+        merged[key] = "; ".join(sorted(variants))
+
+    ignored = {"instruction_sets", "num_cpu"}
+    current_stable = {key: value for key, value in current.items() if key not in ignored}
+    incoming_stable = {
+        key: value for key, value in incoming.items() if key not in ignored
+    }
+    if current_stable != incoming_stable:
+        raise ValueError(f"Incompatible ASV machine parameters in {path}.")
+    return merged
+
+
 def _merge_result_file(path, incoming):
     if not path.is_file():
         _save(path, incoming)
@@ -177,8 +203,11 @@ def _merge_result_file(path, incoming):
     ):
         if current.get(key) != incoming.get(key):
             raise ValueError(f"Incompatible ASV result field {key!r} in {path}.")
-    if current.get("params") != incoming.get("params"):
-        raise ValueError(f"Incompatible ASV machine parameters in {path}.")
+    current["params"] = _merge_machine_params(
+        path,
+        current.get("params"),
+        incoming.get("params"),
+    )
 
     current["date"] = max(current.get("date", 0), incoming.get("date", 0))
     current.setdefault("results", {}).update(incoming.get("results", {}))
