@@ -86,7 +86,8 @@ Every result records the complete input tensor shapes as an ASV `shape`
 parameter, alongside `dtype` and `backend` where applicable. Multi-input
 operators include each input name and shape; scalar and input-free cases are
 identified explicitly. Tiny-LLM and Qwen2 record the prefill, decode, cache,
-and generation shapes.
+and generation shapes. Qwen2 also records `Qwen/Qwen2-0.5B` as its `model`
+parameter and uses `Qwen2-0.5B` in graph titles.
 
 To check that every benchmark runs on all three backends in an environment
 with the benchmark dependencies installed:

@@ -104,14 +104,19 @@ class _CausalLLMBase:
 
     @staticmethod
     def is_available(shape, precision, backend):
+        return _CausalLLMBase._is_backend_available(precision, backend)
+
+    @staticmethod
+    def _is_backend_available(precision, backend):
         return (
             backend not in {"onnxruntime", "onnxruntime-genai"} or precision != "bf16"
         )
 
     def setup(self, shape, precision, backend):
-        if shape != self.params[0][0]:
+        shape_values = self.params[self.param_names.index("shape")]
+        if shape != shape_values[0]:
             raise ValueError(f"Unexpected input shape parameter {shape!r}.")
-        if not self.is_available(shape, precision, backend):
+        if not self._is_backend_available(precision, backend):
             raise NotImplementedError(
                 "ONNX Runtime does not support the required BF16 kernels on CPU."
             )

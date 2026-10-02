@@ -12,6 +12,7 @@ MODEL_NAME = "Qwen/Qwen2-0.5B"
 
 class _Qwen2Base(_CausalLLMBase):
     model_name = MODEL_NAME
+    param_names = ("model", "shape", "dtype", "backend")
 
     @staticmethod
     def make_config():
@@ -33,34 +34,54 @@ class _Qwen2Base(_CausalLLMBase):
             vocab_size=32000,
         )
 
+    @staticmethod
+    def is_available(model, shape, precision, backend):
+        return _CausalLLMBase._is_backend_available(precision, backend)
+
+    def setup(self, model, shape, precision, backend):
+        if model != self.model_name:
+            raise ValueError(f"Unexpected model parameter {model!r}.")
+        super().setup(shape, precision, backend)
+
+    def teardown(self, model, shape, precision, backend):
+        super().teardown(shape, precision, backend)
+
 
 class Qwen2(_Qwen2Base):
     measure_inference = True
     params = (
+        (MODEL_NAME,),
         INFERENCE_SHAPES,
         PRECISIONS,
         ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu"),
     )
 
-    def time_prefill(self, shape, precision, backend):
+    def time_prefill(self, model, shape, precision, backend):
         self.session.run(["logits"], self.prefill_feeds)
 
-    def time_decode(self, shape, precision, backend):
+    time_prefill.pretty_name = "Qwen2-0.5B prefill"
+
+    def time_decode(self, model, shape, precision, backend):
         self.session.run(["logits"], self.decode_feeds)
+
+    time_decode.pretty_name = "Qwen2-0.5B decode"
 
 
 class Qwen2GenAI(_Qwen2Base):
     measure_inference = False
     params = (
+        (MODEL_NAME,),
         GENERATION_SHAPES,
         PRECISIONS,
         ("onnxruntime-genai", "onnx-reference", "onnx-light", "onnx-light-cpu"),
     )
 
-    def time_generate(self, shape, precision, backend):
+    def time_generate(self, model, shape, precision, backend):
         if backend == "onnxruntime-genai":
             self._generate_genai()
         elif backend == "onnx-reference":
             self._generate_reference()
         else:
             self._generate_onnx_light()
+
+    time_generate.pretty_name = "Qwen2-0.5B generation"

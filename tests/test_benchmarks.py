@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import itertools
 import pkgutil
 import unittest
 from pathlib import Path
@@ -181,32 +182,43 @@ class TestBenchmarks(unittest.TestCase):
     def test_model_benchmarks(self):
         self.assertEqual(MatMulAdd.params[1], MODEL_DTYPES)
         self.assertEqual(MLP.params[1], MODEL_DTYPES)
-        for benchmark_type in (
-            MatMulAdd,
-            MLP,
-            Qwen2,
-            Qwen2GenAI,
-            TinyLLM,
-            TinyLLMGenAI,
-        ):
+        for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
             self.assertEqual(
                 benchmark_type.param_names,
                 ("shape", "dtype", "backend"),
             )
             self.assertEqual(len(benchmark_type.params[0]), 1)
             self.assertTrue(benchmark_type.params[0][0])
+        for benchmark_type in (Qwen2, Qwen2GenAI):
+            self.assertEqual(
+                benchmark_type.param_names,
+                ("model", "shape", "dtype", "backend"),
+            )
+            self.assertEqual(benchmark_type.params[0], ("Qwen/Qwen2-0.5B",))
+            self.assertEqual(len(benchmark_type.params[1]), 1)
+            self.assertTrue(benchmark_type.params[1][0])
+        self.assertEqual(Qwen2.time_prefill.pretty_name, "Qwen2-0.5B prefill")
+        self.assertEqual(Qwen2.time_decode.pretty_name, "Qwen2-0.5B decode")
+        self.assertEqual(
+            Qwen2GenAI.time_generate.pretty_name,
+            "Qwen2-0.5B generation",
+        )
         for inference_type, generation_type in (
             (Qwen2, Qwen2GenAI),
             (TinyLLM, TinyLLMGenAI),
         ):
-            self.assertEqual(inference_type.params[1], PRECISIONS)
+            dtype_index = inference_type.param_names.index("dtype")
+            backend_index = inference_type.param_names.index("backend")
+            self.assertEqual(inference_type.params[dtype_index], PRECISIONS)
             self.assertEqual(
-                inference_type.params[2],
+                inference_type.params[backend_index],
                 ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu"),
             )
-            self.assertEqual(generation_type.params[1], PRECISIONS)
+            dtype_index = generation_type.param_names.index("dtype")
+            backend_index = generation_type.param_names.index("backend")
+            self.assertEqual(generation_type.params[dtype_index], PRECISIONS)
             self.assertEqual(
-                generation_type.params[2],
+                generation_type.params[backend_index],
                 (
                     "onnxruntime-genai",
                     "onnx-reference",
@@ -222,14 +234,7 @@ class TestBenchmarks(unittest.TestCase):
             TinyLLM,
             TinyLLMGenAI,
         ):
-            shape_values, dtype_values, backend_values = benchmark_type.params
-            params = (
-                (shape, dtype_name, backend)
-                for shape in shape_values
-                for dtype_name in dtype_values
-                for backend in backend_values
-            )
-            for parameter_values in params:
+            for parameter_values in itertools.product(*benchmark_type.params):
                 backend = parameter_values[-1]
                 if backend == "onnx-light-cpu" or (
                     benchmark_type in {Qwen2, Qwen2GenAI, TinyLLM, TinyLLMGenAI}
@@ -262,7 +267,14 @@ class TestBenchmarks(unittest.TestCase):
                 for dtype_name in MODEL_DTYPES
             ),
             *(
-                (benchmark_type, (benchmark_type.params[0][0], precision, backend))
+                (
+                    benchmark_type,
+                    (
+                        *(values[0] for values in benchmark_type.params[:-2]),
+                        precision,
+                        backend,
+                    ),
+                )
                 for benchmark_type in (Qwen2GenAI, TinyLLMGenAI)
                 for precision in PRECISIONS
                 for backend in ("onnx-light", "onnx-light-cpu")
