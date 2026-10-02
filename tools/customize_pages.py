@@ -189,8 +189,11 @@ def customize_pages(html_dir):
         grid,
         "var display_name = bm.pretty_name || "
         "bm.name.slice(bm.name.indexOf('.') + 1);",
-        "var display_name = bm.pretty_name || "
-        "bm.name.split('.').slice(2).join('.');",
+        "var parts = bm.name.split('.');\n"
+        "        var display_name = bm.pretty_name || "
+        "(parts[0] == 'ops' && parts[parts.length - 1] == 'time_run'\n"
+        "            ? parts[parts.length - 2]\n"
+        "            : parts.slice(2).join('.'));",
     )
     grid = _replace_once(
         grid,
