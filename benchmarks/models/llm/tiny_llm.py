@@ -21,6 +21,13 @@ CACHE_LENGTH = 128
 MAX_NEW_TOKENS = 8
 PROMPT = "The future of artificial intelligence is"
 PRECISIONS = ("fp32", "fp16", "bf16", "int8", "int4", "int2")
+INFERENCE_SHAPES = (
+    "prefill[input_ids=1x128, attention_mask=1x128, cache=1x4x0x64]; "
+    "decode[input_ids=1x1, attention_mask=1x129, cache=1x4x128x64]",
+)
+GENERATION_SHAPES = (
+    "input_ids=1x6, attention_mask=1x6, cache=1x4x0x64",
+)
 
 
 def _cache_dtype(precision):
@@ -73,16 +80,21 @@ def _make_tokenizer():
 
 
 class _TinyLLMBase:
-    param_names = ("dtype", "backend")
+    param_names = ("shape", "dtype", "backend")
     number = 1
     timeout = 60
 
     @staticmethod
-    def is_available(precision, backend):
-        return backend not in {"onnxruntime", "onnxruntime-genai"} or precision != "bf16"
+    def is_available(shape, precision, backend):
+        return (
+            backend not in {"onnxruntime", "onnxruntime-genai"}
+            or precision != "bf16"
+        )
 
-    def setup(self, precision, backend):
-        if not self.is_available(precision, backend):
+    def setup(self, shape, precision, backend):
+        if shape != self.params[0][0]:
+            raise ValueError(f"Unexpected input shape parameter {shape!r}.")
+        if not self.is_available(shape, precision, backend):
             raise NotImplementedError(
                 "ONNX Runtime does not support the required BF16 kernels on CPU."
             )
@@ -234,7 +246,7 @@ class _TinyLLMBase:
             ),
         }
 
-    def teardown(self, precision, backend):
+    def teardown(self, shape, precision, backend):
         if hasattr(self, "genai_model"):
             del self.genai_model
         if hasattr(self, "session"):
@@ -307,25 +319,27 @@ class _TinyLLMBase:
 class TinyLLM(_TinyLLMBase):
     measure_inference = True
     params = (
+        INFERENCE_SHAPES,
         PRECISIONS,
         ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu"),
     )
 
-    def time_prefill(self, precision, backend):
+    def time_prefill(self, shape, precision, backend):
         self.session.run(["logits"], self.prefill_feeds)
 
-    def time_decode(self, precision, backend):
+    def time_decode(self, shape, precision, backend):
         self.session.run(["logits"], self.decode_feeds)
 
 
 class TinyLLMGenAI(_TinyLLMBase):
     measure_inference = False
     params = (
+        GENERATION_SHAPES,
         PRECISIONS,
         ("onnxruntime-genai", "onnx-reference", "onnx-light", "onnx-light-cpu"),
     )
 
-    def time_generate(self, precision, backend):
+    def time_generate(self, shape, precision, backend):
         if backend == "onnxruntime-genai":
             self._generate_genai()
         elif backend == "onnx-reference":

@@ -73,7 +73,7 @@ def _category(headers_root, class_name):
 
 def _case(operator):
     if operator == "QuantizePagedCache":
-        return None, None
+        return None, None, None
     benchmark_cases = backend_test.collect_test_cases(
         operator,
         mode=backend_test.TestMode.BENCHMARK,
@@ -85,9 +85,11 @@ def _case(operator):
         and case.model.graph.node[0].op_type == operator
     ]
     if direct:
-        return direct[0].name, "BENCHMARK"
+        return direct[0].name, "BENCHMARK", _shape_label(direct[0])
     if benchmark_cases:
-        return benchmark_cases[0].name, "BENCHMARK"
+        return benchmark_cases[0].name, "BENCHMARK", _shape_label(
+            benchmark_cases[0]
+        )
 
     test_cases = backend_test.collect_test_cases(
         operator,
@@ -100,10 +102,35 @@ def _case(operator):
         and case.model.graph.node[0].op_type == operator
     ]
     if direct:
-        return direct[0].name, "TEST"
+        return direct[0].name, "TEST", _shape_label(direct[0])
     if test_cases:
-        return test_cases[0].name, "TEST"
+        return test_cases[0].name, "TEST", _shape_label(test_cases[0])
     raise RuntimeError(f"No backend test case found for {operator}.")
+
+
+def _shape_label(case):
+    parts = []
+    data_set = case.data_sets[0]
+    for index, tensor in enumerate(data_set.inputs):
+        name = tensor.name or f"input_{index}"
+        if case.name == "test_cc_sequence_insert_benchmark" and index == 8:
+            name = "tensor"
+        elif case.name == "test_cc_split_to_sequence_1_benchmark" and index == 0:
+            name = "input"
+        dimensions = "x".join(map(str, tensor.shape)) if tensor.shape else "scalar"
+        parts.append(f"{name}={dimensions}")
+    for index, value in enumerate(data_set.maps):
+        name = value.name or f"map_{index}"
+        key_shape = (
+            "x".join(map(str, value.keys.shape)) if value.keys.shape else "scalar"
+        )
+        value_shape = (
+            "x".join(map(str, value.values.shape))
+            if value.values.shape
+            else "scalar"
+        )
+        parts.append(f"{name}=map[{key_shape}->{value_shape}]")
+    return ", ".join(parts) or "no inputs"
 
 
 def _write_module(path, class_name, case_name, case_mode, domain):
@@ -168,14 +195,24 @@ def main():
             path.unlink()
         (directory / "__init__.py").touch()
 
+    shapes = {}
     for domain, operator, class_name in sorted(entries):
-        case_name, case_mode = _case(operator)
+        case_name, case_mode, shape = _case(operator)
         path = (
             args.output
             / _category(source / HEADERS_PATH, class_name)
             / f"{_snake_case(operator)}.py"
         )
         _write_module(path, operator, case_name, case_mode, domain)
+        if case_name is not None:
+            shapes[case_name] = shape
+    shape_path = args.output.parent / "_operator_shapes.py"
+    lines = ["OPERATOR_INPUT_SHAPES = {"]
+    lines.extend(
+        f"    {case_name!r}: {shape!r}," for case_name, shape in sorted(shapes.items())
+    )
+    lines.append("}")
+    shape_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

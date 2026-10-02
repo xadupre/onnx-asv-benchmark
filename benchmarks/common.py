@@ -10,6 +10,16 @@ BACKENDS = ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu")
 MODEL_DTYPES = ("float16", "float32", "float64")
 
 
+def input_shape_label(feeds):
+    parts = []
+    for name, value in feeds.items():
+        if not isinstance(value, np.ndarray):
+            continue
+        dimensions = "x".join(map(str, value.shape)) if value.shape else "scalar"
+        parts.append(f"{name}={dimensions}")
+    return ", ".join(parts) or "no inputs"
+
+
 def standard_normal(rng, shape, dtype):
     dtype = np.dtype(dtype)
     if dtype == np.float16:
