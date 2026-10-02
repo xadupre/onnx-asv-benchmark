@@ -12,6 +12,7 @@ from benchmarks._operator import (
 from benchmarks.common import MODEL_DTYPES
 from benchmarks.models.dummies.matmul_add import MatMulAdd
 from benchmarks.models.dummies.mlp import MLP
+from benchmarks.models.llm.qwen2 import Qwen2, Qwen2GenAI
 from benchmarks.models.llm.tiny_llm import PRECISIONS, TinyLLM, TinyLLMGenAI
 from onnx_light_cpu import (
     registered_kernel_names,
@@ -180,29 +181,47 @@ class TestBenchmarks(unittest.TestCase):
     def test_model_benchmarks(self):
         self.assertEqual(MatMulAdd.params[1], MODEL_DTYPES)
         self.assertEqual(MLP.params[1], MODEL_DTYPES)
-        for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
+        for benchmark_type in (
+            MatMulAdd,
+            MLP,
+            Qwen2,
+            Qwen2GenAI,
+            TinyLLM,
+            TinyLLMGenAI,
+        ):
             self.assertEqual(
                 benchmark_type.param_names,
                 ("shape", "dtype", "backend"),
             )
             self.assertEqual(len(benchmark_type.params[0]), 1)
             self.assertTrue(benchmark_type.params[0][0])
-        self.assertEqual(TinyLLM.params[1], PRECISIONS)
-        self.assertEqual(
-            TinyLLM.params[2],
-            ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu"),
-        )
-        self.assertEqual(TinyLLMGenAI.params[1], PRECISIONS)
-        self.assertEqual(
-            TinyLLMGenAI.params[2],
-            (
-                "onnxruntime-genai",
-                "onnx-reference",
-                "onnx-light",
-                "onnx-light-cpu",
-            ),
-        )
-        for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
+        for inference_type, generation_type in (
+            (Qwen2, Qwen2GenAI),
+            (TinyLLM, TinyLLMGenAI),
+        ):
+            self.assertEqual(inference_type.params[1], PRECISIONS)
+            self.assertEqual(
+                inference_type.params[2],
+                ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu"),
+            )
+            self.assertEqual(generation_type.params[1], PRECISIONS)
+            self.assertEqual(
+                generation_type.params[2],
+                (
+                    "onnxruntime-genai",
+                    "onnx-reference",
+                    "onnx-light",
+                    "onnx-light-cpu",
+                ),
+            )
+        for benchmark_type in (
+            MatMulAdd,
+            MLP,
+            Qwen2,
+            Qwen2GenAI,
+            TinyLLM,
+            TinyLLMGenAI,
+        ):
             shape_values, dtype_values, backend_values = benchmark_type.params
             params = (
                 (shape, dtype_name, backend)
@@ -213,7 +232,7 @@ class TestBenchmarks(unittest.TestCase):
             for parameter_values in params:
                 backend = parameter_values[-1]
                 if backend == "onnx-light-cpu" or (
-                    benchmark_type in {TinyLLM, TinyLLMGenAI}
+                    benchmark_type in {Qwen2, Qwen2GenAI, TinyLLM, TinyLLMGenAI}
                     and backend in {"onnx-reference", "onnx-light"}
                 ):
                     continue
@@ -243,10 +262,8 @@ class TestBenchmarks(unittest.TestCase):
                 for dtype_name in MODEL_DTYPES
             ),
             *(
-                (
-                    TinyLLMGenAI,
-                    (TinyLLMGenAI.params[0][0], precision, backend),
-                )
+                (benchmark_type, (benchmark_type.params[0][0], precision, backend))
+                for benchmark_type in (Qwen2GenAI, TinyLLMGenAI)
                 for precision in PRECISIONS
                 for backend in ("onnx-light", "onnx-light-cpu")
             ),
