@@ -33,6 +33,8 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("#even-spacing, #date-scale", page)
             self.assertIn('class="runtime-grid"', page)
             self.assertEqual(page.count('class="runtime-card"'), 5)
+            self.assertIn('id="machine-summary"', page)
+            self.assertIn("Logical cores", page)
             self.assertIn('id="benchmark-navigation"', page)
             self.assertIn("var date_scale = true;", graph)
             self.assertIn("axisLabel = 'date';", graph)
@@ -41,13 +43,15 @@ class TestCustomizePages(unittest.TestCase):
             self.assertEqual(graph.count("axisLabelColour"), 2)
             self.assertIn("var(--asv-background)", graph)
             self.assertIn(
-                "param != 'machine' && param != 'cpu'",
+                "param != 'cpu' && param != 'num_cpu'",
                 graph,
             )
             self.assertIn(
-                "param != 'machine' && param != 'cpu'",
+                "param != 'cpu' && param != 'num_cpu'",
                 summary,
             )
+            self.assertIn("param != 'instruction_sets'", graph)
+            self.assertIn("param != 'instruction_sets'", summary)
             self.assertIn("param_names[axis-1] == 'backend'", graph)
             self.assertIn("parameters: graph_content[2]", graph)
             self.assertIn("new Date(item.datapoint[0]).toLocaleString()", graph)
@@ -57,6 +61,10 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("parts[parts.length - 2]", grid)
             self.assertIn("parts.slice(2).join('.')", grid)
             self.assertIn("make_summary_navigation(groups)", grid)
+            self.assertIn("make_machine_summary()", grid)
+            self.assertIn("params.instruction_sets", grid)
+            self.assertIn("params.num_cpu", grid)
+            self.assertIn("Not recorded", grid)
             self.assertIn("data-family", grid)
             self.assertIn("data-group", grid)
             self.assertNotIn(
@@ -65,6 +73,7 @@ class TestCustomizePages(unittest.TestCase):
             )
             self.assertIn("@media (prefers-color-scheme: dark)", stylesheet)
             self.assertIn(".runtime-grid", stylesheet)
+            self.assertIn(".machine-table", stylesheet)
             self.assertIn("#benchmark-navigation", stylesheet)
             self.assertIn("background-color: var(--asv-hover)", stylesheet)
             self.assertIn("background-color: var(--asv-selection)", stylesheet)

@@ -4,7 +4,6 @@ import tempfile
 from pathlib import Path
 
 ANONYMOUS_MACHINE_FIELDS = {
-    "num_cpu": "anonymous",
     "os": "anonymous",
     "ram": "anonymous",
 }
@@ -142,12 +141,15 @@ def _publishable_machine(machine):
         raise ValueError("ASV machine metadata does not contain a processor name.")
     if Path(processor).name != processor or processor in {".", ".."}:
         raise ValueError(f"Processor name is not a safe directory name: {processor!r}.")
-    return processor, {
+    published = {
         **machine,
         **ANONYMOUS_MACHINE_FIELDS,
+        "num_cpu": "anonymous",
         "machine": processor,
         "cpu": processor,
     }
+    published.pop("instruction_sets", None)
+    return processor, published
 
 
 def _merge_mapping(target, source, description):

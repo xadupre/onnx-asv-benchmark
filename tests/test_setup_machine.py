@@ -8,6 +8,8 @@ from pathlib import Path
 
 from asv.machine import Machine
 
+from tools.setup_machine import detect_instruction_sets, instruction_sets
+
 SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "setup_machine.py"
 
 
@@ -21,6 +23,7 @@ class TestSetupMachine(unittest.TestCase):
         self.processor = self.profile["cpu"]
         self.machine = self.processor
         self.profile["machine"] = self.machine
+        self.profile["instruction_sets"] = detect_instruction_sets()
 
     def run_setup(self, *args):
         return subprocess.run(
@@ -89,6 +92,17 @@ class TestSetupMachine(unittest.TestCase):
         result = self.run_setup()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(self.path.read_text())[self.machine], self.profile)
+
+    def test_instruction_sets(self):
+        cpuinfo = """\
+processor : 0
+flags : sse2 pni ssse3 sse4_1 sse4_2 avx avx2 avx512f avx512_vnni
+"""
+        self.assertEqual(
+            instruction_sets(cpuinfo),
+            "SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, AVX2, "
+            "AVX-512F, AVX-512VNNI",
+        )
 
 
 if __name__ == "__main__":
