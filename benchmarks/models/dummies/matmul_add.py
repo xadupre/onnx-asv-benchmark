@@ -5,6 +5,7 @@ import onnx_light.onnx.numpy_helper as onh
 from benchmarks.common import (
     BACKENDS,
     MODEL_DTYPES,
+    input_shape_label,
     run_session,
     setup_session,
     standard_normal,
@@ -12,12 +13,12 @@ from benchmarks.common import (
 
 
 class MatMulAdd:
-    params = (MODEL_DTYPES, BACKENDS)
-    param_names = ("dtype", "backend")
+    params = (("X=64x256",), MODEL_DTYPES, BACKENDS)
+    param_names = ("shape", "dtype", "backend")
     number = 3
     timeout = 10
 
-    def setup(self, dtype, backend):
+    def setup(self, shape, dtype, backend):
         numpy_dtype = np.dtype(dtype)
         tensor_dtype = oh.np_dtype_to_tensor_dtype(numpy_dtype)
         rng = np.random.default_rng(0)
@@ -41,7 +42,9 @@ class MatMulAdd:
             ir_version=10,
         )
         feeds = {"X": standard_normal(rng, (64, 256), numpy_dtype)}
+        if shape != input_shape_label(feeds):
+            raise ValueError(f"Unexpected input shape parameter {shape!r}.")
         setup_session(self, backend, model, feeds)
 
-    def time_run(self, dtype, backend):
+    def time_run(self, shape, dtype, backend):
         run_session(self)

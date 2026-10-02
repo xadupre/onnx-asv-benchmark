@@ -82,6 +82,12 @@ asv run --quick --machine "$machine"
 Each benchmark has its own `number` of timed calls per sample, from one for
 MatMul to five for Relu. Every benchmark has a 10-second timeout.
 
+Every result records the complete input tensor shapes as an ASV `shape`
+parameter, alongside `dtype` and `backend` where applicable. Multi-input
+operators include each input name and shape; scalar and input-free cases are
+identified explicitly. Tiny-LLM records the prefill, decode, cache, and
+generation shapes.
+
 To check that every benchmark runs on all three backends in an environment
 with the benchmark dependencies installed:
 

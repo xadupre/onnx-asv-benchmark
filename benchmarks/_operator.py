@@ -16,6 +16,9 @@ from onnx_light.onnx_py._onnxpykernels.runtime import (
 )
 from onnx_light_cpu import register_kernels_for_session
 
+from benchmarks.common import input_shape_label
+from benchmarks._operator_shapes import OPERATOR_INPUT_SHAPES
+
 NONDETERMINISTIC_OPERATORS = {
     "Bernoulli",
     "Multinomial",
@@ -125,16 +128,22 @@ class OperatorBenchmark:
     case_name = None
     case_mode = "BENCHMARK"
     backends = ("onnx-light",)
-    param_names = ("backend",)
+    param_names = ("shape", "backend")
 
     def __init_subclass__(cls):
         super().__init_subclass__()
         if "onnx-light" in cls.backends and "onnx-light-cpu" not in cls.backends:
             cls.backends = (*cls.backends, "onnx-light-cpu")
-        cls.params = cls.backends
+        cls.shapes = (OPERATOR_INPUT_SHAPES[cls.case_name],)
+        cls.params = (cls.shapes, cls.backends)
 
-    def setup(self, backend):
+    def setup(self, shape, backend):
         case, feeds, expected_by_name = _load_case(self.case_name, self.case_mode)
+        actual_shape = input_shape_label(feeds)
+        if shape != actual_shape:
+            raise ValueError(
+                f"Input shape parameter {shape!r} does not match {actual_shape!r}."
+            )
         model_bytes = case.model.SerializeToString()
         if backend == "onnxruntime":
             session = onnxruntime.InferenceSession(
@@ -166,17 +175,19 @@ class OperatorBenchmark:
         self.feeds = feeds
         self.session = session
 
-    def time_run(self, backend):
+    def time_run(self, shape, backend):
         self.session.run(None, self.feeds)
 
 
 class QuantizePagedCacheBenchmark:
-    params = ("onnx-light", "onnx-light-cpu")
-    param_names = ("backend",)
+    params = (("cache=1x8x512x64",), ("onnx-light", "onnx-light-cpu"))
+    param_names = ("shape", "backend")
     number = 1
     timeout = 60
 
-    def setup(self, backend):
+    def setup(self, shape, backend):
+        if shape != self.params[0][0]:
+            raise ValueError(f"Unexpected input shape parameter {shape!r}.")
         cache = onnx_light.PagedCacheProto()
         for page_index in range(16):
             block = cache.blocks.add()
@@ -265,5 +276,5 @@ class QuantizePagedCacheBenchmark:
         self.model = model
         self.session = session
 
-    def time_run(self, backend):
+    def time_run(self, shape, backend):
         self.session.run(self.context)

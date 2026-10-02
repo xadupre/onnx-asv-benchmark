@@ -139,9 +139,12 @@ class TestBenchmarks(unittest.TestCase):
             self.assertTrue(operators.isdisjoint(category_operators))
             operators.update(category_operators)
             for benchmark in benchmarks[category].values():
-                self.assertIn("onnx-light", benchmark.params)
+                self.assertEqual(benchmark.param_names, ("shape", "backend"))
+                self.assertEqual(len(benchmark.params[0]), 1)
+                self.assertTrue(benchmark.params[0][0])
+                self.assertIn("onnx-light", benchmark.params[1])
                 self.assertTrue(
-                    set(benchmark.params)
+                    set(benchmark.params[1])
                     <= {
                         "onnxruntime",
                         "onnx-reference",
@@ -149,7 +152,7 @@ class TestBenchmarks(unittest.TestCase):
                         "onnx-light-cpu",
                     }
                 )
-                self.assertIn("onnx-light-cpu", benchmark.params)
+                self.assertIn("onnx-light-cpu", benchmark.params[1])
         self.assertEqual(len(operators), 225)
 
     def test_one_operator_per_category(self):
@@ -157,34 +160,41 @@ class TestBenchmarks(unittest.TestCase):
         for category, operator in SMOKE_TESTS.items():
             with self.subTest(category=category, operator=operator):
                 benchmark = benchmarks[category][operator]()
-                benchmark.setup("onnx-light")
-                benchmark.time_run("onnx-light")
+                shape = benchmark.params[0][0]
+                benchmark.setup(shape, "onnx-light")
+                benchmark.time_run(shape, "onnx-light")
 
     # 0.1.16 omitted the compiled _cpuregister extension; see onnx-light-cpu#827.
     @requires_onnx_light_cpu("0.1.17")
     def test_onnx_light_cpu_operator(self):
         benchmark = operator_benchmarks()["math"]["Add"]()
-        benchmark.setup("onnx-light-cpu")
+        shape = benchmark.params[0][0]
+        benchmark.setup(shape, "onnx-light-cpu")
         set_kernel_usage_recording(benchmark.session, True)
-        benchmark.time_run("onnx-light-cpu")
+        benchmark.time_run(shape, "onnx-light-cpu")
         self.assertIn(
             registered_kernel_names()["Add"],
             used_kernel_names(benchmark.session),
         )
 
     def test_model_benchmarks(self):
-        self.assertEqual(MatMulAdd.params[0], MODEL_DTYPES)
-        self.assertEqual(MLP.params[0], MODEL_DTYPES)
+        self.assertEqual(MatMulAdd.params[1], MODEL_DTYPES)
+        self.assertEqual(MLP.params[1], MODEL_DTYPES)
         for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
-            self.assertEqual(benchmark_type.param_names[0], "dtype")
-        self.assertEqual(TinyLLM.params[0], PRECISIONS)
+            self.assertEqual(
+                benchmark_type.param_names,
+                ("shape", "dtype", "backend"),
+            )
+            self.assertEqual(len(benchmark_type.params[0]), 1)
+            self.assertTrue(benchmark_type.params[0][0])
+        self.assertEqual(TinyLLM.params[1], PRECISIONS)
         self.assertEqual(
-            TinyLLM.params[1],
+            TinyLLM.params[2],
             ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu"),
         )
-        self.assertEqual(TinyLLMGenAI.params[0], PRECISIONS)
+        self.assertEqual(TinyLLMGenAI.params[1], PRECISIONS)
         self.assertEqual(
-            TinyLLMGenAI.params[1],
+            TinyLLMGenAI.params[2],
             (
                 "onnxruntime-genai",
                 "onnx-reference",
@@ -193,10 +203,10 @@ class TestBenchmarks(unittest.TestCase):
             ),
         )
         for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
-            params = benchmark_type.params
-            dtype_values, backend_values = params
+            shape_values, dtype_values, backend_values = benchmark_type.params
             params = (
-                (dtype_name, backend)
+                (shape, dtype_name, backend)
+                for shape in shape_values
                 for dtype_name in dtype_values
                 for backend in backend_values
             )
@@ -225,12 +235,18 @@ class TestBenchmarks(unittest.TestCase):
     def test_onnx_light_cpu_models(self):
         for benchmark_type, parameter_values in (
             *(
-                (benchmark_type, (dtype_name, "onnx-light-cpu"))
+                (
+                    benchmark_type,
+                    (benchmark_type.params[0][0], dtype_name, "onnx-light-cpu"),
+                )
                 for benchmark_type in (MatMulAdd, MLP)
                 for dtype_name in MODEL_DTYPES
             ),
             *(
-                (TinyLLMGenAI, (precision, backend))
+                (
+                    TinyLLMGenAI,
+                    (TinyLLMGenAI.params[0][0], precision, backend),
+                )
                 for precision in PRECISIONS
                 for backend in ("onnx-light", "onnx-light-cpu")
             ),
