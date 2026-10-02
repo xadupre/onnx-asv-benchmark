@@ -202,14 +202,9 @@ class TestBenchmarks(unittest.TestCase):
             )
             for parameter_values in params:
                 backend = parameter_values[-1]
-                if (
+                if backend == "onnx-light-cpu" or (
                     benchmark_type in {TinyLLM, TinyLLMGenAI}
-                    and backend
-                    in {
-                        "onnx-reference",
-                        "onnx-light",
-                        "onnx-light-cpu",
-                    }
+                    and backend in {"onnx-reference", "onnx-light"}
                 ):
                     continue
                 is_available = getattr(benchmark_type, "is_available", None)
