@@ -178,10 +178,19 @@ class TestBenchmarks(unittest.TestCase):
         for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
             self.assertEqual(benchmark_type.param_names[0], "dtype")
         self.assertEqual(TinyLLM.params[0], PRECISIONS)
+        self.assertEqual(
+            TinyLLM.params[1],
+            ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu"),
+        )
         self.assertEqual(TinyLLMGenAI.params[0], PRECISIONS)
         self.assertEqual(
             TinyLLMGenAI.params[1],
-            ("onnxruntime-genai", "onnx-light", "onnx-light-cpu"),
+            (
+                "onnxruntime-genai",
+                "onnx-reference",
+                "onnx-light",
+                "onnx-light-cpu",
+            ),
         )
         for benchmark_type in (MatMulAdd, MLP, TinyLLM, TinyLLMGenAI):
             params = benchmark_type.params
@@ -194,7 +203,8 @@ class TestBenchmarks(unittest.TestCase):
             for parameter_values in params:
                 backend = parameter_values[-1]
                 if backend == "onnx-light-cpu" or (
-                    benchmark_type is TinyLLMGenAI and backend == "onnx-light"
+                    benchmark_type in {TinyLLM, TinyLLMGenAI}
+                    and backend in {"onnx-reference", "onnx-light"}
                 ):
                     continue
                 is_available = getattr(benchmark_type, "is_available", None)
