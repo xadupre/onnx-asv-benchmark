@@ -31,6 +31,9 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn('name="color-scheme" content="light dark"', page)
             self.assertIn('href="system-theme.css"', page)
             self.assertIn("#even-spacing, #date-scale", page)
+            self.assertIn('class="runtime-grid"', page)
+            self.assertEqual(page.count('class="runtime-card"'), 5)
+            self.assertIn('id="benchmark-navigation"', page)
             self.assertIn("var date_scale = true;", graph)
             self.assertIn("axisLabel = 'date';", graph)
             self.assertIn('text = "date";', graph)
@@ -51,11 +54,16 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("item.series.parameters", graph)
             self.assertIn("parts.slice(0, 2).join(' / ')", grid)
             self.assertIn("bm.name.split('.').slice(2).join('.')", grid)
+            self.assertIn("make_summary_navigation(groups)", grid)
+            self.assertIn("data-family", grid)
+            self.assertIn("data-group", grid)
             self.assertNotIn(
                 '$.asv.pretty_unit(y, unit) + " @ " + commit_hash',
                 graph,
             )
             self.assertIn("@media (prefers-color-scheme: dark)", stylesheet)
+            self.assertIn(".runtime-grid", stylesheet)
+            self.assertIn("#benchmark-navigation", stylesheet)
 
     def test_unexpected_asv_output_is_not_modified(self):
         with tempfile.TemporaryDirectory() as directory:
