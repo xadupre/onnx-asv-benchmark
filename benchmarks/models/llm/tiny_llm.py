@@ -2,9 +2,11 @@ import os
 import tempfile
 
 import numpy as np
+import onnx
 import onnxruntime
 import onnxruntime_genai as og
 import torch
+from onnx.reference import ReferenceEvaluator as OnnxReferenceEvaluator
 from onnx_light import onnx as onnx_light
 from onnx_light.onnx.reference import ReferenceEvaluator as OnnxLightReferenceEvaluator
 from onnx_light_cpu import register_kernels_for_session
@@ -77,7 +79,7 @@ class _TinyLLMBase:
 
     @staticmethod
     def is_available(precision, backend):
-        return backend in {"onnx-light", "onnx-light-cpu"} or precision != "bf16"
+        return backend not in {"onnxruntime", "onnxruntime-genai"} or precision != "bf16"
 
     def setup(self, precision, backend):
         if not self.is_available(precision, backend):
@@ -130,7 +132,24 @@ class _TinyLLMBase:
 
         model_path = os.path.join(output_directory, "model.onnx")
         if backend == "onnxruntime":
-            self._setup_onnxruntime(model_path, precision, config)
+            self.session = onnxruntime.InferenceSession(
+                model_path,
+                providers=["CPUExecutionProvider"],
+            )
+            output_names = [output.name for output in self.session.get_outputs()]
+            self._setup_inference(output_names, precision, config)
+        elif backend == "onnx-reference":
+            model = onnx.load(model_path, load_external_data=True)
+            opsets = {opset.domain: opset.version for opset in model.opset_import}
+            if "" not in opsets and "ai.onnx" in opsets:
+                opsets[""] = opsets["ai.onnx"]
+            self.session = OnnxReferenceEvaluator(model.graph, opsets=opsets)
+            self.output_names = [output.name for output in model.graph.output]
+            if self.measure_inference:
+                self._setup_inference(self.output_names, precision, config)
+            else:
+                self._setup_generation_feeds(precision)
+                self._generate_reference()
         elif backend == "onnxruntime-genai":
             self.genai_model = og.Model(output_directory)
             self._generate_genai()
@@ -139,30 +158,16 @@ class _TinyLLMBase:
             self.session = OnnxLightReferenceEvaluator(model)
             if backend == "onnx-light-cpu":
                 register_kernels_for_session(self.session)
-            self.generation_feeds = {
-                "input_ids": np.array([self.prompt_tokens], dtype=np.int64),
-                "attention_mask": np.ones(
-                    (1, len(self.prompt_tokens)),
-                    dtype=np.int64,
-                ),
-                "past_key_values.0.key": np.empty(
-                    (1, 4, 0, 64),
-                    dtype=_cache_dtype(precision),
-                ),
-                "past_key_values.0.value": np.empty(
-                    (1, 4, 0, 64),
-                    dtype=_cache_dtype(precision),
-                ),
-            }
-            self._generate_onnx_light()
+            if self.measure_inference:
+                output_names = [output.name for output in model.graph.output]
+                self._setup_inference(output_names, precision, config)
+            else:
+                self._setup_generation_feeds(precision)
+                self._generate_onnx_light()
         else:
             raise ValueError(f"Unexpected backend {backend!r}.")
 
-    def _setup_onnxruntime(self, model_path, precision, config):
-        self.session = onnxruntime.InferenceSession(
-            model_path,
-            providers=["CPUExecutionProvider"],
-        )
+    def _setup_inference(self, output_names, precision, config):
         self.prefill_feeds = {
             "input_ids": np.arange(CACHE_LENGTH, dtype=np.int64).reshape(
                 1,
@@ -181,7 +186,6 @@ class _TinyLLMBase:
                 dtype=_cache_dtype(precision),
             ),
         }
-        output_names = [output.name for output in self.session.get_outputs()]
         self.prefill_outputs = dict(
             zip(
                 output_names,
@@ -212,6 +216,23 @@ class _TinyLLMBase:
             raise AssertionError(
                 f"Unexpected decode logits shape {decode_logits.shape!r}."
             )
+
+    def _setup_generation_feeds(self, precision):
+        self.generation_feeds = {
+            "input_ids": np.array([self.prompt_tokens], dtype=np.int64),
+            "attention_mask": np.ones(
+                (1, len(self.prompt_tokens)),
+                dtype=np.int64,
+            ),
+            "past_key_values.0.key": np.empty(
+                (1, 4, 0, 64),
+                dtype=_cache_dtype(precision),
+            ),
+            "past_key_values.0.value": np.empty(
+                (1, 4, 0, 64),
+                dtype=_cache_dtype(precision),
+            ),
+        }
 
     def teardown(self, precision, backend):
         if hasattr(self, "genai_model"):
@@ -254,9 +275,41 @@ class _TinyLLMBase:
             raise AssertionError("onnx-light produced no tokens.")
         return generated_tokens
 
+    def _generate_reference(self):
+        feeds = self.generation_feeds.copy()
+        generated_tokens = []
+        for _ in range(MAX_NEW_TOKENS):
+            outputs = dict(
+                zip(
+                    self.output_names,
+                    self.session.run(self.output_names, feeds),
+                    strict=True,
+                )
+            )
+            token = int(np.argmax(outputs["logits"][0, -1]))
+            generated_tokens.append(token)
+            if token == 2:
+                break
+            feeds = {
+                "input_ids": np.array([[token]], dtype=np.int64),
+                "attention_mask": np.ones(
+                    (1, len(self.prompt_tokens) + len(generated_tokens)),
+                    dtype=np.int64,
+                ),
+                "past_key_values.0.key": outputs["present.0.key"],
+                "past_key_values.0.value": outputs["present.0.value"],
+            }
+        if not generated_tokens:
+            raise AssertionError("ONNX Reference produced no tokens.")
+        return generated_tokens
+
 
 class TinyLLM(_TinyLLMBase):
-    params = (PRECISIONS, ("onnxruntime",))
+    measure_inference = True
+    params = (
+        PRECISIONS,
+        ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu"),
+    )
 
     def time_prefill(self, precision, backend):
         self.session.run(["logits"], self.prefill_feeds)
@@ -266,13 +319,16 @@ class TinyLLM(_TinyLLMBase):
 
 
 class TinyLLMGenAI(_TinyLLMBase):
+    measure_inference = False
     params = (
         PRECISIONS,
-        ("onnxruntime-genai", "onnx-light", "onnx-light-cpu"),
+        ("onnxruntime-genai", "onnx-reference", "onnx-light", "onnx-light-cpu"),
     )
 
     def time_generate(self, precision, backend):
         if backend == "onnxruntime-genai":
             self._generate_genai()
+        elif backend == "onnx-reference":
+            self._generate_reference()
         else:
             self._generate_onnx_light()
