@@ -5,4 +5,4 @@ class LSTM(_OperatorBenchmark):
     operator = "LSTM"
     case_name = "test_cc_lstm_benchmark"
     case_mode = "BENCHMARK"
-    backends = ("onnx-light",)
+    backends = ("onnxruntime", "onnx-reference", "onnx-light")

@@ -11,46 +11,6 @@ ENTRY_PATTERN = re.compile(
     r'\{"([^:]+(?:\.[^:]+)*):([A-Za-z0-9_]+)",\s*'
     r"MakeKernel<onnx_kernels::kernel::([A-Za-z0-9_]+)>\(\)\}"
 )
-UNSUPPORTED_BACKENDS = {
-    "onnxruntime": {
-        "Bernoulli",
-        "CastMap",
-        "CausalConvWithState",
-        "DictVectorizer",
-        "GlobalLpPool",
-        "GRU",
-        "ImageDecoder",
-        "LayerNormalization",
-        "LinearAttention",
-        "LinearClassifier",
-        "LSTM",
-        "MaxRoiPool",
-        "Multinomial",
-        "RandomNormal",
-        "RandomNormalLike",
-        "RandomUniform",
-        "RandomUniformLike",
-        "RNN",
-        "SwiGLU",
-        "TreeEnsembleClassifier",
-    },
-    "onnx-reference": {
-        "CastMap",
-        "CategoryMapper",
-        "ConvTranspose",
-        "DeformConv",
-        "GRU",
-        "GridSample",
-        "LSTM",
-        "MaxRoiPool",
-        "Multinomial",
-        "Optional",
-        "RNN",
-        "Scatter",
-    },
-}
-
-
 def _snake_case(name):
     value = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", name)
     value = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", value).lower()
@@ -143,18 +103,7 @@ def _write_module(path, class_name, case_name, case_mode, domain):
             encoding="utf-8",
         )
         return
-    if domain == "ai.rt":
-        selected = ["onnx-light"]
-    elif domain == "ai.onnx.preview":
-        selected = ["onnx-reference", "onnx-light"]
-    elif domain == "ai.onnx.preview.training":
-        selected = ["onnx-reference", "onnx-light"]
-    else:
-        selected = [
-            backend
-            for backend in ("onnxruntime", "onnx-reference", "onnx-light")
-            if class_name not in UNSUPPORTED_BACKENDS.get(backend, set())
-        ]
+    selected = ["onnxruntime", "onnx-reference", "onnx-light"]
     quoted_backends = ", ".join(f'"{backend}"' for backend in selected)
     backends = f"({quoted_backends}{',' if len(selected) == 1 else ''})"
     path.write_text(

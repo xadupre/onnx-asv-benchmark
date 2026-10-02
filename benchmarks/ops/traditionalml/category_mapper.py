@@ -5,4 +5,4 @@ class CategoryMapper(_OperatorBenchmark):
     operator = "CategoryMapper"
     case_name = "test_cc_category_mapper_benchmark"
     case_mode = "BENCHMARK"
-    backends = ("onnxruntime", "onnx-light")
+    backends = ("onnxruntime", "onnx-reference", "onnx-light")

@@ -5,4 +5,4 @@ class DelayedInitializer(_OperatorBenchmark):
     operator = "DelayedInitializer"
     case_name = "test_cc_delayedinitializer_benchmark"
     case_mode = "BENCHMARK"
-    backends = ("onnx-light",)
+    backends = ("onnxruntime", "onnx-reference", "onnx-light")
