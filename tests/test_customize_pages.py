@@ -39,6 +39,8 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("var date_scale = true;", graph)
             self.assertIn("axisLabel = 'date';", graph)
             self.assertIn('text = "date";', graph)
+            self.assertIn("if (key == 'instruction_sets')", graph)
+            self.assertIn("value.split(', ').pop()", graph)
             self.assertIn("prefers-color-scheme: dark", graph)
             self.assertEqual(graph.count("axisLabelColour"), 2)
             self.assertIn("var(--asv-background)", graph)

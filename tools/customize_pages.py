@@ -107,6 +107,14 @@ def customize_pages(html_dir):
     graph = _replace_once(graph, "var date_scale = false;", "var date_scale = true;")
     graph = _replace_once(
         graph,
+        "                            parts.push(key + \"-\" + value);",
+        "                            if (key == 'instruction_sets') {\n"
+        "                                value = value.split(', ').pop();\n"
+        "                            }\n"
+        '                            parts.push(key + "-" + value);',
+    )
+    graph = _replace_once(
+        graph,
         "function handle_x_scale(options) {\n",
         "function handle_x_scale(options) {\n"
         "        date_scale = true;\n"
