@@ -164,8 +164,8 @@ class TestBenchmarks(unittest.TestCase):
                 benchmark.setup(shape, "onnx-light")
                 benchmark.time_run(shape, "onnx-light")
 
-    # 0.1.16 omitted the compiled _cpuregister extension; see onnx-light-cpu#827.
-    @requires_onnx_light_cpu("0.1.17")
+    # 0.1.17 was built against an onnx-light ABI newer than the 0.1.29 wheel.
+    @requires_onnx_light_cpu("0.1.18")
     def test_onnx_light_cpu_operator(self):
         benchmark = operator_benchmarks()["math"]["Add"]()
         shape = benchmark.params[0][0]
@@ -252,8 +252,8 @@ class TestBenchmarks(unittest.TestCase):
                 ):
                     self.run_benchmark(benchmark_type, parameter_values)
 
-    # Generation exposes the missing 0.1.16 registration extension and kernels.
-    @requires_onnx_light_cpu("0.1.17")
+    # 0.1.17 cannot register kernels on sessions created by onnx-light 0.1.29.
+    @requires_onnx_light_cpu("0.1.18")
     def test_onnx_light_cpu_models(self):
         for benchmark_type, parameter_values in (
             *(

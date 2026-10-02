@@ -28,11 +28,11 @@ python -m pip install asv
 ```
 
 ASV creates a Python 3.12 virtual environment and installs the pinned NumPy,
-ONNX, and ONNX Runtime releases from PyPI. It installs onnx-light 0.1.28 from
+ONNX, and ONNX Runtime releases from PyPI. It installs onnx-light 0.1.29 from
 the wheel published on the
-[onnx-light release page](https://github.com/xadupre/onnx-light/releases/tag/0.1.28)
-and onnx-light-cpu 0.1.16 from its
-[first release](https://github.com/xadupre/onnx-light-cpu/releases/tag/0.1.16).
+[onnx-light release page](https://github.com/xadupre/onnx-light/releases/tag/0.1.29)
+and onnx-light-cpu 0.1.17 from its
+[release page](https://github.com/xadupre/onnx-light-cpu/releases/tag/0.1.17).
 
 ## Run
 
