@@ -49,6 +49,8 @@ class TestResultShards(unittest.TestCase):
                 "version": 1,
                 "machine": "xadupre2025",
                 "cpu": "Example CPU",
+                "num_cpu": "8",
+                "instruction_sets": "AVX, AVX2",
             },
         )
         self.write_json(
@@ -57,7 +59,12 @@ class TestResultShards(unittest.TestCase):
                 "commit_hash": "abc",
                 "env_name": "existing",
                 "date": 1,
-                "params": {"machine": "xadupre2025", "cpu": "Example CPU"},
+                "params": {
+                    "machine": "xadupre2025",
+                    "cpu": "Example CPU",
+                    "num_cpu": "8",
+                    "instruction_sets": "AVX, AVX2",
+                },
                 "python": "3.12",
                 "requirements": {},
                 "env_vars": {},
@@ -150,6 +157,13 @@ class TestResultShards(unittest.TestCase):
         )
         self.assertEqual(results["params"]["machine"], "Example CPU")
         self.assertEqual(results["params"]["cpu"], "Example CPU")
+        self.assertEqual(results["params"]["num_cpu"], "8")
+        self.assertEqual(results["params"]["instruction_sets"], "AVX, AVX2")
+        machine = json.loads(
+            (merged / "Example CPU" / "machine.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(machine["num_cpu"], "anonymous")
+        self.assertNotIn("instruction_sets", machine)
 
         second_source = self.root / "second-source"
         self.make_results(second_source)

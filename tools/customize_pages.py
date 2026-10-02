@@ -35,6 +35,24 @@ RUNTIME_OVERVIEW = """\
             <span>Generation API for autoregressive models, used by the Tiny-LLM benchmark.</span>
           </a>
         </div>
+        <section class="machine-overview" aria-labelledby="machine-overview-title">
+          <h2 id="machine-overview-title">Benchmark processors</h2>
+          <p>
+            Logical cores and instruction sets available to each benchmark worker.
+          </p>
+          <div class="table-responsive">
+            <table class="table machine-table">
+              <thead>
+                <tr>
+                  <th>Processor</th>
+                  <th>Logical cores</th>
+                  <th>Instruction sets</th>
+                </tr>
+              </thead>
+              <tbody id="machine-summary"></tbody>
+            </table>
+          </div>
+        </section>
         <nav id="benchmark-navigation" aria-label="Benchmark groups">
           <div class="benchmark-family-filter btn-group" role="group">
             <button class="btn btn-default active" type="button" data-family="all">All</button>
@@ -103,7 +121,8 @@ def customize_pages(html_dir):
     graph = _replace_once(
         graph,
         "param != 'machine'",
-        "param != 'machine' && param != 'cpu'",
+        "param != 'machine' && param != 'cpu' && param != 'num_cpu' && "
+        "param != 'instruction_sets'",
     )
     graph = _replace_once(
         graph,
@@ -141,9 +160,15 @@ def customize_pages(html_dir):
         "                        new Date(item.datapoint[0]).toLocaleString()\n"
         "                    ];\n"
         "                    $.each(item.series.parameters, function(key, value) {\n"
-        "                        if (key != 'commit' && key != 'cpu' &&\n"
+        "                        if (key != 'commit' && key != 'machine' &&\n"
         "                                value !== null && value != 'anonymous') {\n"
-        "                            var name = key.replace(/^env-/, '');\n"
+        "                            var parameter_names = {\n"
+        "                                cpu: 'processor',\n"
+        "                                num_cpu: 'logical cores',\n"
+        "                                instruction_sets: 'instruction sets'\n"
+        "                            };\n"
+        "                            var name = parameter_names[key] ||\n"
+        "                                key.replace(/^env-/, '');\n"
         "                            var text = name + ': ' + value;\n"
         '                            contents.push($("<span>").text(text).html());\n'
         "                        }\n"
@@ -172,7 +197,8 @@ def customize_pages(html_dir):
     summary = _replace_once(
         summary,
         "param != 'machine'",
-        "param != 'machine' && param != 'cpu'",
+        "param != 'machine' && param != 'cpu' && param != 'num_cpu' && "
+        "param != 'instruction_sets'",
     )
 
     grid_path = html_dir / "summarygrid.js"
@@ -199,6 +225,39 @@ def customize_pages(html_dir):
         grid,
         "    function benchmark_container(bm) {",
         """\
+    function make_machine_summary() {
+        var machines = {};
+        $.each($.asv.main_json.graph_param_list, function(i, params) {
+            var cpu = params.cpu;
+            if (!cpu || cpu == 'anonymous') {
+                return;
+            }
+            if (machines[cpu] === undefined) {
+                machines[cpu] = {cores: {}, instruction_sets: {}};
+            }
+            if (params.num_cpu && params.num_cpu != 'anonymous') {
+                machines[cpu].cores[params.num_cpu] = true;
+            }
+            if (params.instruction_sets &&
+                    params.instruction_sets != 'unavailable') {
+                machines[cpu].instruction_sets[params.instruction_sets] = true;
+            }
+        });
+
+        var body = $('#machine-summary');
+        $.each(Object.keys(machines).sort(), function(i, cpu) {
+            var machine = machines[cpu];
+            var cores = Object.keys(machine.cores).sort().join(', ') || 'Not recorded';
+            var instruction_sets = Object.keys(machine.instruction_sets)
+                .sort().join('; ') || 'Not recorded';
+            var row = $('<tr/>');
+            row.append($('<th scope="row"/>').text(cpu));
+            row.append($('<td/>').text(cores));
+            row.append($('<td/>').text(instruction_sets));
+            body.append(row);
+        });
+    }
+
     function make_summary_navigation(groups) {
         var filters = $('#benchmark-category-filters');
 
@@ -259,6 +318,7 @@ def customize_pages(html_dir):
         "            group_container.attr('id', 'group-' + group)\n"
         "            group_container.append($('<h1>' + group + '</h1>'));",
         "        var groups = get_benchmarks_by_groups();\n"
+        "        make_machine_summary();\n"
         "        make_summary_navigation(groups);\n"
         "        $.each(groups, function(group, benchmarks) {\n"
         "            var family = benchmarks[0].split('.')[0];\n"

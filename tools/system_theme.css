@@ -80,6 +80,37 @@
     line-height: 1.45;
 }
 
+.machine-overview {
+    margin-bottom: 28px;
+}
+
+.machine-overview h2 {
+    margin-bottom: 4px;
+    font-size: 22px;
+}
+
+.machine-overview > p {
+    color: var(--asv-muted);
+}
+
+.machine-table {
+    margin-bottom: 0;
+    background: var(--asv-panel);
+    border: 1px solid var(--asv-border);
+}
+
+.machine-table > thead > tr > th,
+.machine-table > tbody > tr > th,
+.machine-table > tbody > tr > td {
+    padding: 10px 12px;
+    vertical-align: middle;
+    border-color: var(--asv-border);
+}
+
+.machine-table > tbody > tr > th {
+    font-weight: 600;
+}
+
 #benchmark-navigation {
     padding: 16px 0;
     border-top: 1px solid var(--asv-border);

@@ -12,8 +12,10 @@ directories as onnx-light. Model benchmarks live under `benchmarks/models`,
 split between `llm` and `dummies`.
 
 The ASV environment name tracks the pinned dependency versions. ASV's machine
-profile records the processor model, architecture, logical CPU count, and
-memory with every benchmark result.
+profile records the processor model, architecture, logical CPU count,
+available SIMD instruction sets, and memory with every benchmark result. The
+published home page summarizes the logical CPU count and instruction sets for
+every benchmark processor.
 All models are created and checked with onnx-light, then serialized for the
 ONNX reference evaluator and ONNX Runtime.
 
