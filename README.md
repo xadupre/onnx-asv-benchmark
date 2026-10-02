@@ -167,9 +167,10 @@ must be configured. Pass `--publish-pages` to rebuild the static HTML after
 changing its presentation; the workflow can also be started manually from
 GitHub Actions.
 
-The `Weekly benchmark shards` workflow assigns every operator category and
-model module to one of seven daily schedule buckets, so every shard runs once
-per week and finishes independently. Configure a `CACHE_DATA_TOKEN` Actions
+The `Twice-weekly benchmark shards` workflow assigns every operator category
+and model module to one of seven schedule buckets. Each bucket runs twice per
+week, with its executions spaced approximately three and a half days apart,
+and every shard finishes independently. Configure a `CACHE_DATA_TOKEN` Actions
 secret with write access to `xadupre/cache_data`. Shard completion does not
 trigger a Pages deployment; it refreshes only the remote JSON data. The static
 Pages workflow runs when its presentation files change or when started

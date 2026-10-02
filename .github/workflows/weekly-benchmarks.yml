@@ -1,13 +1,20 @@
-name: Weekly benchmark shards
+name: Twice-weekly benchmark shards
 
 on:
   schedule:
     - cron: "17 1 * * 1"
+    - cron: "47 1 * * 1"
     - cron: "17 5 * * 2"
+    - cron: "47 5 * * 2"
     - cron: "17 9 * * 3"
+    - cron: "47 9 * * 3"
+    - cron: "47 11 * * 4"
     - cron: "17 13 * * 4"
+    - cron: "47 13 * * 4"
     - cron: "17 17 * * 5"
+    - cron: "47 17 * * 5"
     - cron: "17 21 * * 6"
+    - cron: "47 21 * * 6"
     - cron: "17 23 * * 0"
   workflow_dispatch:
     inputs:
@@ -38,12 +45,19 @@ jobs:
           else
             case "$SCHEDULE" in
               "17 1 * * 1") bucket=0 ;;
+              "47 13 * * 4") bucket=0 ;;
               "17 5 * * 2") bucket=1 ;;
+              "47 17 * * 5") bucket=1 ;;
               "17 9 * * 3") bucket=2 ;;
+              "47 21 * * 6") bucket=2 ;;
               "17 13 * * 4") bucket=3 ;;
+              "47 1 * * 1") bucket=3 ;;
               "17 17 * * 5") bucket=4 ;;
+              "47 5 * * 2") bucket=4 ;;
               "17 21 * * 6") bucket=5 ;;
+              "47 9 * * 3") bucket=5 ;;
               "17 23 * * 0") bucket=6 ;;
+              "47 11 * * 4") bucket=6 ;;
               *) echo "Unknown schedule: $SCHEDULE" >&2; exit 1 ;;
             esac
             matrix="$(python tools/scheduled_shards.py "$bucket")"
