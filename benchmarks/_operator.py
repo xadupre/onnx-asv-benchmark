@@ -180,7 +180,10 @@ class OperatorBenchmark:
 
 
 class QuantizePagedCacheBenchmark:
-    params = (("cache=1x8x512x64",), ("onnx-light", "onnx-light-cpu"))
+    params = (
+        ("cache=1x8x512x64",),
+        ("onnxruntime", "onnx-reference", "onnx-light", "onnx-light-cpu"),
+    )
     param_names = ("shape", "backend")
     number = 1
     timeout = 60
@@ -188,6 +191,10 @@ class QuantizePagedCacheBenchmark:
     def setup(self, shape, backend):
         if shape != self.params[0][0]:
             raise ValueError(f"Unexpected input shape parameter {shape!r}.")
+        if backend in {"onnxruntime", "onnx-reference"}:
+            raise NotImplementedError(
+                f"{backend} does not support the ai.rt QuantizePagedCache operator."
+            )
         cache = onnx_light.PagedCacheProto()
         for page_index in range(16):
             block = cache.blocks.add()

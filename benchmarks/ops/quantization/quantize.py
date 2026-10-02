@@ -5,4 +5,4 @@ class Quantize(_OperatorBenchmark):
     operator = "Quantize"
     case_name = "test_cc_quantize_int4"
     case_mode = "TEST"
-    backends = ("onnx-light",)
+    backends = ("onnxruntime", "onnx-reference", "onnx-light")

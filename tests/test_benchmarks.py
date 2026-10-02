@@ -142,17 +142,15 @@ class TestBenchmarks(unittest.TestCase):
                 self.assertEqual(benchmark.param_names, ("shape", "backend"))
                 self.assertEqual(len(benchmark.params[0]), 1)
                 self.assertTrue(benchmark.params[0][0])
-                self.assertIn("onnx-light", benchmark.params[1])
-                self.assertTrue(
-                    set(benchmark.params[1])
-                    <= {
+                self.assertEqual(
+                    benchmark.params[1],
+                    (
                         "onnxruntime",
                         "onnx-reference",
                         "onnx-light",
                         "onnx-light-cpu",
-                    }
+                    ),
                 )
-                self.assertIn("onnx-light-cpu", benchmark.params[1])
         self.assertEqual(len(operators), 225)
 
     def test_one_operator_per_category(self):
