@@ -11,6 +11,7 @@ class TestScheduledShards(unittest.TestCase):
 
         self.assertIn("ops/math", shards)
         self.assertIn("ops/nn", shards)
+        self.assertIn("models/llm/qwen2", shards)
         self.assertIn("models/llm/tiny_llm", shards)
         self.assertIn("models/dummies/mlp", shards)
         self.assertNotIn("__pycache__", shards)

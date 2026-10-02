@@ -25,9 +25,7 @@ INFERENCE_SHAPES = (
     "prefill[input_ids=1x128, attention_mask=1x128, cache=1x4x0x64]; "
     "decode[input_ids=1x1, attention_mask=1x129, cache=1x4x128x64]",
 )
-GENERATION_SHAPES = (
-    "input_ids=1x6, attention_mask=1x6, cache=1x4x0x64",
-)
+GENERATION_SHAPES = ("input_ids=1x6, attention_mask=1x6, cache=1x4x0x64",)
 
 
 def _cache_dtype(precision):
@@ -79,27 +77,15 @@ def _make_tokenizer():
     )
 
 
-class _TinyLLMBase:
+class _CausalLLMBase:
     param_names = ("shape", "dtype", "backend")
     number = 1
     timeout = 60
+    model_name = MODEL_NAME
 
     @staticmethod
-    def is_available(shape, precision, backend):
-        return (
-            backend not in {"onnxruntime", "onnxruntime-genai"}
-            or precision != "bf16"
-        )
-
-    def setup(self, shape, precision, backend):
-        if shape != self.params[0][0]:
-            raise ValueError(f"Unexpected input shape parameter {shape!r}.")
-        if not self.is_available(shape, precision, backend):
-            raise NotImplementedError(
-                "ONNX Runtime does not support the required BF16 kernels on CPU."
-            )
-
-        config = LlamaConfig(
+    def make_config():
+        return LlamaConfig(
             architectures=["LlamaForCausalLM"],
             bos_token_id=1,
             eos_token_id=2,
@@ -115,6 +101,27 @@ class _TinyLLMBase:
             rope_theta=10000.0,
             vocab_size=32000,
         )
+
+    @staticmethod
+    def is_available(shape, precision, backend):
+        return _CausalLLMBase._is_backend_available(precision, backend)
+
+    @staticmethod
+    def _is_backend_available(precision, backend):
+        return (
+            backend not in {"onnxruntime", "onnxruntime-genai"} or precision != "bf16"
+        )
+
+    def setup(self, shape, precision, backend):
+        shape_values = self.params[self.param_names.index("shape")]
+        if shape != shape_values[0]:
+            raise ValueError(f"Unexpected input shape parameter {shape!r}.")
+        if not self._is_backend_available(precision, backend):
+            raise NotImplementedError(
+                "ONNX Runtime does not support the required BF16 kernels on CPU."
+            )
+
+        config = self.make_config()
 
         torch.manual_seed(42)
         source_model = AutoModelForCausalLM.from_config(config)
@@ -133,7 +140,7 @@ class _TinyLLMBase:
             raise AssertionError("The generation prompt produced no tokens.")
 
         create_model(
-            model_name=MODEL_NAME,
+            model_name=self.model_name,
             input_path=source_directory,
             output_dir=output_directory,
             precision=precision,
@@ -316,7 +323,7 @@ class _TinyLLMBase:
         return generated_tokens
 
 
-class TinyLLM(_TinyLLMBase):
+class TinyLLM(_CausalLLMBase):
     measure_inference = True
     params = (
         INFERENCE_SHAPES,
@@ -331,7 +338,7 @@ class TinyLLM(_TinyLLMBase):
         self.session.run(["logits"], self.decode_feeds)
 
 
-class TinyLLMGenAI(_TinyLLMBase):
+class TinyLLMGenAI(_CausalLLMBase):
     measure_inference = False
     params = (
         GENERATION_SHAPES,
