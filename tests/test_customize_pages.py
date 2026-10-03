@@ -41,6 +41,13 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn('text = "date";', graph)
             self.assertIn("if (key == 'instruction_sets')", graph)
             self.assertIn("value.split(', ').pop()", graph)
+            self.assertIn("key == 'num_cpu' && value == 'anonymous'", graph)
+            self.assertIn("backend: 'bck'", graph)
+            self.assertIn(
+                "'env-ONNX_LIGHT_CPU_VERSION': 'env-olcpu'",
+                graph,
+            )
+            self.assertIn("'env-ONNX_LIGHT_VERSION': 'env-ol'", graph)
             self.assertIn("prefers-color-scheme: dark", graph)
             self.assertEqual(graph.count("axisLabelColour"), 2)
             self.assertIn("var(--asv-background)", graph)
