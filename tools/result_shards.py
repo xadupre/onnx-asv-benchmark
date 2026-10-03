@@ -172,12 +172,22 @@ def _merge_machine_params(path, current, incoming):
             continue
         if not isinstance(current_value, str) or not isinstance(incoming_value, str):
             raise ValueError(f"Incompatible ASV machine parameters in {path}.")
-        variants = set(current_value.split("; "))
-        variants.update(incoming_value.split("; "))
-        merged[key] = "; ".join(sorted(variants))
+        if key == "instruction_sets":
+            variants = {
+                variant.strip().replace(", ", ",")
+                for value in (current_value, incoming_value)
+                for variant in value.split(";")
+            }
+            merged[key] = ";".join(sorted(variants))
+        else:
+            variants = set(current_value.split("; "))
+            variants.update(incoming_value.split("; "))
+            merged[key] = "; ".join(sorted(variants))
 
     ignored = {"instruction_sets", "num_cpu"}
-    current_stable = {key: value for key, value in current.items() if key not in ignored}
+    current_stable = {
+        key: value for key, value in current.items() if key not in ignored
+    }
     incoming_stable = {
         key: value for key, value in incoming.items() if key not in ignored
     }

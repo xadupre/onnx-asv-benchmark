@@ -132,19 +132,12 @@ class TestResultShards(unittest.TestCase):
         self.assertTrue(
             (shards / "ops" / "math" / "Example CPU" / "result.json").is_file()
         )
-        math_result_path = (
-            shards / "ops" / "math" / "Example CPU" / "result.json"
-        )
+        math_result_path = shards / "ops" / "math" / "Example CPU" / "result.json"
         math_result = json.loads(math_result_path.read_text(encoding="utf-8"))
         math_result["params"]["num_cpu"] = "4"
         self.write_json(math_result_path, math_result)
         model_result_path = (
-            shards
-            / "models"
-            / "llm"
-            / "tiny_llm"
-            / "Example CPU"
-            / "result.json"
+            shards / "models" / "llm" / "tiny_llm" / "Example CPU" / "result.json"
         )
         model_result = json.loads(model_result_path.read_text(encoding="utf-8"))
         model_result["params"]["instruction_sets"] = "AVX, AVX2, AVX-512F"
@@ -177,7 +170,7 @@ class TestResultShards(unittest.TestCase):
         self.assertEqual(results["params"]["num_cpu"], "4; 8")
         self.assertEqual(
             results["params"]["instruction_sets"],
-            "AVX, AVX2; AVX, AVX2, AVX-512F",
+            "AVX,AVX2;AVX,AVX2,AVX-512F",
         )
         machine = json.loads(
             (merged / "Example CPU" / "machine.json").read_text(encoding="utf-8")

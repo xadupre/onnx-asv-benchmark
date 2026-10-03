@@ -40,7 +40,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("axisLabel = 'date';", graph)
             self.assertIn('text = "date";', graph)
             self.assertIn("if (key == 'instruction_sets')", graph)
-            self.assertIn("value.split(', ').pop()", graph)
+            self.assertIn("value.split(',').pop().trim()", graph)
             self.assertIn(
                 "(key == 'num_cpu' && value == 'anonymous')",
                 graph,
@@ -84,6 +84,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("make_summary_navigation(groups)", grid)
             self.assertIn("make_machine_summary()", grid)
             self.assertIn("params.instruction_sets", grid)
+            self.assertIn("variant.split(',').join(', ')", grid)
             self.assertIn("params.num_cpu", grid)
             self.assertIn("Not recorded", grid)
             self.assertIn("data-family", grid)
