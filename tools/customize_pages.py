@@ -112,7 +112,6 @@ def customize_pages(html_dir):
         "                                    ? value.replace(/^'(.*)'$/, '$1') : value;\n"
         "                            if (key == 'onnxruntime' ||\n"
         "                                    key == 'instruction_sets' ||\n"
-        "                                    key == 'num_cpu' ||\n"
         "                                    key == 'env-ONNX_LIGHT_CPU_VERSION' ||\n"
         "                                    key == 'env-ONNX_LIGHT_VERSION') {\n"
         "                                return;\n"
@@ -124,7 +123,8 @@ def customize_pages(html_dir):
         "                                return;\n"
         "                            }\n"
         "                            var legend_names = {\n"
-        "                                backend: 'bck'\n"
+        "                                backend: 'bck',\n"
+        "                                num_cpu: 'vCPU'\n"
         "                            };\n"
         "                            key = legend_names[key] || key;\n"
         '                            parts.push(key + "-" + normalized_value);',
