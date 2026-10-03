@@ -39,13 +39,10 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("var date_scale = true;", graph)
             self.assertIn("axisLabel = 'date';", graph)
             self.assertIn('text = "date";', graph)
-            self.assertIn("if (key == 'instruction_sets')", graph)
-            self.assertIn("value.split(',').pop().trim()", graph)
-            self.assertIn(
-                "(key == 'num_cpu' && value == 'anonymous')",
-                graph,
-            )
-            self.assertIn("key == 'backend' && value == 'onnxruntime'", graph)
+            self.assertIn("key == 'instruction_sets' ||", graph)
+            self.assertIn("value.replace(/^'(.*)'$/, '$1')", graph)
+            self.assertIn("normalized_value == 'anonymous'", graph)
+            self.assertIn("normalized_value == 'onnxruntime'", graph)
             self.assertIn("'ort-' + state.onnxruntime", graph)
             self.assertIn("key == 'onnxruntime'", graph)
             self.assertIn("backend: 'bck'", graph)
@@ -56,6 +53,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("key == 'env-ONNX_LIGHT_VERSION'", graph)
             self.assertNotIn("'env-olcpu'", graph)
             self.assertNotIn("'env-ol'", graph)
+            self.assertNotIn('key + "-" + value', graph)
             self.assertIn("prefers-color-scheme: dark", graph)
             self.assertEqual(graph.count("axisLabelColour"), 2)
             self.assertIn("var(--asv-background)", graph)

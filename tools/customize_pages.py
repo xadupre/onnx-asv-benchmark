@@ -107,25 +107,28 @@ def customize_pages(html_dir):
     graph = _replace_once(
         graph,
         '                            parts.push(key + "-" + value);',
+        "                            var normalized_value =\n"
+        "                                typeof value == 'string'\n"
+        "                                    ? value.replace(/^'(.*)'$/, '$1') : value;\n"
         "                            if (key == 'onnxruntime' ||\n"
+        "                                    key == 'instruction_sets' ||\n"
         "                                    key == 'env-ONNX_LIGHT_CPU_VERSION' ||\n"
         "                                    key == 'env-ONNX_LIGHT_VERSION' ||\n"
-        "                                    (key == 'num_cpu' && value == 'anonymous')) {\n"
+        "                                    (key == 'num_cpu' &&\n"
+        "                                        normalized_value == 'anonymous')) {\n"
         "                                return;\n"
         "                            }\n"
-        "                            if (key == 'backend' && value == 'onnxruntime') {\n"
+        "                            if (key == 'backend' &&\n"
+        "                                    normalized_value == 'onnxruntime') {\n"
         "                                parts.push(state.onnxruntime\n"
         "                                    ? 'ort-' + state.onnxruntime : 'ort');\n"
         "                                return;\n"
-        "                            }\n"
-        "                            if (key == 'instruction_sets') {\n"
-        "                                value = value.split(',').pop().trim();\n"
         "                            }\n"
         "                            var legend_names = {\n"
         "                                backend: 'bck'\n"
         "                            };\n"
         "                            key = legend_names[key] || key;\n"
-        '                            parts.push(key + "-" + value);',
+        '                            parts.push(key + "-" + normalized_value);',
     )
     graph = _replace_once(
         graph,
