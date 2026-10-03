@@ -33,6 +33,8 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("#even-spacing, #date-scale", page)
             self.assertIn('class="runtime-grid"', page)
             self.assertEqual(page.count('class="runtime-card"'), 5)
+            self.assertIn('class="workflow-status"', page)
+            self.assertIn("genai-compatibility.yml/badge.svg?branch=main", page)
             self.assertIn('id="machine-summary"', page)
             self.assertIn("Logical cores", page)
             self.assertIn('id="benchmark-navigation"', page)
