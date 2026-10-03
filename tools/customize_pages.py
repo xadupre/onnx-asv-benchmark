@@ -107,16 +107,22 @@ def customize_pages(html_dir):
     graph = _replace_once(
         graph,
         '                            parts.push(key + "-" + value);',
-        "                            if (key == 'num_cpu' && value == 'anonymous') {\n"
+        "                            if (key == 'onnxruntime' ||\n"
+        "                                    key == 'env-ONNX_LIGHT_CPU_VERSION' ||\n"
+        "                                    key == 'env-ONNX_LIGHT_VERSION' ||\n"
+        "                                    (key == 'num_cpu' && value == 'anonymous')) {\n"
+        "                                return;\n"
+        "                            }\n"
+        "                            if (key == 'backend' && value == 'onnxruntime') {\n"
+        "                                parts.push(state.onnxruntime\n"
+        "                                    ? 'ort-' + state.onnxruntime : 'ort');\n"
         "                                return;\n"
         "                            }\n"
         "                            if (key == 'instruction_sets') {\n"
         "                                value = value.split(', ').pop();\n"
         "                            }\n"
         "                            var legend_names = {\n"
-        "                                backend: 'bck',\n"
-        "                                'env-ONNX_LIGHT_CPU_VERSION': 'env-olcpu',\n"
-        "                                'env-ONNX_LIGHT_VERSION': 'env-ol'\n"
+        "                                backend: 'bck'\n"
         "                            };\n"
         "                            key = legend_names[key] || key;\n"
         '                            parts.push(key + "-" + value);',
