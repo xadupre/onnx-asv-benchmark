@@ -2,7 +2,6 @@ import argparse
 import shutil
 from pathlib import Path
 
-
 RUNTIME_OVERVIEW = """\
       <section class="benchmark-home">
         <div class="benchmark-introduction">
@@ -107,10 +106,19 @@ def customize_pages(html_dir):
     graph = _replace_once(graph, "var date_scale = false;", "var date_scale = true;")
     graph = _replace_once(
         graph,
-        "                            parts.push(key + \"-\" + value);",
+        '                            parts.push(key + "-" + value);',
+        "                            if (key == 'num_cpu' && value == 'anonymous') {\n"
+        "                                return;\n"
+        "                            }\n"
         "                            if (key == 'instruction_sets') {\n"
         "                                value = value.split(', ').pop();\n"
         "                            }\n"
+        "                            var legend_names = {\n"
+        "                                backend: 'bck',\n"
+        "                                'env-ONNX_LIGHT_CPU_VERSION': 'env-olcpu',\n"
+        "                                'env-ONNX_LIGHT_VERSION': 'env-ol'\n"
+        "                            };\n"
+        "                            key = legend_names[key] || key;\n"
         '                            parts.push(key + "-" + value);',
     )
     graph = _replace_once(
@@ -135,8 +143,7 @@ def customize_pages(html_dir):
     graph = _replace_once(
         graph,
         "else if (params[axis-1].length > 1) {",
-        "else if (params[axis-1].length > 1 || "
-        "param_names[axis-1] == 'backend') {",
+        "else if (params[axis-1].length > 1 || " "param_names[axis-1] == 'backend') {",
     )
     graph = _replace_once(
         graph,
@@ -145,8 +152,7 @@ def customize_pages(html_dir):
     )
     graph = _replace_once(
         graph,
-        "label: graph_content[1],\n"
-        "                        bars: { order: count, },",
+        "label: graph_content[1],\n" "                        bars: { order: count, },",
         "label: graph_content[1],\n"
         "                        parameters: graph_content[2],\n"
         "                        bars: { order: count, },",
@@ -195,9 +201,9 @@ def customize_pages(html_dir):
     )
     graph = _replace_once(
         graph,
-        '"color:#666;background:white;padding-left:0.25em;font-size:smaller;\'',
+        "\"color:#666;background:white;padding-left:0.25em;font-size:smaller;'",
         '"color:var(--asv-muted);background:var(--asv-background);'
-        'padding-left:0.25em;font-size:smaller;\'',
+        "padding-left:0.25em;font-size:smaller;'",
     )
 
     summary_path = html_dir / "summarylist.js"
@@ -322,7 +328,7 @@ def customize_pages(html_dir):
     grid = _replace_once(
         grid,
         "        $.each(get_benchmarks_by_groups(), function(group, benchmarks) {\n"
-        '            var group_container = $(\'<div class="benchmark-group"/>\')\n'
+        "            var group_container = $('<div class=\"benchmark-group\"/>')\n"
         "            group_container.attr('id', 'group-' + group)\n"
         "            group_container.append($('<h1>' + group + '</h1>'));",
         "        var groups = get_benchmarks_by_groups();\n"
@@ -330,7 +336,7 @@ def customize_pages(html_dir):
         "        make_summary_navigation(groups);\n"
         "        $.each(groups, function(group, benchmarks) {\n"
         "            var family = benchmarks[0].split('.')[0];\n"
-        '            var group_container = $(\'<div class="benchmark-group"/>\');\n'
+        "            var group_container = $('<div class=\"benchmark-group\"/>');\n"
         "            group_container.attr('id', 'group-' + group);\n"
         "            group_container.attr('data-family', family);\n"
         "            group_container.attr('data-group', group);\n"
