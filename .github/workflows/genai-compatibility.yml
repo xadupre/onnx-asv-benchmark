@@ -74,9 +74,9 @@ jobs:
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: "4"
         run: |
-          python -m pip install upstream/onnx-light
           python -m pip install scikit-build-core nanobind
+          python -m pip install --no-build-isolation upstream/onnx-light
           CMAKE_ARGS="-DONNX_LIGHT_CPU_RELEASE_WHEEL=ON" \
-            python -m pip install --no-build-isolation upstream/onnx-light-cpu
+            python -m pip install --no-build-isolation --no-deps upstream/onnx-light-cpu
       - name: Run GenAI scenarios
         run: python -m tools.check_genai
