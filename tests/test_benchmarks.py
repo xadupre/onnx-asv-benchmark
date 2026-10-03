@@ -194,6 +194,14 @@ class TestBenchmarks(unittest.TestCase):
     def test_operator_dtypes(self):
         benchmarks = operator_benchmarks()
         expected = {
+            ("logical", "Equal"): (
+                "float16",
+                "float64",
+                "bfloat16",
+                "uint8",
+                "int64",
+            ),
+            ("logical", "IsNaN"): ("float16", "float64", "bfloat16"),
             ("math", "Add"): ("float16", "float64", "bfloat16", "uint8", "int64"),
             ("math", "Div"): ("float16", "float64", "bfloat16", "uint8", "int64"),
             ("math", "Gemm"): (
@@ -233,6 +241,8 @@ class TestBenchmarks(unittest.TestCase):
                     self.assertIn(dtype, benchmark_type.dtypes)
 
         for category, operator, dtype in (
+            ("logical", "Equal", "int32"),
+            ("logical", "IsNaN", "float16"),
             ("math", "Add", "int32"),
             ("math", "Div", "float16"),
             ("math", "MatMul", "int32"),

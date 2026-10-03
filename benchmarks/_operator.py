@@ -43,6 +43,23 @@ TENSOR_TYPES = {
     "int32": onnx_light.TensorProto.INT32,
     "int64": onnx_light.TensorProto.INT64,
 }
+TENSOR_TYPE_STRINGS = {
+    f"tensor({name})"
+    for name in (
+        "float16",
+        "float",
+        "double",
+        "bfloat16",
+        "uint8",
+        "uint16",
+        "uint32",
+        "uint64",
+        "int8",
+        "int16",
+        "int32",
+        "int64",
+    )
+}
 
 
 def _numpy_dtype(dtype):
@@ -156,6 +173,25 @@ def _formal_parameter(parameters, index):
     return None
 
 
+def _data_type_parameter(schema):
+    constraints = {
+        constraint.type_param_str: constraint for constraint in schema.type_constraints
+    }
+    input_parameters = {parameter.type_str for parameter in schema.inputs}
+    for parameter in (*schema.outputs, *schema.inputs):
+        constraint = constraints.get(parameter.type_str)
+        if (
+            parameter.type_str in input_parameters
+            and constraint is not None
+            and any(
+                allowed_type in TENSOR_TYPE_STRINGS
+                for allowed_type in constraint.allowed_type_strs
+            )
+        ):
+            return parameter.type_str
+    raise RuntimeError(f"No numeric data type parameter found for {schema.name}.")
+
+
 def _typed_case(case, dtype):
     model = type(case.model)()
     model.ParseFromString(case.model.SerializeToString())
@@ -166,7 +202,7 @@ def _typed_case(case, dtype):
         max_inclusive_version=opsets.get(node.domain, opsets.get("", None)),
         domain=node.domain,
     )
-    type_parameter = schema.outputs[0].type_str
+    type_parameter = _data_type_parameter(schema)
     input_names = {
         name
         for index, name in enumerate(node.input)

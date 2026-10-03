@@ -63,6 +63,25 @@ def _category(headers_root, class_name):
     return matches[0]
 
 
+def _data_type_constraint(schema):
+    constraints = {
+        constraint.type_param_str: constraint for constraint in schema.type_constraints
+    }
+    input_parameters = {parameter.type_str for parameter in schema.inputs}
+    for parameter in (*schema.outputs, *schema.inputs):
+        constraint = constraints.get(parameter.type_str)
+        if (
+            parameter.type_str in input_parameters
+            and constraint is not None
+            and any(
+                allowed_type in SUPPORTED_DTYPES
+                for allowed_type in constraint.allowed_type_strs
+            )
+        ):
+            return constraint
+    return None
+
+
 def _operator_dtypes(case):
     if len(case.model.graph.node) != 1:
         return ()
@@ -75,19 +94,10 @@ def _operator_dtypes(case):
         max_inclusive_version=opsets.get(node.domain, opsets.get("", None)),
         domain=node.domain,
     )
-    if not schema.outputs:
-        return ()
-    type_parameter = schema.outputs[0].type_str
-    constraint = next(
-        (
-            constraint
-            for constraint in schema.type_constraints
-            if constraint.type_param_str == type_parameter
-        ),
-        None,
-    )
+    constraint = _data_type_constraint(schema)
     if constraint is None:
         return ()
+    type_parameter = constraint.type_param_str
     supported_dtypes = tuple(
         SUPPORTED_DTYPES[value]
         for value in constraint.allowed_type_strs

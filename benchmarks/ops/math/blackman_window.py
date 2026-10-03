@@ -5,4 +5,5 @@ class BlackmanWindow(_OperatorBenchmark):
     operator = "BlackmanWindow"
     case_name = "test_cc_blackmanwindow_benchmark"
     case_mode = "BENCHMARK"
+    dtypes = ('int32', 'int64')
     backends = ("onnxruntime", "onnx-reference", "onnx-light")
