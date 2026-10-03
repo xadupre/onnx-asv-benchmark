@@ -141,11 +141,20 @@ class TestBenchmarks(unittest.TestCase):
             self.assertTrue(operators.isdisjoint(category_operators))
             operators.update(category_operators)
             for benchmark in benchmarks[category].values():
-                self.assertEqual(benchmark.param_names, ("shape", "backend"))
+                if hasattr(benchmark, "dtypes"):
+                    self.assertEqual(
+                        benchmark.param_names,
+                        ("shape", "dtype", "backend"),
+                    )
+                    self.assertEqual(benchmark.params[1], benchmark.dtypes)
+                    backend_index = 2
+                else:
+                    self.assertEqual(benchmark.param_names, ("shape", "backend"))
+                    backend_index = 1
                 self.assertEqual(len(benchmark.params[0]), 1)
                 self.assertTrue(benchmark.params[0][0])
                 self.assertEqual(
-                    benchmark.params[1],
+                    benchmark.params[backend_index],
                     (
                         "onnxruntime",
                         "onnx-reference",
@@ -161,21 +170,91 @@ class TestBenchmarks(unittest.TestCase):
             with self.subTest(category=category, operator=operator):
                 benchmark = benchmarks[category][operator]()
                 shape = benchmark.params[0][0]
-                benchmark.setup(shape, "onnx-light")
-                benchmark.time_run(shape, "onnx-light")
+                parameters = (
+                    (shape, benchmark.dtypes[0], "onnx-light")
+                    if hasattr(benchmark, "dtypes")
+                    else (shape, "onnx-light")
+                )
+                benchmark.setup(*parameters)
+                benchmark.time_run(*parameters)
 
     # 0.1.17 was built against an onnx-light ABI newer than the 0.1.29 wheel.
     @requires_onnx_light_cpu("0.1.18")
     def test_onnx_light_cpu_operator(self):
         benchmark = operator_benchmarks()["math"]["Add"]()
         shape = benchmark.params[0][0]
-        benchmark.setup(shape, "onnx-light-cpu")
+        benchmark.setup(shape, "float32", "onnx-light-cpu")
         set_kernel_usage_recording(benchmark.session, True)
-        benchmark.time_run(shape, "onnx-light-cpu")
+        benchmark.time_run(shape, "float32", "onnx-light-cpu")
         self.assertIn(
             registered_kernel_names()["Add"],
             used_kernel_names(benchmark.session),
         )
+
+    def test_operator_dtypes(self):
+        benchmarks = operator_benchmarks()
+        expected = {
+            ("logical", "Equal"): (
+                "float16",
+                "float64",
+                "bfloat16",
+                "uint8",
+                "int64",
+            ),
+            ("logical", "IsNaN"): ("float16", "float64", "bfloat16"),
+            ("math", "Add"): ("float16", "float64", "bfloat16", "uint8", "int64"),
+            ("math", "Div"): ("float16", "float64", "bfloat16", "uint8", "int64"),
+            ("math", "Gemm"): (
+                "float16",
+                "float64",
+                "bfloat16",
+                "uint32",
+                "int64",
+            ),
+            ("math", "MatMul"): (
+                "float16",
+                "float64",
+                "bfloat16",
+                "uint32",
+                "int64",
+            ),
+            ("tensor", "Gather"): (
+                "float16",
+                "float64",
+                "bfloat16",
+                "uint8",
+                "int64",
+            ),
+            ("tensor", "ScatterElements"): (
+                "float16",
+                "float64",
+                "bfloat16",
+                "uint8",
+                "int64",
+            ),
+        }
+        for (category, operator), expected_dtypes in expected.items():
+            benchmark_type = benchmarks[category][operator]
+            with self.subTest(operator=operator):
+                self.assertEqual(benchmark_type.dtypes[0], "float32")
+                for dtype in expected_dtypes:
+                    self.assertIn(dtype, benchmark_type.dtypes)
+
+        for category, operator, dtype in (
+            ("logical", "Equal", "int32"),
+            ("logical", "IsNaN", "float16"),
+            ("math", "Add", "int32"),
+            ("math", "Div", "float16"),
+            ("math", "MatMul", "int32"),
+            ("tensor", "Gather", "int32"),
+            ("tensor", "ScatterElements", "int32"),
+        ):
+            with self.subTest(operator=operator, dtype=dtype):
+                benchmark_type = benchmarks[category][operator]
+                self.run_benchmark(
+                    benchmark_type,
+                    (benchmark_type.params[0][0], dtype, "onnx-reference"),
+                )
 
     def test_model_benchmarks(self):
         self.assertEqual(MatMulAdd.params[1], MODEL_DTYPES)

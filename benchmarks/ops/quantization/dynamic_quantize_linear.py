@@ -5,4 +5,5 @@ class DynamicQuantizeLinear(_OperatorBenchmark):
     operator = "DynamicQuantizeLinear"
     case_name = "test_dynamicquantizelinear_benchmark"
     case_mode = "BENCHMARK"
+    dtypes = ('float32',)
     backends = ("onnxruntime", "onnx-reference", "onnx-light")

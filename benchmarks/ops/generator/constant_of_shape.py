@@ -5,4 +5,5 @@ class ConstantOfShape(_OperatorBenchmark):
     operator = "ConstantOfShape"
     case_name = "test_constantofshape_float_ones_benchmark"
     case_mode = "BENCHMARK"
+    dtypes = ('int64',)
     backends = ("onnxruntime", "onnx-reference", "onnx-light")

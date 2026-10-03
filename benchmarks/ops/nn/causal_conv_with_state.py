@@ -5,4 +5,5 @@ class CausalConvWithState(_OperatorBenchmark):
     operator = "CausalConvWithState"
     case_name = "test_cc_causal_conv_with_state_basic_benchmark"
     case_mode = "BENCHMARK"
+    dtypes = ('float32', 'float16', 'bfloat16')
     backends = ("onnxruntime", "onnx-reference", "onnx-light")
