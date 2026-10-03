@@ -11,6 +11,15 @@ RUNTIME_OVERVIEW = """\
             Explore model and operator performance across optimized, reference,
             and lightweight ONNX runtimes. Lower execution times are better.
           </p>
+          <a
+            class="workflow-status"
+            href="https://github.com/xadupre/onnx-asv-benchmark/actions/workflows/genai-compatibility.yml"
+          >
+            <img
+              src="https://github.com/xadupre/onnx-asv-benchmark/actions/workflows/genai-compatibility.yml/badge.svg?branch=main"
+              alt="GenAI compatibility workflow status"
+            >
+          </a>
         </div>
         <div class="runtime-grid" aria-label="Runtime descriptions">
           <a class="runtime-card" href="https://onnxruntime.ai/" target="_blank">
