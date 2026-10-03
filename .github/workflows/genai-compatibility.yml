@@ -79,4 +79,4 @@ jobs:
           CMAKE_ARGS="-DONNX_LIGHT_CPU_RELEASE_WHEEL=ON" \
             python -m pip install --no-build-isolation upstream/onnx-light-cpu
       - name: Run GenAI scenarios
-        run: python tools/check_genai.py
+        run: python -m tools.check_genai
