@@ -119,7 +119,7 @@ def customize_pages(html_dir):
         "                                return;\n"
         "                            }\n"
         "                            if (key == 'instruction_sets') {\n"
-        "                                value = value.split(', ').pop();\n"
+        "                                value = value.split(',').pop().trim();\n"
         "                            }\n"
         "                            var legend_names = {\n"
         "                                backend: 'bck'\n"
@@ -260,7 +260,11 @@ def customize_pages(html_dir):
             }
             if (params.instruction_sets &&
                     params.instruction_sets != 'unavailable') {
-                machines[cpu].instruction_sets[params.instruction_sets] = true;
+                var instruction_sets = params.instruction_sets.split(';')
+                    .map(function(variant) {
+                        return variant.split(',').join(', ');
+                    }).join('; ');
+                machines[cpu].instruction_sets[instruction_sets] = true;
             }
         });
 
