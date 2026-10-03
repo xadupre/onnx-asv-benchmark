@@ -3,6 +3,7 @@ from functools import lru_cache
 import numpy as np
 import onnx
 import onnxruntime
+from onnx import defs
 from onnx.reference import ReferenceEvaluator as OnnxReferenceEvaluator
 from onnx_light import onnx as onnx_light
 import onnx_light.onnx.helper as oh
@@ -27,6 +28,29 @@ NONDETERMINISTIC_OPERATORS = {
     "RandomUniform",
     "RandomUniformLike",
 }
+
+TENSOR_TYPES = {
+    "float16": onnx_light.TensorProto.FLOAT16,
+    "float32": onnx_light.TensorProto.FLOAT,
+    "float64": onnx_light.TensorProto.DOUBLE,
+    "bfloat16": onnx_light.TensorProto.BFLOAT16,
+    "uint8": onnx_light.TensorProto.UINT8,
+    "uint16": onnx_light.TensorProto.UINT16,
+    "uint32": onnx_light.TensorProto.UINT32,
+    "uint64": onnx_light.TensorProto.UINT64,
+    "int8": onnx_light.TensorProto.INT8,
+    "int16": onnx_light.TensorProto.INT16,
+    "int32": onnx_light.TensorProto.INT32,
+    "int64": onnx_light.TensorProto.INT64,
+}
+
+
+def _numpy_dtype(dtype):
+    if dtype == "bfloat16":
+        import ml_dtypes
+
+        return ml_dtypes.bfloat16
+    return np.dtype(dtype)
 
 
 def _tensor_to_array(tensor):
@@ -121,6 +145,60 @@ def _assert_value(actual, expected, rtol, atol):
         )
 
 
+def _formal_parameter(parameters, index):
+    if index < len(parameters):
+        return parameters[index]
+    if (
+        parameters
+        and parameters[-1].option == defs.OpSchema.FormalParameterOption.Variadic
+    ):
+        return parameters[-1]
+    return None
+
+
+def _typed_case(case, dtype):
+    model = type(case.model)()
+    model.ParseFromString(case.model.SerializeToString())
+    node = model.graph.node[0]
+    opsets = {opset.domain: opset.version for opset in model.opset_import}
+    schema = defs.get_schema(
+        node.op_type,
+        max_inclusive_version=opsets.get(node.domain, opsets.get("", None)),
+        domain=node.domain,
+    )
+    type_parameter = schema.outputs[0].type_str
+    input_names = {
+        name
+        for index, name in enumerate(node.input)
+        if name
+        and (formal := _formal_parameter(schema.inputs, index)) is not None
+        and formal.type_str == type_parameter
+    }
+    output_names = {
+        name
+        for index, name in enumerate(node.output)
+        if name
+        and (formal := _formal_parameter(schema.outputs, index)) is not None
+        and formal.type_str == type_parameter
+    }
+    numpy_dtype = _numpy_dtype(dtype)
+    tensor_type = TENSOR_TYPES[dtype]
+    for value_info in (*model.graph.input, *model.graph.value_info):
+        if value_info.name in input_names:
+            value_info.type.tensor_type.elem_type = tensor_type
+    for value_info in (*model.graph.output, *model.graph.value_info):
+        if value_info.name in output_names:
+            value_info.type.tensor_type.elem_type = tensor_type
+    for tensor in model.graph.initializer:
+        if tensor.name in input_names:
+            replacement = onh.from_array(
+                _tensor_to_array(tensor).astype(numpy_dtype),
+                name=tensor.name,
+            )
+            tensor.CopyFrom(replacement)
+    return model, input_names
+
+
 class OperatorBenchmark:
     number = 1
     timeout = 60
@@ -135,16 +213,44 @@ class OperatorBenchmark:
         if "onnx-light" in cls.backends and "onnx-light-cpu" not in cls.backends:
             cls.backends = (*cls.backends, "onnx-light-cpu")
         cls.shapes = (OPERATOR_INPUT_SHAPES[cls.case_name],)
-        cls.params = (cls.shapes, cls.backends)
+        if hasattr(cls, "dtypes"):
+            cls.param_names = ("shape", "dtype", "backend")
+            cls.params = (cls.shapes, cls.dtypes, cls.backends)
+        else:
+            cls.params = (cls.shapes, cls.backends)
 
-    def setup(self, shape, backend):
+    def setup(self, shape, *args):
+        if hasattr(self, "dtypes"):
+            dtype, backend = args
+        else:
+            (backend,) = args
+            dtype = None
         case, feeds, expected_by_name = _load_case(self.case_name, self.case_mode)
+        model = case.model
+        if dtype in TENSOR_TYPES and dtype != self.dtypes[0]:
+            model, typed_input_names = _typed_case(case, dtype)
+            numpy_dtype = _numpy_dtype(dtype)
+            feeds = {
+                name: (
+                    value.astype(numpy_dtype)
+                    if name in typed_input_names and isinstance(value, np.ndarray)
+                    else value
+                )
+                for name, value in feeds.items()
+            }
+            reference = OnnxReferenceEvaluator(
+                onnx.load_model_from_string(model.SerializeToString())
+            )
+            output_names = [output.name for output in model.graph.output]
+            expected_by_name = dict(
+                zip(output_names, reference.run(None, feeds), strict=True)
+            )
         actual_shape = input_shape_label(feeds)
         if shape != actual_shape:
             raise ValueError(
                 f"Input shape parameter {shape!r} does not match {actual_shape!r}."
             )
-        model_bytes = case.model.SerializeToString()
+        model_bytes = model.SerializeToString()
         if backend == "onnxruntime":
             session = onnxruntime.InferenceSession(
                 model_bytes,
@@ -153,15 +259,15 @@ class OperatorBenchmark:
         elif backend == "onnx-reference":
             session = OnnxReferenceEvaluator(onnx.load_model_from_string(model_bytes))
         elif backend == "onnx-light":
-            session = OnnxLightReferenceEvaluator(case.model)
+            session = OnnxLightReferenceEvaluator(model)
         elif backend == "onnx-light-cpu":
-            session = OnnxLightReferenceEvaluator(case.model)
+            session = OnnxLightReferenceEvaluator(model)
             register_kernels_for_session(session)
         else:
             raise ValueError(f"Unexpected backend {backend!r}.")
 
         outputs = session.run(None, feeds)
-        output_names = [output.name for output in case.model.graph.output]
+        output_names = [output.name for output in model.graph.output]
         if expected_by_name and self.operator not in NONDETERMINISTIC_OPERATORS:
             for name, output in zip(output_names, outputs, strict=True):
                 _assert_value(
@@ -175,7 +281,7 @@ class OperatorBenchmark:
         self.feeds = feeds
         self.session = session
 
-    def time_run(self, shape, backend):
+    def time_run(self, shape, *args):
         self.session.run(None, self.feeds)
 
 

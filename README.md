@@ -85,7 +85,9 @@ Each benchmark has its own `number` of timed calls per sample, from one for
 MatMul to five for Relu. Every benchmark has a 10-second timeout.
 
 Every result records the complete input tensor shapes as an ASV `shape`
-parameter, alongside `dtype` and `backend` where applicable. Multi-input
+parameter, alongside `dtype` and `backend` where applicable. Operator
+benchmarks include every floating-point and integer dtype admitted by their ONNX
+schema while preserving the dtype of indices and other independently typed inputs. Multi-input
 operators include each input name and shape; scalar and input-free cases are
 identified explicitly. Tiny-LLM and Qwen2 record the prefill, decode, cache,
 and generation shapes. Qwen2 also records `Qwen/Qwen2-0.5B` as its `model`
