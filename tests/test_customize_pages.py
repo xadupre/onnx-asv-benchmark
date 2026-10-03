@@ -40,12 +40,14 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("axisLabel = 'date';", graph)
             self.assertIn('text = "date";', graph)
             self.assertIn("key == 'instruction_sets' ||", graph)
+            self.assertNotIn("key == 'num_cpu' ||", graph)
             self.assertIn("value.replace(/^'(.*)'$/, '$1')", graph)
-            self.assertIn("normalized_value == 'anonymous'", graph)
+            self.assertNotIn("normalized_value == 'anonymous'", graph)
             self.assertIn("normalized_value == 'onnxruntime'", graph)
             self.assertIn("'ort-' + state.onnxruntime", graph)
             self.assertIn("key == 'onnxruntime'", graph)
             self.assertIn("backend: 'bck'", graph)
+            self.assertIn("num_cpu: 'vCPU'", graph)
             self.assertIn(
                 "key == 'env-ONNX_LIGHT_CPU_VERSION'",
                 graph,
