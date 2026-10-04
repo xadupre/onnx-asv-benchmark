@@ -139,17 +139,30 @@ def _publishable_machine(machine):
     processor = machine.get("cpu")
     if not isinstance(processor, str) or not processor or processor == "anonymous":
         raise ValueError("ASV machine metadata does not contain a processor name.")
-    if Path(processor).name != processor or processor in {".", ".."}:
-        raise ValueError(f"Processor name is not a safe directory name: {processor!r}.")
+    num_cpu = machine.get("num_cpu")
+    if isinstance(num_cpu, str) and num_cpu and num_cpu != "anonymous":
+        machine_id = f"{processor} ({num_cpu} vCPU)"
+    elif machine.get("machine") == processor:
+        machine_id = processor
+    elif (
+        isinstance(machine.get("machine"), str)
+        and machine["machine"].startswith(f"{processor} (")
+        and machine["machine"].endswith(" vCPU)")
+    ):
+        machine_id = machine["machine"]
+    else:
+        raise ValueError("ASV machine metadata does not contain a logical core count.")
+    if Path(machine_id).name != machine_id or machine_id in {".", ".."}:
+        raise ValueError(f"Machine name is not a safe directory name: {machine_id!r}.")
     published = {
         **machine,
         **ANONYMOUS_MACHINE_FIELDS,
         "num_cpu": "anonymous",
-        "machine": processor,
+        "machine": machine_id,
         "cpu": processor,
     }
     published.pop("instruction_sets", None)
-    return processor, published
+    return machine_id, published
 
 
 def _merge_mapping(target, source, description):
@@ -292,7 +305,7 @@ def write_shards(source, shard_root, selected_shards=None):
                     **result.get("params", {}),
                     **ANONYMOUS_MACHINE_FIELDS,
                     "machine": machine_id,
-                    "cpu": machine_id,
+                    "cpu": machine["cpu"],
                 },
                 "results": shard_results,
                 "durations": {

@@ -51,6 +51,12 @@ def detect_instruction_sets():
     return detected or "unavailable"
 
 
+def machine_name(processor, num_cpu):
+    if not num_cpu:
+        raise ValueError("ASV could not detect the number of logical cores.")
+    return f"{processor} ({num_cpu} vCPU)"
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Set up or check the processor-named ASV machine profile."
@@ -64,14 +70,15 @@ def main():
     processor = profile["cpu"]
     if not processor:
         raise ValueError("ASV could not detect a processor name.")
-    profile["machine"] = processor
+    machine = machine_name(processor, profile["num_cpu"])
+    profile["machine"] = machine
     profile["instruction_sets"] = detect_instruction_sets()
 
     path = Path(MachineCollection.get_machine_file_path())
     machines = (
         util.load_json(path, MachineCollection.api_version) if path.is_file() else {}
     )
-    current = machines.get(processor)
+    current = machines.get(machine)
     if not isinstance(current, dict):
         current = {}
     matches = all(current.get(key) == value for key, value in profile.items())
@@ -79,18 +86,18 @@ def main():
     if args.check:
         if not matches:
             raise SystemExit(
-                f"ASV profile {processor!r} in {path} is missing or outdated; "
+                f"ASV profile {machine!r} in {path} is missing or outdated; "
                 "run python tools/setup_machine.py to set it up."
             )
         action = "Verified"
     elif not matches:
-        MachineCollection.save(processor, {**current, **profile})
-        action = "Updated" if processor in machines else "Created"
+        MachineCollection.save(machine, {**current, **profile})
+        action = "Updated" if machine in machines else "Created"
     else:
         action = "Already correct"
 
-    print(f"{action} ASV profile {processor!r} in {path}.", file=sys.stderr)
-    print(processor)
+    print(f"{action} ASV profile {machine!r} in {path}.", file=sys.stderr)
+    print(machine)
 
 
 if __name__ == "__main__":

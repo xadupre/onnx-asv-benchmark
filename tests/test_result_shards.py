@@ -130,14 +130,31 @@ class TestResultShards(unittest.TestCase):
         )
         self.assertFalse((shards / "ops" / "math" / "cpu").exists())
         self.assertTrue(
-            (shards / "ops" / "math" / "Example CPU" / "result.json").is_file()
+            (
+                shards
+                / "ops"
+                / "math"
+                / "Example CPU (8 vCPU)"
+                / "result.json"
+            ).is_file()
         )
-        math_result_path = shards / "ops" / "math" / "Example CPU" / "result.json"
+        math_result_path = (
+            shards
+            / "ops"
+            / "math"
+            / "Example CPU (8 vCPU)"
+            / "result.json"
+        )
         math_result = json.loads(math_result_path.read_text(encoding="utf-8"))
         math_result["params"]["num_cpu"] = "4"
         self.write_json(math_result_path, math_result)
         model_result_path = (
-            shards / "models" / "llm" / "tiny_llm" / "Example CPU" / "result.json"
+            shards
+            / "models"
+            / "llm"
+            / "tiny_llm"
+            / "Example CPU (8 vCPU)"
+            / "result.json"
         )
         model_result = json.loads(model_result_path.read_text(encoding="utf-8"))
         model_result["params"]["instruction_sets"] = "AVX, AVX2, AVX-512F"
@@ -150,7 +167,9 @@ class TestResultShards(unittest.TestCase):
 
         merge_shards(shards, merged)
         results = json.loads(
-            (merged / "Example CPU" / "result.json").read_text(encoding="utf-8")
+            (merged / "Example CPU (8 vCPU)" / "result.json").read_text(
+                encoding="utf-8"
+            )
         )
         merged_benchmarks = json.loads(
             (merged / "benchmarks.json").read_text(encoding="utf-8")
@@ -165,7 +184,7 @@ class TestResultShards(unittest.TestCase):
                 "models.llm.tiny_llm.TinyLLM.time_prefill",
             },
         )
-        self.assertEqual(results["params"]["machine"], "Example CPU")
+        self.assertEqual(results["params"]["machine"], "Example CPU (8 vCPU)")
         self.assertEqual(results["params"]["cpu"], "Example CPU")
         self.assertEqual(results["params"]["num_cpu"], "4; 8")
         self.assertEqual(
@@ -173,7 +192,9 @@ class TestResultShards(unittest.TestCase):
             "AVX,AVX2;AVX,AVX2,AVX-512F",
         )
         machine = json.loads(
-            (merged / "Example CPU" / "machine.json").read_text(encoding="utf-8")
+            (merged / "Example CPU (8 vCPU)" / "machine.json").read_text(
+                encoding="utf-8"
+            )
         )
         self.assertEqual(machine["num_cpu"], "anonymous")
         self.assertNotIn("instruction_sets", machine)
@@ -182,18 +203,22 @@ class TestResultShards(unittest.TestCase):
         self.make_results(second_source)
         machine_path = second_source / "xadupre2025" / "machine.json"
         machine = json.loads(machine_path.read_text(encoding="utf-8"))
-        machine["cpu"] = "Other CPU"
+        machine["num_cpu"] = "4"
         self.write_json(machine_path, machine)
         result_path = second_source / "xadupre2025" / "result.json"
         second_results = json.loads(result_path.read_text(encoding="utf-8"))
-        second_results["params"]["cpu"] = "Other CPU"
+        second_results["params"]["num_cpu"] = "4"
         self.write_json(result_path, second_results)
 
         write_shards(second_source, shards)
         merge_shards(shards, merged)
 
-        self.assertTrue((merged / "Other CPU" / "result.json").is_file())
-        self.assertTrue((merged / "Example CPU" / "result.json").is_file())
+        self.assertTrue(
+            (merged / "Example CPU (4 vCPU)" / "result.json").is_file()
+        )
+        self.assertTrue(
+            (merged / "Example CPU (8 vCPU)" / "result.json").is_file()
+        )
 
     def test_migrate_legacy_results(self):
         destination = self.root / "cache-data"
@@ -211,7 +236,7 @@ class TestResultShards(unittest.TestCase):
                 / "models"
                 / "llm"
                 / "tiny_llm"
-                / "Example CPU"
+                / "Example CPU (8 vCPU)"
                 / "result.json"
             ).is_file()
         )
