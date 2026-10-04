@@ -8,7 +8,7 @@ from pathlib import Path
 
 from asv.machine import Machine
 
-from tools.setup_machine import detect_instruction_sets, instruction_sets
+from tools.setup_machine import detect_instruction_sets, instruction_sets, machine_name
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "setup_machine.py"
 
@@ -21,7 +21,7 @@ class TestSetupMachine(unittest.TestCase):
         self.env = {**os.environ, "HOME": self.home.name}
         self.profile = Machine.get_defaults()
         self.processor = self.profile["cpu"]
-        self.machine = self.processor
+        self.machine = machine_name(self.processor, self.profile["num_cpu"])
         self.profile["machine"] = self.machine
         self.profile["instruction_sets"] = detect_instruction_sets()
 
@@ -103,6 +103,9 @@ flags : sse2 pni ssse3 sse4_1 sse4_2 avx avx2 avx512f avx512_vnni
             "SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, AVX2, "
             "AVX-512F, AVX-512VNNI",
         )
+
+    def test_machine_name_includes_available_logical_cores(self):
+        self.assertEqual(machine_name("Example CPU", "4"), "Example CPU (4 vCPU)")
 
 
 if __name__ == "__main__":

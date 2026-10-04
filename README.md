@@ -36,18 +36,20 @@ and onnx-light-cpu 0.1.17 from its
 
 ## Run
 
-Before the first run, set up the processor-named ASV machine profile:
+Before the first run, set up the processor-and-core-count-named ASV machine
+profile:
 
 ```bash
 machine="$(python tools/setup_machine.py)"
 ```
 
 The script creates or corrects the profile in `~/.asv-machine.json`, reports
-what it did on stderr, and prints only the processor name on stdout for shell
-capture. The processor name identifies the machine in results so performance
-can be compared across processors, without exposing the hostname. It can be
-run again without changing a correct profile. To verify the current setup, use
-`python tools/setup_machine.py --check`.
+what it did on stderr, and prints only the machine name on stdout for shell
+capture. The processor and available logical core count identify the machine
+in results, so restricted workers are not merged with workers using all cores,
+without exposing the hostname. It can be run again without changing a correct
+profile. To verify the current setup, use `python tools/setup_machine.py
+--check`.
 
 Run the complete comparison in the versioned environment:
 
@@ -155,7 +157,7 @@ python tools/publish_results.py --shard ops/math
 Model shards use `models/<group>/<module>`; operator shards use
 `ops/<category>`. Omitting `--shard` publishes every shard found in the local
 results. The first publication migrates legacy flat results, including the
-`xadupre2025` directory, to a processor-named layout.
+`xadupre2025` directory, to a processor-and-core-count-named layout.
 
 When the site data is generated, historical benchmark names are normalized to
 the same hierarchy. The HTML navigation therefore groups operators under
