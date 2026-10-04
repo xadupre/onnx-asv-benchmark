@@ -16,9 +16,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dependencies:
-          - latest-releases
-          - main-branches
+        include:
+          - dependencies: latest-releases
+            source: release
+          - dependencies: main-branches-abi3
+            source: main
+            python-abi: stable
+            stable-abi: "ON"
+          - dependencies: main-branches-native
+            source: main
+            python-abi: native
+            stable-abi: "OFF"
 
     steps:
       - uses: actions/checkout@v4
@@ -26,14 +34,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: Check out onnx-light main
-        if: matrix.dependencies == 'main-branches'
+        if: matrix.source == 'main'
         uses: actions/checkout@v4
         with:
           repository: xadupre/onnx-light
           ref: main
           path: upstream/onnx-light
       - name: Check out onnx-light-cpu main
-        if: matrix.dependencies == 'main-branches'
+        if: matrix.source == 'main'
         uses: actions/checkout@v4
         with:
           repository: xadupre/onnx-light-cpu
@@ -53,7 +61,7 @@ jobs:
           python -m pip install --no-deps \
             "modelbuilder @ git+https://github.com/xadupre/mbext.git@aadae02d50480298db28716e4769a13b3d82f819"
       - name: Install latest releases
-        if: matrix.dependencies == 'latest-releases'
+        if: matrix.source == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -70,17 +78,26 @@ jobs:
             --dir wheels
           python -m pip install wheels/onnx_light-*.whl wheels/onnx_light_cpu-*.whl
       - name: Build and install main branches
-        if: matrix.dependencies == 'main-branches'
+        if: matrix.source == 'main'
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: "4"
         run: |
           python -m pip install scikit-build-core nanobind
-          python -m pip install --no-build-isolation \
-            -C wheel.py-api=cp312 \
-            upstream/onnx-light
-          CMAKE_ARGS="-DONNX_LIGHT_CPU_RELEASE_WHEEL=ON" \
-            python -m pip install --no-build-isolation --no-deps \
+          if [[ "${{ matrix.python-abi }}" == "stable" ]]; then
+            python -m pip install --no-build-isolation \
               -C wheel.py-api=cp312 \
-              upstream/onnx-light-cpu
+              upstream/onnx-light
+            CMAKE_ARGS="-DONNX_LIGHT_CPU_RELEASE_WHEEL=ON" \
+              python -m pip install --no-build-isolation --no-deps \
+                -C wheel.py-api=cp312 \
+                upstream/onnx-light-cpu
+          else
+            python -m pip install --no-build-isolation \
+              -C cmake.define.ONNX_LIGHT_PYTHON_STABLE_ABI=OFF \
+              upstream/onnx-light
+            CMAKE_ARGS="-DONNX_LIGHT_CPU_RELEASE_WHEEL=ON -DONNX_LIGHT_CPU_PYTHON_STABLE_ABI=${{ matrix.stable-abi }}" \
+              python -m pip install --no-build-isolation --no-deps \
+                upstream/onnx-light-cpu
+          fi
       - name: Run GenAI scenarios
         run: python -m tools.check_genai
