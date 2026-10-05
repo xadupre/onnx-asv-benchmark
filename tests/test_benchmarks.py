@@ -178,7 +178,6 @@ class TestBenchmarks(unittest.TestCase):
                 benchmark.setup(*parameters)
                 benchmark.time_run(*parameters)
 
-    # 0.1.17 was built against an onnx-light ABI newer than the 0.1.29 wheel.
     @requires_onnx_light_cpu("0.1.18")
     def test_onnx_light_cpu_operator(self):
         benchmark = operator_benchmarks()["math"]["Add"]()
@@ -331,7 +330,6 @@ class TestBenchmarks(unittest.TestCase):
                 ):
                     self.run_benchmark(benchmark_type, parameter_values)
 
-    # 0.1.17 cannot register kernels on sessions created by onnx-light 0.1.29.
     @requires_onnx_light_cpu("0.1.18")
     def test_onnx_light_cpu_models(self):
         for benchmark_type, parameter_values in (
