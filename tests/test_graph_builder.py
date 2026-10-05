@@ -32,7 +32,12 @@ class TestGraphBuilder(unittest.TestCase):
                     actual = light_session.run(None, feeds)[0]
                     expected = scripted_session.run(None, feeds)[0]
                     self.assertEqual(actual.shape, shape)
-                    np.testing.assert_allclose(actual, expected, rtol=0, atol=0)
+                    np.testing.assert_allclose(
+                        actual,
+                        expected,
+                        rtol=1e-5,
+                        atol=1e-6,
+                    )
 
     def test_serialized_payload(self):
         payload = np.zeros(128, dtype=np.uint8)

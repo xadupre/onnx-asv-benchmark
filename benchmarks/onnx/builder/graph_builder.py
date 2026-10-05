@@ -1,4 +1,5 @@
 import numpy as np
+import onnx
 import onnx_ir
 import onnxscript
 from onnx_light.onnx import TensorProto
@@ -10,6 +11,7 @@ SHAPE = ["batch", "sequence", "width"]
 BLOCK_SIZE = 20
 PAYLOAD_BYTES = 8_000_000
 LARGE_INITIALIZER_COUNT = 4
+_PAYLOAD = None
 
 
 def attention_blocks(op, value, constants, node_count):
@@ -50,6 +52,13 @@ def constants():
     )
 
 
+def payload():
+    global _PAYLOAD
+    if _PAYLOAD is None:
+        _PAYLOAD = np.zeros(PAYLOAD_BYTES, dtype=np.uint8)
+    return _PAYLOAD
+
+
 def build_light(node_count, payload=None):
     builder = GraphBuilder("attention")
     builder.set_opset_version("", OPSET)
@@ -86,7 +95,7 @@ def build_onnxscript(node_count, payload=None):
             initializer.type = onnx_ir.TensorType(onnx_ir.DataType.UINT8)
             initializer.shape = onnx_ir.Shape([len(payload)])
             builder.add_output(initializer, None)
-    return onnx_ir.to_proto(onnx_ir.Model(graph, ir_version=10))
+    return onnx_ir.to_proto(onnx_ir.Model(graph, ir_version=onnx.IR_VERSION))
 
 
 class GraphBuilderAttention:
@@ -97,7 +106,7 @@ class GraphBuilderAttention:
 
     def setup(self, nodes, dtype, builder, serialize):
         self.build = build_light if builder == "onnx-light" else build_onnxscript
-        self.payload = np.zeros(PAYLOAD_BYTES, dtype=np.uint8)
+        self.payload = payload()
 
     def time_build(self, nodes, dtype, builder, serialize):
         model = self.build(nodes, self.payload)
