@@ -1,4 +1,4 @@
-from benchmarks.models._onnx_io import (
+from benchmarks.builder._onnx_io import (
     DTYPES,
     LOAD_CASES,
     LOAD_CPP_CASES,

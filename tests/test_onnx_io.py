@@ -6,7 +6,7 @@ from pathlib import Path
 
 import onnx
 import onnx_light.onnx as onnxl
-from benchmarks.models._onnx_io import (
+from benchmarks.builder._onnx_io import (
     LOAD_CPP_CASES,
     LOAD_CASES,
     PARSE_CASES,
@@ -14,10 +14,10 @@ from benchmarks.models._onnx_io import (
     SAVE_CASES,
     SERIALIZE_CASES,
 )
-from benchmarks.models.load.onnx_io import OnnxLoad, OnnxLoadCpp
-from benchmarks.models.parse.onnx_io import OnnxParse
-from benchmarks.models.save.onnx_io import OnnxSave, OnnxSaveCpp
-from benchmarks.models.serialize.onnx_io import OnnxSerialize
+from benchmarks.builder.load.onnx_io import OnnxLoad, OnnxLoadCpp
+from benchmarks.builder.parse.onnx_io import OnnxParse
+from benchmarks.builder.save.onnx_io import OnnxSave, OnnxSaveCpp
+from benchmarks.builder.serialize.onnx_io import OnnxSerialize
 
 
 class TestOnnxIO(unittest.TestCase):

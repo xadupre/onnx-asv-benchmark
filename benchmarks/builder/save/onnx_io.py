@@ -1,4 +1,4 @@
-from benchmarks.models._onnx_io import (
+from benchmarks.builder._onnx_io import (
     DTYPES,
     SAVE_CASES,
     SAVE_CPP_CASES,
