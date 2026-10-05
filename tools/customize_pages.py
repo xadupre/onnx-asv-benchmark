@@ -64,6 +64,7 @@ RUNTIME_OVERVIEW = """\
         <nav id="benchmark-navigation" aria-label="Benchmark groups">
           <div class="benchmark-family-filter btn-group" role="group">
             <button class="btn btn-default active" type="button" data-family="all">All</button>
+            <button class="btn btn-default" type="button" data-family="builder">Builder</button>
             <button class="btn btn-default" type="button" data-family="models">Models</button>
             <button class="btn btn-default" type="button" data-family="ops">Operators</button>
           </div>
@@ -195,6 +196,7 @@ def customize_pages(html_dir):
         "                                value !== null && value != 'anonymous') {\n"
         "                            var parameter_names = {\n"
         "                                cpu: 'processor',\n"
+        "                                'onnx-ir': 'ir-py',\n"
         "                                num_cpu: 'logical cores',\n"
         "                                instruction_sets: 'instruction sets'\n"
         "                            };\n"
@@ -296,7 +298,7 @@ def customize_pages(html_dir):
     function make_summary_navigation(groups) {
         var filters = $('#benchmark-category-filters');
 
-        $.each(['models', 'ops'], function(i, family) {
+        $.each(['builder', 'models', 'ops'], function(i, family) {
             var family_filters = $('<div class="benchmark-category-filter btn-group"/>');
             family_filters.attr('data-family', family);
             family_filters.hide();

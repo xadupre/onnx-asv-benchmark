@@ -98,6 +98,10 @@ class TestResultShards(unittest.TestCase):
             benchmark_shard("models.tiny_llm.TinyLLM.time_prefill"),
             "models/llm/tiny_llm",
         )
+        self.assertEqual(
+            benchmark_shard("builder.pattern_fusion.PatternFusion.time_fusion"),
+            "builder/pattern_fusion",
+        )
 
     def test_canonical_benchmark_name(self):
         self.assertEqual(
@@ -130,20 +134,10 @@ class TestResultShards(unittest.TestCase):
         )
         self.assertFalse((shards / "ops" / "math" / "cpu").exists())
         self.assertTrue(
-            (
-                shards
-                / "ops"
-                / "math"
-                / "Example CPU (8 vCPU)"
-                / "result.json"
-            ).is_file()
+            (shards / "ops" / "math" / "Example CPU (8 vCPU)" / "result.json").is_file()
         )
         math_result_path = (
-            shards
-            / "ops"
-            / "math"
-            / "Example CPU (8 vCPU)"
-            / "result.json"
+            shards / "ops" / "math" / "Example CPU (8 vCPU)" / "result.json"
         )
         math_result = json.loads(math_result_path.read_text(encoding="utf-8"))
         math_result["params"]["num_cpu"] = "4"
@@ -213,12 +207,8 @@ class TestResultShards(unittest.TestCase):
         write_shards(second_source, shards)
         merge_shards(shards, merged)
 
-        self.assertTrue(
-            (merged / "Example CPU (4 vCPU)" / "result.json").is_file()
-        )
-        self.assertTrue(
-            (merged / "Example CPU (8 vCPU)" / "result.json").is_file()
-        )
+        self.assertTrue((merged / "Example CPU (4 vCPU)" / "result.json").is_file())
+        self.assertTrue((merged / "Example CPU (8 vCPU)" / "result.json").is_file())
 
     def test_migrate_legacy_results(self):
         destination = self.root / "cache-data"

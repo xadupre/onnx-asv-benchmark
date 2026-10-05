@@ -11,6 +11,11 @@ Operator benchmarks live under `benchmarks/ops` and use the same category
 directories as onnx-light. Model benchmarks live under `benchmarks/models`,
 split between `llm` and `dummies`.
 
+Builder benchmarks live under `benchmarks/builder`. The pattern-fusion
+benchmark compares onnx-light and onnxscript construction and rewriting for
+50, 100, 250, and 500 repeated blocks. Each block contains four fusion
+patterns and twelve ONNX nodes; construction and fusion are timed separately.
+
 The ASV environment name tracks the pinned dependency versions. ASV's machine
 profile records the processor model, architecture, logical CPU count,
 available SIMD instruction sets, and memory with every benchmark result. The
