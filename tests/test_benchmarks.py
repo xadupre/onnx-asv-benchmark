@@ -5,6 +5,7 @@ import pkgutil
 import unittest
 from pathlib import Path
 
+import onnx_light
 import onnx_light_cpu
 from benchmarks._operator import (
     OperatorBenchmark,
@@ -67,6 +68,15 @@ def requires_onnx_light_cpu(minimum_version):
         current >= minimum,
         f"onnx-light-cpu>={minimum_version} is required; found "
         f"{onnx_light_cpu.__version__}.",
+    )
+
+
+def requires_onnx_light(minimum_version):
+    current = tuple(int(part) for part in onnx_light.__version__.split("."))
+    minimum = tuple(int(part) for part in minimum_version.split("."))
+    return unittest.skipUnless(
+        current >= minimum,
+        f"onnx-light>={minimum_version} is required; found {onnx_light.__version__}.",
     )
 
 
@@ -178,7 +188,6 @@ class TestBenchmarks(unittest.TestCase):
                 benchmark.setup(*parameters)
                 benchmark.time_run(*parameters)
 
-    # 0.1.17 was built against an onnx-light ABI newer than the 0.1.29 wheel.
     @requires_onnx_light_cpu("0.1.18")
     def test_onnx_light_cpu_operator(self):
         benchmark = operator_benchmarks()["math"]["Add"]()
@@ -331,7 +340,7 @@ class TestBenchmarks(unittest.TestCase):
                 ):
                     self.run_benchmark(benchmark_type, parameter_values)
 
-    # 0.1.17 cannot register kernels on sessions created by onnx-light 0.1.29.
+    @requires_onnx_light("0.1.31")
     @requires_onnx_light_cpu("0.1.18")
     def test_onnx_light_cpu_models(self):
         for benchmark_type, parameter_values in (
