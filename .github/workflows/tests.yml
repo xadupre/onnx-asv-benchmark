@@ -28,6 +28,7 @@ jobs:
             onnx==1.23.1 \
             onnxruntime==1.30.0 \
             onnxruntime-genai==0.15.2 \
+            onnxscript==0.7.2 \
             torch \
             transformers==5.15.0 \
             "scipy>=1.18.0" \
