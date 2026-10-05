@@ -20,7 +20,7 @@
     "build_command": [],
     "uninstall_command": [],
     "install_command": [
-        "python -m pip install torch transformers==5.15.0 scipy>=1.18.0 ml_dtypes>=0.6.0 onnxruntime-genai==0.15.2 onnxscript==0.7.2",
+        "python -m pip install torch transformers==5.15.0 scipy>=1.18.0 ml_dtypes>=0.6.0 onnxruntime-genai==0.15.2 onnx-ir==1.0.0 onnxscript==0.7.2",
         "python -m pip install --no-deps \"modelbuilder @ git+https://github.com/xadupre/mbext.git@aadae02d50480298db28716e4769a13b3d82f819\"",
         "python -m pip install https://github.com/xadupre/onnx-light/releases/download/0.1.30/onnx_light-0.1.30-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
         "python -m pip install https://github.com/xadupre/onnx-light-cpu/releases/download/0.1.20/onnx_light_cpu-0.1.20-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
