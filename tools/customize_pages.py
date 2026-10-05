@@ -195,6 +195,7 @@ def customize_pages(html_dir):
         "                                value !== null && value != 'anonymous') {\n"
         "                            var parameter_names = {\n"
         "                                cpu: 'processor',\n"
+        "                                'onnx-ir': 'ir-py',\n"
         "                                num_cpu: 'logical cores',\n"
         "                                instruction_sets: 'instruction sets'\n"
         "                            };\n"

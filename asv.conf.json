@@ -10,6 +10,8 @@
         "req": {
             "numpy": ["2.5.3"],
             "onnx": ["1.23.1"],
+            "onnx-ir": ["1.0.0"],
+            "onnxscript": ["0.7.2"],
             "onnxruntime": ["1.30.0"]
         },
         "env": {

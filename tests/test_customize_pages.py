@@ -76,6 +76,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("new Date(item.datapoint[0]).toLocaleString()", graph)
             self.assertIn("item.series.parameters", graph)
             self.assertIn("cpu: 'processor'", graph)
+            self.assertIn("'onnx-ir': 'ir-py'", graph)
             self.assertIn("num_cpu: 'logical cores'", graph)
             self.assertIn("instruction_sets: 'instruction sets'", graph)
             self.assertIn("key != 'machine'", graph)

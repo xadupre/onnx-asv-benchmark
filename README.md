@@ -11,8 +11,9 @@ Operator benchmarks live under `benchmarks/ops` and use the same category
 directories as onnx-light. Model benchmarks live under `benchmarks/models`,
 split between `llm` and `dummies`.
 
-The ASV environment name tracks the pinned dependency versions. ASV's machine
-profile records the processor model, architecture, logical CPU count,
+The ASV environment name tracks the pinned dependency versions. Graph
+observation tooltips show the ONNX, onnxscript, and ir-py versions. ASV's
+machine profile records the processor model, architecture, logical CPU count,
 available SIMD instruction sets, and memory with every benchmark result. The
 published home page summarizes the logical CPU count and instruction sets for
 every benchmark processor.
