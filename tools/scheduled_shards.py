@@ -10,12 +10,13 @@ def discover_shards(root):
         for path in (benchmark_root / "ops").iterdir()
         if path.is_dir() and not path.name.startswith((".", "__"))
     )
-    models = sorted(
+    modules = sorted(
         path.relative_to(benchmark_root).with_suffix("").as_posix()
-        for path in (benchmark_root / "models").glob("*/*.py")
+        for root_name in ("models", "onnx")
+        for path in (benchmark_root / root_name).glob("*/*.py")
         if path.name != "__init__.py"
     )
-    return operators + models
+    return operators + modules
 
 
 def main():
