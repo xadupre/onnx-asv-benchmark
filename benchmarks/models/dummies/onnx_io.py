@@ -137,6 +137,14 @@ class _OnnxIOBase:
 class OnnxLoad(_OnnxIOBase):
     params = (("X=dynamicx2048 (40 Gemm)",), ("float32",), LOAD_CASES)
 
+    def setup(self, shape, dtype, case):
+        super().setup(shape, dtype, case)
+        if case.endswith("/ort"):
+            self.ort_options = ort.SessionOptions()
+            self.ort_options.graph_optimization_level = (
+                ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+            )
+
     def time_run(self, shape, dtype, case):
         _, files, library = case.split("/")
         path = self.external_path if files.startswith("2file") else self.path
@@ -148,9 +156,7 @@ class OnnxLoad(_OnnxIOBase):
             if files.startswith("2file"):
                 self.ir.external_data.load_to_model(model)
         elif library == "ort":
-            opts = ort.SessionOptions()
-            opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
-            ort.InferenceSession(path, sess_options=opts)
+            ort.InferenceSession(path, sess_options=self.ort_options)
         else:
             options = {"num_threads": threads}
             if files.startswith("2file"):
@@ -221,15 +227,22 @@ class OnnxBytes(_OnnxIOBase):
                 if case.endswith("/onnx")
                 else self.light_model.SerializeToString()
             )
+        if case.endswith("/onnxlight") and not case.endswith("x1/onnxlight"):
+            operation, mode, _ = case.split("/")
+            if operation == "serialize":
+                self.options = onnxl.SerializeOptions()
+                self.options.num_threads = 4
+            else:
+                self.options = onnxl.ParseOptions()
+                self.options.no_copy = mode.startswith("nc")
+                self.options.num_threads = 4 if mode.endswith("x4") else 1
 
     def time_run(self, shape, dtype, case):
         operation, mode, library = case.split("/")
         if operation == "serialize":
             model = self.onnx_model if library == "onnx" else self.light_model
             if mode == "x4":
-                options = onnxl.SerializeOptions()
-                options.num_threads = 4
-                model.SerializeToString(options)
+                model.SerializeToString(self.options)
             else:
                 model.SerializeToString()
         else:
@@ -237,10 +250,7 @@ class OnnxBytes(_OnnxIOBase):
             if library == "onnx" or mode == "x1":
                 model.ParseFromString(self.data)
             else:
-                options = onnxl.ParseOptions()
-                options.no_copy = mode.startswith("nc")
-                options.num_threads = 4 if mode.endswith("x4") else 1
-                model.ParseFromString(self.data, options)
+                model.ParseFromString(self.data, self.options)
 
 
 class OnnxCpp(_OnnxIOBase):
