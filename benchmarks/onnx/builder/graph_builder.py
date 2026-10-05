@@ -9,6 +9,7 @@ OPSET = 18
 SHAPE = ["batch", "sequence", "width"]
 BLOCK_SIZE = 20
 PAYLOAD_BYTES = 8_000_000
+LARGE_INITIALIZER_COUNT = 4
 
 
 def attention_blocks(op, value, constants, node_count):
@@ -59,7 +60,7 @@ def build_light(node_count, payload=None):
     value = attention_blocks(builder.op, value, initializers, node_count)
     builder.out(value, TensorProto.FLOAT, SHAPE)
     if payload is not None:
-        for index in range(4):
+        for index in range(LARGE_INITIALIZER_COUNT):
             name = builder.init(payload, name=f"large{index}", copy=False)
             builder.out(name, TensorProto.UINT8, [len(payload)])
     return builder.to_onnx("model")
@@ -80,8 +81,10 @@ def build_onnxscript(node_count, payload=None):
     value.type = onnx_ir.TensorType(onnx_ir.DataType.FLOAT)
     builder.add_output(value, None)
     if payload is not None:
-        for index in range(4):
+        for index in range(LARGE_INITIALIZER_COUNT):
             initializer = builder.initializer(onnx_ir.tensor(payload), name=f"large{index}")
+            initializer.type = onnx_ir.TensorType(onnx_ir.DataType.UINT8)
+            initializer.shape = onnx_ir.Shape([len(payload)])
             builder.add_output(initializer, None)
     return onnx_ir.to_proto(onnx_ir.Model(graph, ir_version=10))
 

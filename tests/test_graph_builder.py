@@ -6,6 +6,7 @@ from onnx.reference import ReferenceEvaluator
 
 from benchmarks.onnx.builder.graph_builder import (
     GraphBuilderAttention,
+    LARGE_INITIALIZER_COUNT,
     build_light,
     build_onnxscript,
 )
@@ -38,9 +39,19 @@ class TestGraphBuilder(unittest.TestCase):
         for build in (build_light, build_onnxscript):
             with self.subTest(builder=build.__name__):
                 model = build(20, payload)
-                self.assertEqual(len(model.graph.output), 5)
+                for opset in model.opset_import:
+                    if opset.domain == "ai.onnx":
+                        opset.domain = ""
+                onnx.checker.check_model(model)
+                self.assertEqual(
+                    len(model.graph.output),
+                    LARGE_INITIALIZER_COUNT + 1,
+                )
                 serialized = model.SerializeToString()
-                self.assertGreaterEqual(len(serialized), 4 * len(payload))
+                self.assertGreaterEqual(
+                    len(serialized),
+                    LARGE_INITIALIZER_COUNT * len(payload),
+                )
 
     def test_benchmark_cases(self):
         self.assertEqual(
