@@ -15,6 +15,10 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn("models/llm/qwen2", shards)
         self.assertIn("models/llm/tiny_llm", shards)
         self.assertIn("models/dummies/mlp", shards)
+        self.assertIn("models/load/onnx_io", shards)
+        self.assertIn("models/save/onnx_io", shards)
+        self.assertIn("models/serialize/onnx_io", shards)
+        self.assertIn("models/parse/onnx_io", shards)
         self.assertNotIn("__pycache__", shards)
         self.assertEqual(len(shards), len(set(shards)))
 

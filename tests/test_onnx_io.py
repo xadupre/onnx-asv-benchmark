@@ -6,30 +6,46 @@ from pathlib import Path
 
 import onnx
 import onnx_light.onnx as onnxl
-from benchmarks.models.dummies.onnx_io import (
-    BYTE_CASES,
-    CPP_CASES,
+from benchmarks.models._onnx_io import (
+    LOAD_CPP_CASES,
     LOAD_CASES,
+    PARSE_CASES,
+    SAVE_CPP_CASES,
     SAVE_CASES,
-    OnnxBytes,
-    OnnxCpp,
-    OnnxLoad,
-    OnnxSave,
+    SERIALIZE_CASES,
 )
+from benchmarks.models.load.onnx_io import OnnxLoad, OnnxLoadCpp
+from benchmarks.models.parse.onnx_io import OnnxParse
+from benchmarks.models.save.onnx_io import OnnxSave, OnnxSaveCpp
+from benchmarks.models.serialize.onnx_io import OnnxSerialize
 
 
 class TestOnnxIO(unittest.TestCase):
     def test_cases(self):
-        cases = (*LOAD_CASES, *SAVE_CASES, *BYTE_CASES, *CPP_CASES)
+        cases = (
+            *LOAD_CASES,
+            *SAVE_CASES,
+            *SERIALIZE_CASES,
+            *PARSE_CASES,
+            *LOAD_CPP_CASES,
+            *SAVE_CPP_CASES,
+        )
         self.assertEqual(len(cases), 42)
         self.assertEqual(len(set(cases)), 42)
-        for benchmark in (OnnxLoad, OnnxSave, OnnxBytes, OnnxCpp):
+        for benchmark in (
+            OnnxLoad,
+            OnnxLoadCpp,
+            OnnxSave,
+            OnnxSaveCpp,
+            OnnxSerialize,
+            OnnxParse,
+        ):
             self.assertEqual(benchmark.param_names, ("shape", "dtype", "case"))
             self.assertEqual(benchmark.params[1], ("float32",))
             self.assertEqual(benchmark.params[0], ("X=dynamicx2048 (40 Gemm)",))
 
     def test_python_cases(self):
-        for benchmark_type in (OnnxLoad, OnnxSave, OnnxBytes):
+        for benchmark_type in (OnnxLoad, OnnxSave, OnnxSerialize, OnnxParse):
             class SmallBenchmark(benchmark_type):
                 n_init = 2
                 dim = 8
@@ -60,10 +76,6 @@ class TestOnnxIO(unittest.TestCase):
                             benchmark.teardown(*parameters)
 
     def test_cpp_cases(self):
-        class SmallCpp(OnnxCpp):
-            n_init = 2
-            dim = 8
-
         with tempfile.TemporaryDirectory() as directory:
             for name in ("load_onnx_time", "load_onnx_light_time", "save_onnx_light_time"):
                 operation = name.split("_", 1)[0]
@@ -81,15 +93,23 @@ class TestOnnxIO(unittest.TestCase):
             os.environ["PATH"] = directory + os.pathsep + old_path
             os.environ["CICPP"] = "1"
             try:
-                for case in CPP_CASES:
-                    with self.subTest(case=case):
-                        benchmark = SmallCpp()
-                        parameters = ("X=dynamicx8 (2 Gemm)", "float32", case)
-                        benchmark.setup(*parameters)
-                        try:
-                            self.assertEqual(benchmark.track_run(*parameters), 0.002)
-                        finally:
-                            benchmark.teardown(*parameters)
+                for benchmark_type in (OnnxLoadCpp, OnnxSaveCpp):
+
+                    class SmallCpp(benchmark_type):
+                        n_init = 2
+                        dim = 8
+
+                    for case in benchmark_type.params[2]:
+                        with self.subTest(case=case):
+                            benchmark = SmallCpp()
+                            parameters = ("X=dynamicx8 (2 Gemm)", "float32", case)
+                            benchmark.setup(*parameters)
+                            try:
+                                self.assertEqual(
+                                    benchmark.track_run(*parameters), 0.002
+                                )
+                            finally:
+                                benchmark.teardown(*parameters)
             finally:
                 os.environ["PATH"] = old_path
                 if old_cicpp is None:

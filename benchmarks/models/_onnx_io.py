@@ -1,4 +1,4 @@
-"""Loading and serialization cases from onnx-light's plot_onnx_time example."""
+"""Shared implementation for ONNX I/O benchmarks."""
 
 import importlib.util
 import os
@@ -15,6 +15,9 @@ import onnxruntime as ort
 from onnx_light.doc import find_standalone_executable, measure_cpp_with_example
 from onnx_light.onnx.reference import ReferenceEvaluator
 
+
+SHAPES = ("X=dynamicx2048 (40 Gemm)",)
+DTYPES = ("float32",)
 
 LOAD_CASES = (
     "load/1filex1/onnx",
@@ -45,22 +48,26 @@ SAVE_CASES = (
     "save/2filex1/onnxlight",
     "save/2filex4/onnxlight",
 )
-BYTE_CASES = (
+SERIALIZE_CASES = (
     "serialize/x1/onnx",
     "serialize/x1/onnxlight",
     "serialize/x4/onnxlight",
+)
+PARSE_CASES = (
     "parse/x1/onnx",
     "parse/x1/onnxlight",
     "parse/x4/onnxlight",
     "parse/nc/onnxlight",
     "parse/ncx4/onnxlight",
 )
-CPP_CASES = (
+LOAD_CPP_CASES = (
     "load/1filex1/onnxlight-cpp",
     "load/1filex4/onnxlight-cpp",
     "load/2filex1/onnxlight-cpp-nocopy",
     "load/2filex1/onnxlight-cpp",
     "load/1filex1/onnx-cpp",
+)
+SAVE_CPP_CASES = (
     "save/1filex1/onnxlight-cpp",
     "save/1filex4/onnxlight-cpp",
     "save/2filex1/onnxlight-cpp",
@@ -134,9 +141,7 @@ class _OnnxIOBase:
         self.tmp.cleanup()
 
 
-class OnnxLoad(_OnnxIOBase):
-    params = (("X=dynamicx2048 (40 Gemm)",), ("float32",), LOAD_CASES)
-
+class _OnnxLoad(_OnnxIOBase):
     def setup(self, shape, dtype, case):
         super().setup(shape, dtype, case)
         if case.endswith("/ort"):
@@ -173,8 +178,7 @@ class OnnxLoad(_OnnxIOBase):
                 ReferenceEvaluator(model)
 
 
-class OnnxSave(_OnnxIOBase):
-    params = (("X=dynamicx2048 (40 Gemm)",), ("float32",), SAVE_CASES)
+class _OnnxSave(_OnnxIOBase):
     repeat = 1
 
     def setup(self, shape, dtype, case):
@@ -216,9 +220,7 @@ class OnnxSave(_OnnxIOBase):
         onnxl.save(self.light_model, self.out, **options)
 
 
-class OnnxBytes(_OnnxIOBase):
-    params = (("X=dynamicx2048 (40 Gemm)",), ("float32",), BYTE_CASES)
-
+class _OnnxBytes(_OnnxIOBase):
     def setup(self, shape, dtype, case):
         super().setup(shape, dtype, case)
         if case.startswith("parse/"):
@@ -253,8 +255,7 @@ class OnnxBytes(_OnnxIOBase):
                 model.ParseFromString(self.data, self.options)
 
 
-class OnnxCpp(_OnnxIOBase):
-    params = (("X=dynamicx2048 (40 Gemm)",), ("float32",), CPP_CASES)
+class _OnnxCpp(_OnnxIOBase):
     unit = "seconds"
 
     def setup(self, shape, dtype, case):

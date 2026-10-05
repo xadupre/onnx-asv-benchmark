@@ -95,8 +95,9 @@ identified explicitly. Tiny-LLM and Qwen2 record the prefill, decode, cache,
 and generation shapes. Qwen2 also records `Qwen/Qwen2-0.5B` as its `model`
 parameter and uses `Qwen2-0.5B` in graph titles.
 
-`models/dummies/onnx_io` benchmarks the 42 load, save, serialize, parse,
-and standalone C++ cases in onnx-light's `plot_onnx_time.py`. It uses that
+`models/load/onnx_io`, `models/save/onnx_io`, `models/serialize/onnx_io`, and
+`models/parse/onnx_io` benchmark the 42 load, save, serialize, parse, and
+standalone C++ cases in onnx-light's `plot_onnx_time.py`. They use that
 example's 40-Gemm float32 model with 2048-wide weights; model creation and
 fixture file preparation happen outside the timed call. Install `onnx-ir` to
 run the `ir-py` cases. The C++ cases require the onnx-light example executables
