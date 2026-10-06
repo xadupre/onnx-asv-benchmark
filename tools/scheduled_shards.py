@@ -1,12 +1,14 @@
 import argparse
 import json
 from pathlib import Path
-
-from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
+import runpy
 
 
 def discover_shards(root):
     benchmark_root = Path(root) / "benchmarks"
+    case_shards = runpy.run_path(benchmark_root / "cpu_backend_cases" / "_manifest.py")[
+        "CASE_SHARDS"
+    ]
     operators = sorted(
         path.relative_to(benchmark_root).with_suffix("").as_posix()
         for path in (benchmark_root / "ops").glob("*/*.py")
@@ -20,7 +22,7 @@ def discover_shards(root):
     )
     cpu_backend_cases = [
         f"cpu_backend_cases/{category}/{module}/{class_name}"
-        for category, module, class_name, _, _, _ in CASE_SHARDS
+        for category, module, class_name, _, _, _ in case_shards
     ]
     return operators + modules + cpu_backend_cases
 
