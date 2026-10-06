@@ -1,6 +1,7 @@
 import unittest
 
 from benchmarks.builder.pattern.pattern_fusion import (
+    BLOCK_COUNTS,
     FUSIONS_PER_BLOCK,
     NODES_PER_BLOCK,
     PatternFusion,
@@ -36,19 +37,25 @@ class TestPatternFusion(unittest.TestCase):
             PatternFusion.param_names,
             ("blocks", "dtype", "implementation"),
         )
-        for implementation in PatternFusion.params[2]:
-            for method_name in ("time_construction", "time_fusion"):
-                with self.subTest(
-                    implementation=implementation,
-                    method=method_name,
-                ):
-                    benchmark = PatternFusion()
-                    benchmark.setup(50, "float32", implementation)
-                    getattr(benchmark, method_name)(50, "float32", implementation)
-                    if method_name == "time_construction":
-                        self.assertIsNotNone(benchmark.model)
-                    benchmark.teardown(50, "float32", implementation)
-                    self.assertIsNone(benchmark.model)
+        for blocks in BLOCK_COUNTS:
+            for implementation in PatternFusion.params[2]:
+                for method_name in ("time_construction", "time_fusion"):
+                    with self.subTest(
+                        blocks=blocks,
+                        implementation=implementation,
+                        method=method_name,
+                    ):
+                        benchmark = PatternFusion()
+                        benchmark.setup(blocks, "float32", implementation)
+                        getattr(benchmark, method_name)(
+                            blocks, "float32", implementation
+                        )
+                        if method_name == "time_construction":
+                            self.assertIsNotNone(benchmark.model)
+                        benchmark.teardown(blocks, "float32", implementation)
+                        self.assertIsNone(benchmark.model)
+                        self.assertIsNone(benchmark.optimizer)
+                        self.assertIsNone(benchmark.fusion_graph)
 
     def test_invalid_block_count(self):
         for build in (build_light, build_onnxscript):
