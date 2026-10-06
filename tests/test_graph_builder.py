@@ -71,11 +71,22 @@ class TestGraphBuilder(unittest.TestCase):
                     benchmark.setup(100, "float32", builder, serialize)
                     benchmark.time_build(100, "float32", builder, serialize)
                     self.assertIsNotNone(benchmark.model)
+                    if serialize:
+                        self.assertIsInstance(benchmark.serialized, bytes)
+                        self.assertGreater(len(benchmark.serialized), 0)
+                    else:
+                        self.assertIsNone(benchmark.serialized)
                     benchmark.teardown(100, "float32", builder, serialize)
                     self.assertIsNone(benchmark.model)
+                    self.assertIsNone(benchmark.serialized)
 
     def test_invalid_node_count(self):
         for build in (build_light, build_onnxscript):
             with self.subTest(builder=build.__name__):
                 with self.assertRaises(ValueError):
                     build(21)
+
+    def test_invalid_benchmark_builder(self):
+        benchmark = GraphBuilderAttention()
+        with self.assertRaises(ValueError):
+            benchmark.setup(100, "float32", "unknown", False)

@@ -109,9 +109,10 @@ example's 40-Gemm float32 model with 2048-wide weights; model creation and
 fixture file preparation happen outside the timed call. Install `onnx-ir` to
 run the `ir-py` cases. The C++ cases require the onnx-light example executables
 (`load_onnx_time`, `load_onnx_light_time`, `save_onnx_light_time`) on `PATH`
-or in their onnx-light build directories; in CI, set `CICPP=1` to enable
-executable discovery. These C++ results are tracked seconds per operation
-reported by the executables, not Python subprocess launch time.
+or in their onnx-light build directories. `CICPP=1` only permits executable
+discovery when `CI` is set; it does not build the executables. Without it,
+unavailable C++ cases are skipped. These C++ results are tracked seconds per
+operation reported by the executables, not Python subprocess launch time.
 
 To check that every benchmark runs on all three backends in an environment
 with the benchmark dependencies installed:
@@ -179,10 +180,10 @@ python tools/publish_results.py --shard models/llm/tiny_llm
 python tools/publish_results.py --shard ops/math/add
 ```
 
-Model shards use `models/<group>/<module>`; operator shards use
-`ops/<category>/<module>` so every scheduled operator job stays below one
-hour. Omitting `--shard` publishes every shard found in the local results. The
-first publication migrates legacy flat results, including the `xadupre2025`
+Builder, model, and operator shards use `<family>/<group>/<module>`. Splitting
+operators by module keeps every scheduled job below one hour. Omitting
+`--shard` publishes every shard found in the local results. The first
+publication migrates legacy flat results, including the `xadupre2025`
 directory, to a processor-and-core-count-named layout.
 
 When the site data is generated, historical benchmark names are normalized to

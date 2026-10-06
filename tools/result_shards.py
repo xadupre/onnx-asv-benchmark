@@ -38,6 +38,8 @@ MODEL_GROUPS = {
 
 def canonical_benchmark_name(name):
     parts = name.split(".")
+    if parts[:2] == ["onnx", "builder"]:
+        return ".".join(("builder", "builder", *parts[2:]))
     if parts[0] in OPERATOR_CATEGORIES:
         category = "math" if parts[0] == "maths" else parts[0]
         return ".".join(("ops", category, *parts[1:]))
