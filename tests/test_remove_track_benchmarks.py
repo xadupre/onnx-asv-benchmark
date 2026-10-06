@@ -15,7 +15,11 @@ class TestRemoveTrackBenchmarks(unittest.TestCase):
                     {
                         "version": 2,
                         "ops.math.add.Add.time_run": {"type": "time"},
+                        "builder.load.onnx_io.OnnxLoadCpp.track_run": {
+                            "type": "track"
+                        },
                         "machine.track_processor": {"type": "track"},
+                        "versions.track_onnx": {"type": "track"},
                     }
                 ),
                 encoding="utf-8",
@@ -28,6 +32,9 @@ class TestRemoveTrackBenchmarks(unittest.TestCase):
                 {
                     "version": 2,
                     "ops.math.add.Add.time_run": {"type": "time"},
+                    "builder.load.onnx_io.OnnxLoadCpp.track_run": {
+                        "type": "track"
+                    },
                 },
             )
 

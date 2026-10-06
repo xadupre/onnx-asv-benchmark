@@ -104,6 +104,10 @@ class TestResultShards(unittest.TestCase):
             ),
             "onnx/builder/graph_builder",
         )
+        self.assertEqual(
+            benchmark_shard("builder.load.onnx_io.OnnxLoad.time_run"),
+            "builder/load/onnx_io",
+        )
 
     def test_canonical_benchmark_name(self):
         self.assertEqual(
