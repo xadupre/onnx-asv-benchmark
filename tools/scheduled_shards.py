@@ -12,7 +12,7 @@ def discover_shards(root):
     )
     modules = sorted(
         path.relative_to(benchmark_root).with_suffix("").as_posix()
-        for root_name in ("builder", "models")
+        for root_name in ("builder", "models", "onnx")
         for path in (benchmark_root / root_name).rglob("*.py")
         if not path.name.startswith("_")
     )
