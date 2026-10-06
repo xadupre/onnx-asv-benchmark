@@ -104,9 +104,9 @@ class TestResultShards(unittest.TestCase):
         )
         self.assertEqual(
             benchmark_shard(
-                "onnx.builder.graph_builder.GraphBuilderAttention.time_build"
+                "builder.builder.graph_builder.GraphBuilderAttention.time_build"
             ),
-            "onnx/builder/graph_builder",
+            "builder/builder/graph_builder",
         )
         self.assertEqual(
             benchmark_shard("builder.load.onnx_io.OnnxLoad.time_run"),
