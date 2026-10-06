@@ -67,6 +67,9 @@ RUNTIME_OVERVIEW = """\
             <button class="btn btn-default" type="button" data-family="builder">Builder</button>
             <button class="btn btn-default" type="button" data-family="models">Models</button>
             <button class="btn btn-default" type="button" data-family="ops">Operators</button>
+            <button class="btn btn-default" type="button" data-family="cpu_backend_cases">
+              CPU backend cases
+            </button>
           </div>
           <div id="benchmark-category-filters"></div>
         </nav>
@@ -298,7 +301,7 @@ def customize_pages(html_dir):
     function make_summary_navigation(groups) {
         var filters = $('#benchmark-category-filters');
 
-        $.each(['builder', 'models', 'ops'], function(i, family) {
+        $.each(['builder', 'models', 'ops', 'cpu_backend_cases'], function(i, family) {
             var family_filters = $('<div class="benchmark-category-filter btn-group"/>');
             family_filters.attr('data-family', family);
             family_filters.hide();
