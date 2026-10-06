@@ -13,13 +13,8 @@ def discover_shards(root):
     modules = sorted(
         path.relative_to(benchmark_root).with_suffix("").as_posix()
         for root_name in ("builder", "models")
-        for path in (benchmark_root / root_name).glob("*.py")
-        if path.name != "__init__.py"
-    ) + sorted(
-        path.relative_to(benchmark_root).with_suffix("").as_posix()
-        for root_name in ("builder", "models")
-        for path in (benchmark_root / root_name).glob("*/*.py")
-        if path.name != "__init__.py"
+        for path in (benchmark_root / root_name).rglob("*.py")
+        if not path.name.startswith("_")
     )
     return operators + modules
 
