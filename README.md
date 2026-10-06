@@ -137,6 +137,17 @@ onnx-light-cpu kernels are registered only on that benchmark session, while
 operators without one fall back to onnx-light. This keeps the regular
 onnx-light measurements unchanged.
 
+The separate `cpu_backend_cases` benchmark family runs every
+`test_cpu_*_benchmark` case registered by onnx-light-cpu. Each case is measured
+with both onnx-light-cpu and ONNX Runtime; unsupported ONNX Runtime cases remain
+visible as failed measurements. The generated manifest splits large operator
+families into shards of at most 200 cases so scheduled jobs remain below the
+one-hour limit. Regenerate it after updating the pinned onnx-light-cpu release:
+
+```bash
+python tools/generate_cpu_backend_case_manifest.py
+```
+
 The model benchmarks also include one-layer `arnir0/Tiny-LLM` and
 `Qwen/Qwen2-0.5B` configurations based on `mbext` fast tests. Each benchmark
 creates a deterministic random Hugging Face model and uses `mbext` to generate

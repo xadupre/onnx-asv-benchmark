@@ -2,6 +2,8 @@ import argparse
 import json
 from pathlib import Path
 
+from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
+
 
 def discover_shards(root):
     benchmark_root = Path(root) / "benchmarks"
@@ -16,7 +18,10 @@ def discover_shards(root):
         for path in (benchmark_root / root_name).rglob("*.py")
         if not path.name.startswith("_")
     )
-    return operators + modules
+    cpu_backend_cases = [
+        f"cpu_backend_cases/cases/{class_name}" for class_name, _, _, _ in CASE_SHARDS
+    ]
+    return operators + modules + cpu_backend_cases
 
 
 def main():

@@ -86,7 +86,10 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("parts[parts.length - 2]", grid)
             self.assertIn("parts.slice(2).join('.')", grid)
             self.assertIn("make_summary_navigation(groups)", grid)
-            self.assertIn("['builder', 'models', 'ops']", grid)
+            self.assertIn(
+                "['builder', 'models', 'ops', 'cpu_backend_cases']",
+                grid,
+            )
             self.assertIn("make_machine_summary()", grid)
             self.assertIn("params.instruction_sets", grid)
             self.assertIn("variant.split(',').join(', ')", grid)

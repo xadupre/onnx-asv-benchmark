@@ -116,6 +116,8 @@ def benchmark_shard(name):
     parts = canonical_benchmark_name(name).split(".")
     if parts[0] == "ops" and len(parts) > 2:
         return f"ops/{parts[1]}/{parts[2]}"
+    if parts[0] == "cpu_backend_cases" and len(parts) > 2:
+        return f"cpu_backend_cases/{parts[1]}/{parts[2]}"
     if parts[0] in {"builder", "models"} and len(parts) > 4:
         return f"{parts[0]}/{parts[1]}/{parts[2]}"
     if parts[0] == "builder" and len(parts) > 1:
