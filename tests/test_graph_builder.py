@@ -43,6 +43,7 @@ class TestGraphBuilder(unittest.TestCase):
         payload = np.zeros(128, dtype=np.uint8)
         for build in (build_light, build_onnxscript):
             with self.subTest(builder=build.__name__):
+                base_size = len(build(20).SerializeToString())
                 model = build(20, payload)
                 for opset in model.opset_import:
                     if opset.domain == "ai.onnx":
@@ -54,7 +55,7 @@ class TestGraphBuilder(unittest.TestCase):
                 )
                 serialized = model.SerializeToString()
                 self.assertGreaterEqual(
-                    len(serialized),
+                    len(serialized) - base_size,
                     LARGE_INITIALIZER_COUNT * len(payload),
                 )
 
@@ -69,6 +70,9 @@ class TestGraphBuilder(unittest.TestCase):
                     benchmark = GraphBuilderAttention()
                     benchmark.setup(100, "float32", builder, serialize)
                     benchmark.time_build(100, "float32", builder, serialize)
+                    self.assertIsNotNone(benchmark.model)
+                    benchmark.teardown(100, "float32", builder, serialize)
+                    self.assertIsNone(benchmark.model)
 
     def test_invalid_node_count(self):
         for build in (build_light, build_onnxscript):

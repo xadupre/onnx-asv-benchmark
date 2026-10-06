@@ -107,8 +107,14 @@ class GraphBuilderAttention:
     def setup(self, nodes, dtype, builder, serialize):
         self.build = build_light if builder == "onnx-light" else build_onnxscript
         self.payload = payload()
+        self.model = None
+        self.serialized = None
 
     def time_build(self, nodes, dtype, builder, serialize):
-        model = self.build(nodes, self.payload)
+        self.model = self.build(nodes, self.payload)
         if serialize:
-            model.SerializeToString()
+            self.serialized = self.model.SerializeToString()
+
+    def teardown(self, nodes, dtype, builder, serialize):
+        self.serialized = None
+        self.model = None
