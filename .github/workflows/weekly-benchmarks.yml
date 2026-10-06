@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       shard:
-        description: Shards to run, comma-separated (for example ops/math,models/llm/tiny_llm)
+        description: Shards to run, comma-separated (for example ops/math/add,models/llm/tiny_llm)
         required: true
         type: string
 
@@ -99,7 +99,7 @@ jobs:
       group: benchmark-shard-${{ matrix.shard }}
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:

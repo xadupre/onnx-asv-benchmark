@@ -6,9 +6,9 @@ from pathlib import Path
 def discover_shards(root):
     benchmark_root = Path(root) / "benchmarks"
     operators = sorted(
-        f"ops/{path.name}"
-        for path in (benchmark_root / "ops").iterdir()
-        if path.is_dir() and not path.name.startswith((".", "__"))
+        path.relative_to(benchmark_root).with_suffix("").as_posix()
+        for path in (benchmark_root / "ops").glob("*/*.py")
+        if not path.name.startswith("_")
     )
     modules = sorted(
         path.relative_to(benchmark_root).with_suffix("").as_posix()

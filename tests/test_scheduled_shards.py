@@ -10,8 +10,10 @@ class TestScheduledShards(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         shards = discover_shards(root)
 
-        self.assertIn("ops/math", shards)
-        self.assertIn("ops/nn", shards)
+        self.assertIn("ops/math/add", shards)
+        self.assertIn("ops/nn/attention", shards)
+        self.assertIn("ops/nn/linear_attention", shards)
+        self.assertNotIn("ops/nn", shards)
         self.assertIn("models/llm/qwen2", shards)
         self.assertIn("models/llm/tiny_llm", shards)
         self.assertIn("models/dummies/mlp", shards)
@@ -24,6 +26,9 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn("builder/parse/onnx_io", shards)
         self.assertNotIn("__pycache__", shards)
         self.assertEqual(len(shards), len(set(shards)))
+        operator_shards = [shard for shard in shards if shard.startswith("ops/")]
+        self.assertGreater(len(operator_shards), 50)
+        self.assertTrue(all(len(shard.split("/")) == 3 for shard in operator_shards))
 
         buckets = [
             {shard for index, shard in enumerate(shards) if index % 7 == bucket}
@@ -44,6 +49,10 @@ class TestScheduledShards(unittest.TestCase):
 
         self.assertEqual(len(scheduled), 14)
         self.assertEqual(set(scheduled), set(mappings))
+        self.assertRegex(
+            workflow,
+            r"(?s)  benchmark:.*?    timeout-minutes: 60",
+        )
         for bucket in map(str, range(7)):
             self.assertEqual(list(mappings.values()).count(bucket), 2)
 
