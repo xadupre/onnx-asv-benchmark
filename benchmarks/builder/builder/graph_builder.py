@@ -105,7 +105,14 @@ class GraphBuilderAttention:
     timeout = 120
 
     def setup(self, nodes, dtype, builder, serialize):
-        self.build = build_light if builder == "onnx-light" else build_onnxscript
+        if nodes not in NODE_COUNTS or dtype != "float32":
+            raise ValueError(f"Unexpected parameters {nodes!r}, {dtype!r}.")
+        if builder == "onnx-light":
+            self.build = build_light
+        elif builder == "onnxscript":
+            self.build = build_onnxscript
+        else:
+            raise ValueError(f"Unexpected builder {builder!r}.")
         self.payload = payload()
         self.model = None
         self.serialized = None

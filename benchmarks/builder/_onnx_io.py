@@ -115,6 +115,7 @@ class _OnnxIOBase:
     param_names = ("shape", "dtype", "case")
 
     def setup(self, shape, dtype, case):
+        self.tmp = None
         if shape != f"X=dynamicx{self.dim} ({self.n_init} Gemm)" or dtype != "float32":
             raise ValueError(f"Unexpected model parameters {shape!r}, {dtype!r}")
         if "/ir-py" in case and importlib.util.find_spec("onnx_ir") is None:
@@ -128,8 +129,11 @@ class _OnnxIOBase:
         if case.startswith("load/2file"):
             onnxl.save(model, self.external_path, location=self.external_data)
         if case.startswith(("save/", "serialize/", "parse/")):
-            self.light_model = model
-            self.onnx_model = onnx.load(self.path)
+            library = case.rsplit("/", 1)[1]
+            if library == "onnx":
+                self.onnx_model = onnx.load(self.path)
+            elif library == "onnxlight":
+                self.light_model = model
         if "/ir-py" in case:
             import onnx_ir
 
@@ -138,11 +142,24 @@ class _OnnxIOBase:
                 self.ir_model = onnx_ir.load(self.path)
 
     def teardown(self, shape, dtype, case):
-        self.tmp.cleanup()
+        for name in (
+            "data",
+            "ir_model",
+            "light_model",
+            "loaded_model",
+            "onnx_model",
+        ):
+            if hasattr(self, name):
+                setattr(self, name, None)
+        tmp = getattr(self, "tmp", None)
+        if tmp is not None:
+            tmp.cleanup()
+            self.tmp = None
 
 
 class _OnnxLoad(_OnnxIOBase):
     def setup(self, shape, dtype, case):
+        self.loaded_model = None
         super().setup(shape, dtype, case)
         if case.endswith("/ort"):
             self.ort_options = ort.SessionOptions()
@@ -155,13 +172,16 @@ class _OnnxLoad(_OnnxIOBase):
         path = self.external_path if files.startswith("2file") else self.path
         threads = 4 if files.endswith("x4") else 1
         if library == "onnx":
-            onnx.load(path)
+            self.loaded_model = onnx.load(path)
         elif library == "ir-py":
             model = self.ir.load(path)
             if files.startswith("2file"):
                 self.ir.external_data.load_to_model(model)
+            self.loaded_model = model
         elif library == "ort":
-            ort.InferenceSession(path, sess_options=self.ort_options)
+            self.loaded_model = ort.InferenceSession(
+                path, sess_options=self.ort_options
+            )
         else:
             options = {"num_threads": threads}
             if files.startswith("2file"):
@@ -175,7 +195,8 @@ class _OnnxLoad(_OnnxIOBase):
                 options["touch_raw_data_pages"] = True
             model = onnxl.load(path, **options)
             if library == "reference":
-                ReferenceEvaluator(model)
+                model = ReferenceEvaluator(model)
+            self.loaded_model = model
 
 
 class _OnnxSave(_OnnxIOBase):
@@ -212,7 +233,7 @@ class _OnnxSave(_OnnxIOBase):
             if external:
                 options["location"] = self.out_data
             self._light_save(options)
-        if external and (library != "onnxlight" or threads == 1):
+        if external:
             _flush(self.out_data)
             _flush(self.out)
 
@@ -259,6 +280,7 @@ class _OnnxCpp(_OnnxIOBase):
     unit = "seconds"
 
     def setup(self, shape, dtype, case):
+        self.out_dir = None
         operation, _, library = case.split("/")
         executable = (
             "load_onnx_time"
@@ -291,7 +313,9 @@ class _OnnxCpp(_OnnxIOBase):
         self.out_dir = tempfile.TemporaryDirectory()
 
     def teardown(self, shape, dtype, case):
-        self.out_dir.cleanup()
+        if self.out_dir is not None:
+            self.out_dir.cleanup()
+            self.out_dir = None
         super().teardown(shape, dtype, case)
 
     def track_run(self, shape, dtype, case):
@@ -322,4 +346,9 @@ class _OnnxCpp(_OnnxIOBase):
         )
         if result is None:
             raise RuntimeError(f"C++ benchmark {case} failed")
-        return result["avg"]
+        average = result["avg"]
+        if not np.isfinite(average) or average < 0:
+            raise RuntimeError(
+                f"C++ benchmark {case} returned invalid average {average!r}"
+            )
+        return average

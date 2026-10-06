@@ -111,6 +111,12 @@ class TestResultShards(unittest.TestCase):
             "builder/builder/graph_builder",
         )
         self.assertEqual(
+            benchmark_shard(
+                "onnx.builder.graph_builder.GraphBuilderAttention.time_build"
+            ),
+            "builder/builder/graph_builder",
+        )
+        self.assertEqual(
             benchmark_shard("builder.load.onnx_io.OnnxLoad.time_run"),
             "builder/load/onnx_io",
         )
@@ -127,6 +133,12 @@ class TestResultShards(unittest.TestCase):
         self.assertEqual(
             canonical_benchmark_name("models.llm.tiny_llm.TinyLLM.time_prefill"),
             "models.llm.tiny_llm.TinyLLM.time_prefill",
+        )
+        self.assertEqual(
+            canonical_benchmark_name(
+                "onnx.builder.graph_builder.GraphBuilderAttention.time_build"
+            ),
+            "builder.builder.graph_builder.GraphBuilderAttention.time_build",
         )
 
     def test_write_and_merge_shards(self):

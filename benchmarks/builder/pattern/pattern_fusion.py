@@ -242,22 +242,25 @@ class PatternFusion:
         self.model = None
         model = self.build(blocks)
         self.expected = blocks * FUSIONS_PER_BLOCK
-        self.fusion_graph = (
-            OptimizationGraphBuilder(model)
-            if implementation == "onnx-light"
-            else onnx_ir.from_proto(model)
-        )
+        if implementation == "onnx-light":
+            self.fusion_graph = OptimizationGraphBuilder(model)
+            self.optimizer = GraphGraph(self.fusion_graph, light_patterns())
+        else:
+            self.fusion_graph = onnx_ir.from_proto(model)
+            self.optimizer = ONNXSCRIPT_RULES
 
     def time_construction(self, blocks, dtype, implementation):
         self.model = self.build(blocks)
 
     def time_fusion(self, blocks, dtype, implementation):
         if implementation == "onnx-light":
-            count = len(GraphGraph(self.fusion_graph, light_patterns()).optimize())
+            count = len(self.optimizer.optimize())
         else:
-            count = ONNXSCRIPT_RULES.apply_to_model(self.fusion_graph)
+            count = self.optimizer.apply_to_model(self.fusion_graph)
         if count != self.expected:
             raise AssertionError(f"Expected {self.expected} fusions, got {count}.")
 
     def teardown(self, blocks, dtype, implementation):
         self.model = None
+        self.optimizer = None
+        self.fusion_graph = None

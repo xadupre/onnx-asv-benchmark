@@ -59,6 +59,8 @@ class TestOnnxIO(unittest.TestCase):
                     try:
                         benchmark.setup(*parameters)
                         benchmark.time_run(*parameters)
+                        if case.startswith("load/"):
+                            self.assertIsNotNone(benchmark.loaded_model)
                         if case.startswith("save/"):
                             self.assertTrue(Path(benchmark.out).is_file())
                             if "/2file" in case:
@@ -74,6 +76,33 @@ class TestOnnxIO(unittest.TestCase):
                     finally:
                         if hasattr(benchmark, "tmp"):
                             benchmark.teardown(*parameters)
+                    if case.startswith("load/"):
+                        self.assertIsNone(benchmark.loaded_model)
+
+    def test_cpp_cases_skip_without_executables(self):
+        old_ci = os.environ.get("CI")
+        old_cicpp = os.environ.get("CICPP")
+        os.environ["CI"] = "1"
+        os.environ.pop("CICPP", None)
+        try:
+            benchmark = OnnxLoadCpp()
+            parameters = (
+                "X=dynamicx2048 (40 Gemm)",
+                "float32",
+                "load/1filex1/onnx-cpp",
+            )
+            with self.assertRaises(NotImplementedError):
+                benchmark.setup(*parameters)
+            benchmark.teardown(*parameters)
+        finally:
+            if old_ci is None:
+                os.environ.pop("CI", None)
+            else:
+                os.environ["CI"] = old_ci
+            if old_cicpp is None:
+                os.environ.pop("CICPP", None)
+            else:
+                os.environ["CICPP"] = old_cicpp
 
     def test_cpp_cases(self):
         with tempfile.TemporaryDirectory() as directory:
