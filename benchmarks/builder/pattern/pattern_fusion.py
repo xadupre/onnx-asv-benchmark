@@ -239,6 +239,7 @@ class PatternFusion:
             self.build = build_onnxscript
         else:
             raise ValueError(f"Unexpected implementation {implementation!r}.")
+        self.model = None
         model = self.build(blocks)
         self.expected = blocks * FUSIONS_PER_BLOCK
         self.fusion_graph = (
@@ -248,7 +249,7 @@ class PatternFusion:
         )
 
     def time_construction(self, blocks, dtype, implementation):
-        self.build(blocks)
+        self.model = self.build(blocks)
 
     def time_fusion(self, blocks, dtype, implementation):
         if implementation == "onnx-light":
@@ -257,3 +258,6 @@ class PatternFusion:
             count = ONNXSCRIPT_RULES.apply_to_model(self.fusion_graph)
         if count != self.expected:
             raise AssertionError(f"Expected {self.expected} fusions, got {count}.")
+
+    def teardown(self, blocks, dtype, implementation):
+        self.model = None

@@ -45,6 +45,10 @@ class TestPatternFusion(unittest.TestCase):
                     benchmark = PatternFusion()
                     benchmark.setup(50, "float32", implementation)
                     getattr(benchmark, method_name)(50, "float32", implementation)
+                    if method_name == "time_construction":
+                        self.assertIsNotNone(benchmark.model)
+                    benchmark.teardown(50, "float32", implementation)
+                    self.assertIsNone(benchmark.model)
 
     def test_invalid_block_count(self):
         for build in (build_light, build_onnxscript):
