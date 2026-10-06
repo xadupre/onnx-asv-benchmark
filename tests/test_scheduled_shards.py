@@ -1,4 +1,8 @@
 import re
+import json
+import os
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -6,6 +10,21 @@ from tools.scheduled_shards import discover_shards
 
 
 class TestScheduledShards(unittest.TestCase):
+    def test_cli_runs_without_repository_on_pythonpath(self):
+        root = Path(__file__).resolve().parents[1]
+        environment = os.environ.copy()
+        environment.pop("PYTHONPATH", None)
+        completed = subprocess.run(
+            [sys.executable, str(root / "tools" / "scheduled_shards.py"), "0"],
+            cwd=root,
+            env=environment,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        matrix = json.loads(completed.stdout)
+        self.assertTrue(matrix["shard"])
+
     def test_discover_shards(self):
         root = Path(__file__).resolve().parents[1]
         shards = discover_shards(root)
