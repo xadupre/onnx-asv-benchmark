@@ -15,6 +15,7 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn("models/llm/qwen2", shards)
         self.assertIn("models/llm/tiny_llm", shards)
         self.assertIn("models/dummies/mlp", shards)
+        self.assertIn("onnx/builder/graph_builder", shards)
         self.assertIn("builder/load/onnx_io", shards)
         self.assertIn("builder/save/onnx_io", shards)
         self.assertIn("builder/serialize/onnx_io", shards)
