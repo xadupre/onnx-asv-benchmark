@@ -88,8 +88,14 @@ class TestResultShards(unittest.TestCase):
         )
 
     def test_benchmark_shard(self):
-        self.assertEqual(benchmark_shard("ops.math.add.Add.time_run"), "ops/math")
-        self.assertEqual(benchmark_shard("maths.add.Add.time_run"), "ops/math")
+        self.assertEqual(
+            benchmark_shard("ops.math.add.Add.time_run"),
+            "ops/math/add",
+        )
+        self.assertEqual(
+            benchmark_shard("maths.add.Add.time_run"),
+            "ops/math/add",
+        )
         self.assertEqual(
             benchmark_shard("models.llm.tiny_llm.TinyLLM.time_prefill"),
             "models/llm/tiny_llm",
@@ -99,9 +105,7 @@ class TestResultShards(unittest.TestCase):
             "models/llm/tiny_llm",
         )
         self.assertEqual(
-            benchmark_shard(
-                "builder.pattern.pattern_fusion.PatternFusion.time_fusion"
-            ),
+            benchmark_shard("builder.pattern.pattern_fusion.PatternFusion.time_fusion"),
             "builder/pattern/pattern_fusion",
         )
         self.assertEqual(
@@ -147,21 +151,23 @@ class TestResultShards(unittest.TestCase):
         merged = self.root / "merged"
         self.make_results(source)
         self.write_json(
-            shards / "ops" / "math" / "cpu" / "machine.json",
+            shards / "ops" / "math" / "add" / "cpu" / "machine.json",
             {"machine": "cpu", "cpu": "anonymous"},
         )
-        self.write_json(shards / "ops" / "math" / "cpu" / "old.json", {})
+        self.write_json(shards / "ops" / "math" / "add" / "cpu" / "old.json", {})
 
         self.assertEqual(
             write_shards(source, shards),
-            {"ops/math", "models/llm/tiny_llm"},
+            {"ops/math/add", "models/llm/tiny_llm"},
         )
-        self.assertFalse((shards / "ops" / "math" / "cpu").exists())
+        self.assertFalse((shards / "ops" / "math" / "add" / "cpu").exists())
         self.assertTrue(
-            (shards / "ops" / "math" / "Example CPU (8 vCPU)" / "result.json").is_file()
+            (
+                shards / "ops" / "math" / "add" / "Example CPU (8 vCPU)" / "result.json"
+            ).is_file()
         )
         math_result_path = (
-            shards / "ops" / "math" / "Example CPU (8 vCPU)" / "result.json"
+            shards / "ops" / "math" / "add" / "Example CPU (8 vCPU)" / "result.json"
         )
         math_result = json.loads(math_result_path.read_text(encoding="utf-8"))
         math_result["params"]["num_cpu"] = "4"
@@ -240,7 +246,7 @@ class TestResultShards(unittest.TestCase):
 
         migrated = migrate_legacy_results(destination)
 
-        self.assertEqual(migrated, {"ops/math", "models/llm/tiny_llm"})
+        self.assertEqual(migrated, {"ops/math/add", "models/llm/tiny_llm"})
         self.assertFalse((destination / "benchmarks.json").exists())
         self.assertFalse((destination / "xadupre2025").exists())
         self.assertTrue(
@@ -260,20 +266,22 @@ class TestResultShards(unittest.TestCase):
         shards = self.root / "shards"
         self.make_results(source)
         write_shards(source, shards)
-        (shards / "ops" / "math").rename(shards / "maths")
+        (shards / "ops" / "math" / "add").rename(shards / "maths")
         (shards / "models" / "llm" / "tiny_llm").rename(shards / "models" / "tiny_llm")
 
         migrated = migrate_shard_hierarchy(shards)
 
-        self.assertEqual(migrated, {"ops/math", "models/llm/tiny_llm"})
+        self.assertEqual(migrated, {"ops/math/add", "models/llm/tiny_llm"})
         self.assertFalse((shards / "maths").exists())
         self.assertFalse((shards / "models" / "tiny_llm").exists())
-        self.assertTrue((shards / "ops" / "math" / "benchmarks.json").is_file())
+        self.assertTrue((shards / "ops" / "math" / "add" / "benchmarks.json").is_file())
         self.assertTrue(
             (shards / "models" / "llm" / "tiny_llm" / "benchmarks.json").is_file()
         )
         benchmarks = json.loads(
-            (shards / "ops" / "math" / "benchmarks.json").read_text(encoding="utf-8")
+            (shards / "ops" / "math" / "add" / "benchmarks.json").read_text(
+                encoding="utf-8"
+            )
         )
         self.assertIn("ops.math.add.Add.time_run", benchmarks)
         self.assertNotIn("maths.add.Add.time_run", benchmarks)

@@ -177,16 +177,17 @@ Publish the raw `.asv/results` data as independent shards under the
 
 ```bash
 python tools/publish_results.py --shard models/llm/tiny_llm
-python tools/publish_results.py --shard ops/math
+python tools/publish_results.py --shard ops/math/add
 ```
 
-Builder and model shards use `<family>/<group>/<module>`; operator shards use
-`ops/<category>`. Omitting `--shard` publishes every shard found in the local
-results. The first publication migrates legacy flat results, including the
-`xadupre2025` directory, to a processor-and-core-count-named layout.
+Builder, model, and operator shards use `<family>/<group>/<module>`. Splitting
+operators by module keeps every scheduled job below one hour. Omitting
+`--shard` publishes every shard found in the local results. The first
+publication migrates legacy flat results, including the `xadupre2025`
+directory, to a processor-and-core-count-named layout.
 
 When the site data is generated, historical benchmark names are normalized to
-the same hierarchy. The HTML navigation therefore groups operators under
+the same hierarchy. The HTML navigation groups operator modules under
 `ops/<category>` and models under `models/<group>/<module>`, including results
 recorded before the source tree was reorganized.
 
