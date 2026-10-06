@@ -98,6 +98,10 @@ class TestResultShards(unittest.TestCase):
             benchmark_shard("models.tiny_llm.TinyLLM.time_prefill"),
             "models/llm/tiny_llm",
         )
+        self.assertEqual(
+            benchmark_shard("builder.load.onnx_io.OnnxLoad.time_run"),
+            "builder/load/onnx_io",
+        )
 
     def test_canonical_benchmark_name(self):
         self.assertEqual(

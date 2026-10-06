@@ -9,14 +9,18 @@ def remove_track_benchmarks(path):
     benchmarks = {
         name: benchmark
         for name, benchmark in benchmarks.items()
-        if not isinstance(benchmark, dict) or benchmark.get("type") != "track"
+        if not (
+            isinstance(benchmark, dict)
+            and benchmark.get("type") == "track"
+            and name.startswith(("machine.track_", "versions.track_"))
+        )
     }
     path.write_text(json.dumps(benchmarks), encoding="utf-8")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Remove ASV track benchmarks before publishing the site."
+        description="Remove legacy machine and version tracks before publishing."
     )
     parser.add_argument("benchmarks", type=Path)
     remove_track_benchmarks(parser.parse_args().benchmarks)

@@ -11,8 +11,9 @@ Operator benchmarks live under `benchmarks/ops` and use the same category
 directories as onnx-light. Model benchmarks live under `benchmarks/models`,
 split between `llm` and `dummies`.
 
-The ASV environment name tracks the pinned dependency versions. ASV's machine
-profile records the processor model, architecture, logical CPU count,
+The ASV environment name tracks the pinned dependency versions. Graph
+observation tooltips show the ONNX, onnxscript, and ir-py versions. ASV's
+machine profile records the processor model, architecture, logical CPU count,
 available SIMD instruction sets, and memory with every benchmark result. The
 published home page summarizes the logical CPU count and instruction sets for
 every benchmark processor.
@@ -94,6 +95,17 @@ operators include each input name and shape; scalar and input-free cases are
 identified explicitly. Tiny-LLM and Qwen2 record the prefill, decode, cache,
 and generation shapes. Qwen2 also records `Qwen/Qwen2-0.5B` as its `model`
 parameter and uses `Qwen2-0.5B` in graph titles.
+
+`builder/load/onnx_io`, `builder/save/onnx_io`, `builder/serialize/onnx_io`,
+and `builder/parse/onnx_io` benchmark the 42 load, save, serialize, parse, and
+standalone C++ cases in onnx-light's `plot_onnx_time.py`. They use that
+example's 40-Gemm float32 model with 2048-wide weights; model creation and
+fixture file preparation happen outside the timed call. Install `onnx-ir` to
+run the `ir-py` cases. The C++ cases require the onnx-light example executables
+(`load_onnx_time`, `load_onnx_light_time`, `save_onnx_light_time`) on `PATH`
+or in their onnx-light build directories; in CI, set `CICPP=1` to enable
+executable discovery. These C++ results are tracked seconds per operation
+reported by the executables, not Python subprocess launch time.
 
 To check that every benchmark runs on all three backends in an environment
 with the benchmark dependencies installed:
