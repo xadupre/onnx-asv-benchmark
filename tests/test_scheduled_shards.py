@@ -15,7 +15,9 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn("models/llm/qwen2", shards)
         self.assertIn("models/llm/tiny_llm", shards)
         self.assertIn("models/dummies/mlp", shards)
-        self.assertIn("onnx/builder/graph_builder", shards)
+        self.assertIn("builder/pattern/pattern_fusion", shards)
+        self.assertNotIn("builder/_onnx_io", shards)
+        self.assertIn("builder/builder/graph_builder", shards)
         self.assertIn("builder/load/onnx_io", shards)
         self.assertIn("builder/save/onnx_io", shards)
         self.assertIn("builder/serialize/onnx_io", shards)
@@ -34,13 +36,11 @@ class TestScheduledShards(unittest.TestCase):
 
     def test_each_bucket_is_scheduled_twice(self):
         root = Path(__file__).resolve().parents[1]
-        workflow = (
-            root / ".github" / "workflows" / "weekly-benchmarks.yml"
-        ).read_text(encoding="utf-8")
-        scheduled = re.findall(r'- cron: "([^"]+)"', workflow)
-        mappings = dict(
-            re.findall(r'"([^"]+)"\) bucket=([0-6]) ;;', workflow)
+        workflow = (root / ".github" / "workflows" / "weekly-benchmarks.yml").read_text(
+            encoding="utf-8"
         )
+        scheduled = re.findall(r'- cron: "([^"]+)"', workflow)
+        mappings = dict(re.findall(r'"([^"]+)"\) bucket=([0-6]) ;;', workflow))
 
         self.assertEqual(len(scheduled), 14)
         self.assertEqual(set(scheduled), set(mappings))

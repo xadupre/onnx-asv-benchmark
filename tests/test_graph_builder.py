@@ -4,7 +4,7 @@ import numpy as np
 import onnx
 from onnx.reference import ReferenceEvaluator
 
-from benchmarks.onnx.builder.graph_builder import (
+from benchmarks.builder.builder.graph_builder import (
     GraphBuilderAttention,
     LARGE_INITIALIZER_COUNT,
     build_light,

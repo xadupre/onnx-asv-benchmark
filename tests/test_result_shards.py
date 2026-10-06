@@ -100,9 +100,15 @@ class TestResultShards(unittest.TestCase):
         )
         self.assertEqual(
             benchmark_shard(
-                "onnx.builder.graph_builder.GraphBuilderAttention.time_build"
+                "builder.pattern.pattern_fusion.PatternFusion.time_fusion"
             ),
-            "onnx/builder/graph_builder",
+            "builder/pattern/pattern_fusion",
+        )
+        self.assertEqual(
+            benchmark_shard(
+                "builder.builder.graph_builder.GraphBuilderAttention.time_build"
+            ),
+            "builder/builder/graph_builder",
         )
         self.assertEqual(
             benchmark_shard("builder.load.onnx_io.OnnxLoad.time_run"),
@@ -140,20 +146,10 @@ class TestResultShards(unittest.TestCase):
         )
         self.assertFalse((shards / "ops" / "math" / "cpu").exists())
         self.assertTrue(
-            (
-                shards
-                / "ops"
-                / "math"
-                / "Example CPU (8 vCPU)"
-                / "result.json"
-            ).is_file()
+            (shards / "ops" / "math" / "Example CPU (8 vCPU)" / "result.json").is_file()
         )
         math_result_path = (
-            shards
-            / "ops"
-            / "math"
-            / "Example CPU (8 vCPU)"
-            / "result.json"
+            shards / "ops" / "math" / "Example CPU (8 vCPU)" / "result.json"
         )
         math_result = json.loads(math_result_path.read_text(encoding="utf-8"))
         math_result["params"]["num_cpu"] = "4"
@@ -223,12 +219,8 @@ class TestResultShards(unittest.TestCase):
         write_shards(second_source, shards)
         merge_shards(shards, merged)
 
-        self.assertTrue(
-            (merged / "Example CPU (4 vCPU)" / "result.json").is_file()
-        )
-        self.assertTrue(
-            (merged / "Example CPU (8 vCPU)" / "result.json").is_file()
-        )
+        self.assertTrue((merged / "Example CPU (4 vCPU)" / "result.json").is_file())
+        self.assertTrue((merged / "Example CPU (8 vCPU)" / "result.json").is_file())
 
     def test_migrate_legacy_results(self):
         destination = self.root / "cache-data"
