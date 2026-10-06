@@ -1,6 +1,6 @@
 import unittest
 
-from benchmarks.builder.pattern_fusion import (
+from benchmarks.builder.pattern.pattern_fusion import (
     FUSIONS_PER_BLOCK,
     NODES_PER_BLOCK,
     PatternFusion,

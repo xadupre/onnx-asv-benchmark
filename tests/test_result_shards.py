@@ -99,8 +99,10 @@ class TestResultShards(unittest.TestCase):
             "models/llm/tiny_llm",
         )
         self.assertEqual(
-            benchmark_shard("builder.pattern_fusion.PatternFusion.time_fusion"),
-            "builder/pattern_fusion",
+            benchmark_shard(
+                "builder.pattern.pattern_fusion.PatternFusion.time_fusion"
+            ),
+            "builder/pattern/pattern_fusion",
         )
         self.assertEqual(
             benchmark_shard(
