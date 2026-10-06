@@ -1,4 +1,5 @@
 import argparse
+import ast
 from collections import defaultdict
 import json
 from pathlib import Path
@@ -6,6 +7,18 @@ import re
 
 from onnx_light.onnx.backend import TestMode, collect_test_cases_by_name
 from onnx_light_cpu import register_backend_test_cases
+
+CUSTOM_OPERATOR_LOCATIONS = {
+    "BiasGelu": ("math", "bias_gelu"),
+    "CDist": ("math", "c_dist"),
+    "GroupQueryAttention": ("nn", "group_query_attention"),
+    "MatMulNBits": ("math", "mat_mul_n_bits"),
+    "SimplifiedLayerNormalization": ("nn", "simplified_layer_normalization"),
+    "SkipSimplifiedLayerNormalization": (
+        "nn",
+        "skip_simplified_layer_normalization",
+    ),
+}
 
 
 def case_prefix(name):
@@ -22,7 +35,22 @@ def class_name(operator, part, part_count):
     return name if part_count == 1 else f"{name}Part{part + 1:02d}"
 
 
-def build_shards(cases, chunk_size):
+def operator_locations(ops_root):
+    locations = dict(CUSTOM_OPERATOR_LOCATIONS)
+    for path in sorted(Path(ops_root).glob("*/*.py")):
+        if path.name == "__init__.py":
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        classes = [node.name for node in tree.body if isinstance(node, ast.ClassDef)]
+        if len(classes) != 1:
+            raise RuntimeError(
+                f"Expected one operator class in {path}, found {classes}."
+            )
+        locations[classes[0]] = (path.parent.name, path.stem)
+    return locations
+
+
+def build_shards(cases, chunk_size, locations):
     grouped = defaultdict(list)
     operators = {}
     for case in cases:
@@ -35,15 +63,19 @@ def build_shards(cases, chunk_size):
     shards = []
     used_names = set()
     for prefix, names in sorted(grouped.items()):
+        operator = operators[prefix]
+        if operator not in locations:
+            raise RuntimeError(f"No ops benchmark location found for {operator!r}.")
+        category, module = locations[operator]
         part_count = (len(names) + chunk_size - 1) // chunk_size
         for part in range(part_count):
-            name = class_name(operators[prefix], part, part_count)
+            name = class_name(operator, part, part_count)
             if name in used_names:
                 name = f"{name}{prefix.title()}"
             used_names.add(name)
             start = part * chunk_size
             stop = None if part + 1 == part_count else start + chunk_size
-            shards.append((name, prefix, start, stop))
+            shards.append((category, module, name, prefix, start, stop))
     return shards
 
 
@@ -53,13 +85,63 @@ def write_manifest(path, shards):
         "",
         "CASE_SHARDS = (",
     ]
-    for name, prefix, start, stop in shards:
+    for category, module, name, prefix, start, stop in shards:
         stop_value = "None" if stop is None else str(stop)
-        lines.append(
-            f"    ({json.dumps(name)}, {json.dumps(prefix)}, {start}, {stop_value}),"
+        lines.extend(
+            (
+                "    (",
+                f"        {json.dumps(category)},",
+                f"        {json.dumps(module)},",
+                f"        {json.dumps(name)},",
+                f"        {json.dumps(prefix)},",
+                f"        {start},",
+                f"        {stop_value},",
+                "    ),",
+            )
         )
     lines.extend((")", ""))
     path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def write_modules(root, shards):
+    root = Path(root)
+    grouped = defaultdict(list)
+    for category, module, name, prefix, start, stop in shards:
+        grouped[category, module].append((name, prefix, start, stop))
+
+    expected = set()
+    for (category, module), classes in grouped.items():
+        directory = root / category
+        directory.mkdir(parents=True, exist_ok=True)
+        init = directory / "__init__.py"
+        if not init.exists():
+            init.write_text("", encoding="utf-8")
+        path = directory / f"{module}.py"
+        expected.add(path)
+        lines = [
+            "from benchmarks.cpu_backend_cases._base import (",
+            "    _CpuBackendCaseBenchmark,",
+            ")",
+            "",
+            "",
+        ]
+        for index, (name, prefix, start, stop) in enumerate(classes):
+            if index:
+                lines.extend(("", ""))
+            lines.extend(
+                (
+                    f"class {name}(_CpuBackendCaseBenchmark):",
+                    f"    case_prefix = {json.dumps(prefix)}",
+                    f"    case_start = {start}",
+                    f"    case_stop = {'None' if stop is None else stop}",
+                )
+            )
+        lines.append("")
+        path.write_text("\n".join(lines), encoding="utf-8")
+
+    for path in root.glob("*/*.py"):
+        if path.name != "__init__.py" and path not in expected:
+            path.unlink()
 
 
 def main():
@@ -72,6 +154,11 @@ def main():
         type=Path,
         default=Path("benchmarks/cpu_backend_cases/_manifest.py"),
     )
+    parser.add_argument(
+        "--benchmark-root",
+        type=Path,
+        default=Path("benchmarks"),
+    )
     args = parser.parse_args()
     if args.chunk_size <= 0:
         parser.error("--chunk-size must be greater than zero")
@@ -82,8 +169,10 @@ def main():
         mode=TestMode.BENCHMARK,
         generate_benchmark_expected_outputs=False,
     )
-    shards = build_shards(cases, args.chunk_size)
+    locations = operator_locations(args.benchmark_root / "ops")
+    shards = build_shards(cases, args.chunk_size, locations)
     write_manifest(args.output, shards)
+    write_modules(args.benchmark_root / "cpu_backend_cases", shards)
     print(f"Wrote {len(shards)} shards covering {len(cases)} backend cases.")
 
 

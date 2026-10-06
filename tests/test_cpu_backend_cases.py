@@ -1,13 +1,17 @@
+import importlib
 import inspect
 import unittest
 
-from benchmarks.cpu_backend_cases import cases
 from benchmarks.cpu_backend_cases._base import (
     _CpuBackendCaseBenchmark,
     _all_case_names,
 )
 from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
-from tools.generate_cpu_backend_case_manifest import build_shards, case_prefix
+from tools.generate_cpu_backend_case_manifest import (
+    build_shards,
+    case_prefix,
+    operator_locations,
+)
 
 
 class _Case:
@@ -37,13 +41,18 @@ class _Node:
 
 class TestCpuBackendCases(unittest.TestCase):
     def test_manifest_classes_cover_distinct_cases(self):
-        benchmark_types = {
-            name: value
-            for name, value in inspect.getmembers(cases, inspect.isclass)
-            if value.__module__ == cases.__name__
-            and issubclass(value, _CpuBackendCaseBenchmark)
-        }
-        self.assertEqual(set(benchmark_types), {shard[0] for shard in CASE_SHARDS})
+        benchmark_types = {}
+        for category, module_name, class_name, _, _, _ in CASE_SHARDS:
+            module = importlib.import_module(
+                f"benchmarks.cpu_backend_cases.{category}.{module_name}"
+            )
+            benchmark_type = getattr(module, class_name)
+            self.assertTrue(inspect.isclass(benchmark_type))
+            self.assertTrue(issubclass(benchmark_type, _CpuBackendCaseBenchmark))
+            self.assertEqual(benchmark_type.__module__, module.__name__)
+            benchmark_types[category, module_name, class_name] = benchmark_type
+
+        self.assertEqual(len(benchmark_types), len(CASE_SHARDS))
         names = [
             name
             for benchmark_type in benchmark_types.values()
@@ -71,7 +80,8 @@ class TestCpuBackendCases(unittest.TestCase):
         )
 
     def test_one_case_on_both_backends(self):
-        benchmark_type = cases.Abs
+        module = importlib.import_module("benchmarks.cpu_backend_cases.math.abs")
+        benchmark_type = module.Abs
         case_name = next(
             name for name in benchmark_type.params[0] if "_float32_" in name
         )
@@ -87,16 +97,32 @@ class TestCpuBackendCases(unittest.TestCase):
             _Case(f"test_cpu_abs_n{index}_float32_benchmark", "Abs")
             for index in range(5)
         ]
-        shards = build_shards(source, chunk_size=2)
+        shards = build_shards(
+            source,
+            chunk_size=2,
+            locations={"Abs": ("math", "abs")},
+        )
         self.assertEqual(
             shards,
             [
-                ("AbsPart01", "abs", 0, 2),
-                ("AbsPart02", "abs", 2, 4),
-                ("AbsPart03", "abs", 4, None),
+                ("math", "abs", "AbsPart01", "abs", 0, 2),
+                ("math", "abs", "AbsPart02", "abs", 2, 4),
+                ("math", "abs", "AbsPart03", "abs", 4, None),
             ],
         )
         self.assertTrue(source[0].unloaded)
+
+    def test_operator_locations_match_ops_hierarchy(self):
+        locations = operator_locations("benchmarks/ops")
+        self.assertEqual(locations["Abs"], ("math", "abs"))
+        self.assertEqual(
+            locations["BatchNormalization"],
+            ("nn", "batch_normalization"),
+        )
+        self.assertEqual(
+            locations["GroupQueryAttention"],
+            ("nn", "group_query_attention"),
+        )
 
     def test_case_prefix_rejects_unexpected_names(self):
         self.assertEqual(case_prefix("test_cpu_abs_float32_benchmark"), "abs")

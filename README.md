@@ -140,9 +140,11 @@ onnx-light measurements unchanged.
 The separate `cpu_backend_cases` benchmark family runs every
 `test_cpu_*_benchmark` case registered by onnx-light-cpu. Each case is measured
 with both onnx-light-cpu and ONNX Runtime; unsupported ONNX Runtime cases remain
-visible as failed measurements. The generated manifest splits large operator
-families into shards of at most 200 cases so scheduled jobs remain below the
-one-hour limit. Regenerate it after updating the pinned onnx-light-cpu release:
+visible as failed measurements. Cases use the same category and module
+hierarchy as `benchmarks/ops`; the generated manifest splits modules with more
+than 200 cases into separate class-level shards so scheduled jobs remain below
+the one-hour limit. Regenerate the modules and manifest after updating the
+pinned onnx-light-cpu release:
 
 ```bash
 python tools/generate_cpu_backend_case_manifest.py

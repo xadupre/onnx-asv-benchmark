@@ -19,7 +19,8 @@ def discover_shards(root):
         if not path.name.startswith("_")
     )
     cpu_backend_cases = [
-        f"cpu_backend_cases/cases/{class_name}" for class_name, _, _, _ in CASE_SHARDS
+        f"cpu_backend_cases/{category}/{module}/{class_name}"
+        for category, module, class_name, _, _, _ in CASE_SHARDS
     ]
     return operators + modules + cpu_backend_cases
 

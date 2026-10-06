@@ -25,7 +25,13 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn("builder/serialize/onnx_io", shards)
         self.assertIn("builder/parse/onnx_io", shards)
         self.assertTrue(
-            any(shard.startswith("cpu_backend_cases/cases/") for shard in shards)
+            any(shard.startswith("cpu_backend_cases/math/abs/") for shard in shards)
+        )
+        self.assertTrue(
+            any(
+                shard.startswith("cpu_backend_cases/nn/batch_normalization/")
+                for shard in shards
+            )
         )
         self.assertNotIn("__pycache__", shards)
         self.assertEqual(len(shards), len(set(shards)))
@@ -36,7 +42,7 @@ class TestScheduledShards(unittest.TestCase):
             shard for shard in shards if shard.startswith("cpu_backend_cases/")
         ]
         self.assertTrue(cpu_case_shards)
-        self.assertTrue(all(len(shard.split("/")) == 3 for shard in cpu_case_shards))
+        self.assertTrue(all(len(shard.split("/")) == 4 for shard in cpu_case_shards))
 
         buckets = [
             {shard for index, shard in enumerate(shards) if index % 7 == bucket}

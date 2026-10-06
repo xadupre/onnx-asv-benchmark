@@ -125,8 +125,8 @@ class TestResultShards(unittest.TestCase):
             "builder/load/onnx_io",
         )
         self.assertEqual(
-            benchmark_shard("cpu_backend_cases.cases.Abs.time_run"),
-            "cpu_backend_cases/cases/Abs",
+            benchmark_shard("cpu_backend_cases.math.abs.Abs.time_run"),
+            "cpu_backend_cases/math/abs/Abs",
         )
 
     def test_canonical_benchmark_name(self):
