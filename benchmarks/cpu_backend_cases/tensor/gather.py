@@ -48,7 +48,7 @@ class GatherInt64Int32(_CpuBackendCaseBenchmark):
     case_dtypes = ('int64', 'int32')
 
 
-class GatherInt64Int64(_CpuBackendCaseBenchmark):
+class GatherInt64Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "gather"
     case_dtypes = ('int64', 'int64')
 

@@ -3,16 +3,16 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class BatchnormalizationBfloat16Bfloat16Bfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
+class BatchNormalizationBfloat16Inputs5(_CpuBackendCaseBenchmark):
     case_prefix = "batchnormalization"
     case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16')
 
 
-class BatchnormalizationFloat16Float16Float16Float16Float16(_CpuBackendCaseBenchmark):
+class BatchNormalizationFloat16Inputs5(_CpuBackendCaseBenchmark):
     case_prefix = "batchnormalization"
     case_dtypes = ('float16', 'float16', 'float16', 'float16', 'float16')
 
 
-class BatchnormalizationFloat32Float32Float32Float32Float32(_CpuBackendCaseBenchmark):
+class BatchNormalizationFloat32Inputs5(_CpuBackendCaseBenchmark):
     case_prefix = "batchnormalization"
     case_dtypes = ('float32', 'float32', 'float32', 'float32', 'float32')

@@ -11,6 +11,7 @@ from tools.generate_cpu_backend_case_manifest import (
     build_shards,
     case_metadata,
     case_prefix,
+    class_name,
     operator_locations,
     simplified_case_name,
 )
@@ -131,4 +132,8 @@ class TestCpuBackendCases(unittest.TestCase):
                 ("float64", "float64"),
             ),
             "sub_v14_row",
+        )
+        self.assertEqual(
+            class_name("LinearAttention", ("bfloat16",) * 6),
+            "LinearAttentionBfloat16Inputs6",
         )

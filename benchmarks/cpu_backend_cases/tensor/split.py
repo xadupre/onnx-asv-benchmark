@@ -48,7 +48,7 @@ class SplitInt64(_CpuBackendCaseBenchmark):
     case_dtypes = ('int64',)
 
 
-class SplitInt64Int64(_CpuBackendCaseBenchmark):
+class SplitInt64Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "split"
     case_dtypes = ('int64', 'int64')
 

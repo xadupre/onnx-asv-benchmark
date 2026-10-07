@@ -3,21 +3,21 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class SimplifiedlayernormalizationBfloat16Bfloat16(_CpuBackendCaseBenchmark):
+class SimplifiedLayerNormalizationBfloat16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "simplified"
     case_dtypes = ('bfloat16', 'bfloat16')
 
 
-class SimplifiedlayernormalizationFloat16Float16(_CpuBackendCaseBenchmark):
+class SimplifiedLayerNormalizationFloat16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "simplified"
     case_dtypes = ('float16', 'float16')
 
 
-class SimplifiedlayernormalizationFloat32Float32(_CpuBackendCaseBenchmark):
+class SimplifiedLayerNormalizationFloat32Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "simplified"
     case_dtypes = ('float32', 'float32')
 
 
-class SimplifiedlayernormalizationFloat64Float64(_CpuBackendCaseBenchmark):
+class SimplifiedLayerNormalizationFloat64Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "simplified"
     case_dtypes = ('float64', 'float64')

@@ -3,16 +3,16 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class RmsnormalizationBfloat16Bfloat16(_CpuBackendCaseBenchmark):
+class RMSNormalizationBfloat16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "rms"
     case_dtypes = ('bfloat16', 'bfloat16')
 
 
-class RmsnormalizationFloat16Float16(_CpuBackendCaseBenchmark):
+class RMSNormalizationFloat16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "rms"
     case_dtypes = ('float16', 'float16')
 
 
-class RmsnormalizationFloat32Float32(_CpuBackendCaseBenchmark):
+class RMSNormalizationFloat32Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "rms"
     case_dtypes = ('float32', 'float32')

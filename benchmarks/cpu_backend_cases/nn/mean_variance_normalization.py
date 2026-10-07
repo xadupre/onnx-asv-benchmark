@@ -3,16 +3,16 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class MeanvariancenormalizationBfloat16(_CpuBackendCaseBenchmark):
+class MeanVarianceNormalizationBfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "meanvariancenormalization"
     case_dtypes = ('bfloat16',)
 
 
-class MeanvariancenormalizationFloat16(_CpuBackendCaseBenchmark):
+class MeanVarianceNormalizationFloat16(_CpuBackendCaseBenchmark):
     case_prefix = "meanvariancenormalization"
     case_dtypes = ('float16',)
 
 
-class MeanvariancenormalizationFloat32(_CpuBackendCaseBenchmark):
+class MeanVarianceNormalizationFloat32(_CpuBackendCaseBenchmark):
     case_prefix = "meanvariancenormalization"
     case_dtypes = ('float32',)

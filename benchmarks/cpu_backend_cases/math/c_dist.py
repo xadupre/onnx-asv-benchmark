@@ -3,11 +3,11 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class CdistFloat32Float32(_CpuBackendCaseBenchmark):
+class CDistFloat32Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "cdist"
     case_dtypes = ('float32', 'float32')
 
 
-class CdistFloat64Float64(_CpuBackendCaseBenchmark):
+class CDistFloat64Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "cdist"
     case_dtypes = ('float64', 'float64')

@@ -3,11 +3,11 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class MeanFloat32Float32Float32(_CpuBackendCaseBenchmark):
+class MeanFloat32Inputs3(_CpuBackendCaseBenchmark):
     case_prefix = "mean"
     case_dtypes = ('float32', 'float32', 'float32')
 
 
-class MeanFloat64Float64Float64(_CpuBackendCaseBenchmark):
+class MeanFloat64Inputs3(_CpuBackendCaseBenchmark):
     case_prefix = "mean"
     case_dtypes = ('float64', 'float64', 'float64')

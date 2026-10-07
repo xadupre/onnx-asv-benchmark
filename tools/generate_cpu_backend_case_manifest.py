@@ -30,8 +30,14 @@ def case_prefix(name):
 
 
 def class_name(operator, dtypes):
-    name = operator + "_" + "_".join(dtypes)
-    name = "".join(part.title() for part in re.split(r"[^A-Za-z0-9]+", name))
+    distinct_dtypes = tuple(dict.fromkeys(dtypes))
+    operator_name = re.sub(r"[^A-Za-z0-9]", "", operator)
+    dtype_name = "".join(
+        "".join(part.title() for part in re.split(r"[^A-Za-z0-9]+", dtype))
+        for dtype in distinct_dtypes
+    )
+    input_count = f"Inputs{len(dtypes)}" if len(distinct_dtypes) < len(dtypes) else ""
+    name = operator_name + dtype_name + input_count
     if not name or name[0].isdigit():
         raise ValueError(f"Cannot derive a benchmark class name from {operator!r}.")
     return name

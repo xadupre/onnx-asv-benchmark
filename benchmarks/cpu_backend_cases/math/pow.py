@@ -3,7 +3,7 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class PowBfloat16Bfloat16(_CpuBackendCaseBenchmark):
+class PowBfloat16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "pow"
     case_dtypes = ('bfloat16', 'bfloat16')
 
@@ -43,7 +43,7 @@ class PowFloat16Bfloat16(_CpuBackendCaseBenchmark):
     case_dtypes = ('float16', 'bfloat16')
 
 
-class PowFloat16Float16(_CpuBackendCaseBenchmark):
+class PowFloat16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "pow"
     case_dtypes = ('float16', 'float16')
 
@@ -73,7 +73,7 @@ class PowFloat16Uint64(_CpuBackendCaseBenchmark):
     case_dtypes = ('float16', 'uint64')
 
 
-class PowFloat32Float32(_CpuBackendCaseBenchmark):
+class PowFloat32Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "pow"
     case_dtypes = ('float32', 'float32')
 
@@ -103,7 +103,7 @@ class PowInt32Float32(_CpuBackendCaseBenchmark):
     case_dtypes = ('int32', 'float32')
 
 
-class PowInt32Int32(_CpuBackendCaseBenchmark):
+class PowInt32Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "pow"
     case_dtypes = ('int32', 'int32')
 
@@ -133,7 +133,7 @@ class PowInt64Int32(_CpuBackendCaseBenchmark):
     case_dtypes = ('int64', 'int32')
 
 
-class PowInt64Int64(_CpuBackendCaseBenchmark):
+class PowInt64Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "pow"
     case_dtypes = ('int64', 'int64')
 

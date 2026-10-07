@@ -3,76 +3,76 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class AttentionBfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
+class AttentionBfloat16Inputs3(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16')
 
 
-class AttentionBfloat16Bfloat16Bfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
+class AttentionBfloat16Inputs5(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16')
 
 
-class AttentionBfloat16Bfloat16Bfloat16Bool(_CpuBackendCaseBenchmark):
+class AttentionBfloat16BoolInputs4(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'bool')
 
 
-class AttentionBfloat16Bfloat16Bfloat16Float32(_CpuBackendCaseBenchmark):
+class AttentionBfloat16Float32Inputs4(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'float32')
 
 
-class AttentionBfloat16Bfloat16Bfloat16Int64(_CpuBackendCaseBenchmark):
+class AttentionBfloat16Int64Inputs4(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'int64')
 
 
-class AttentionFloat16Float16Float16(_CpuBackendCaseBenchmark):
+class AttentionFloat16Inputs3(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float16', 'float16', 'float16')
 
 
-class AttentionFloat16Float16Float16Bool(_CpuBackendCaseBenchmark):
+class AttentionFloat16BoolInputs4(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float16', 'float16', 'float16', 'bool')
 
 
-class AttentionFloat16Float16Float16Float16Float16(_CpuBackendCaseBenchmark):
+class AttentionFloat16Inputs5(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float16', 'float16', 'float16', 'float16', 'float16')
 
 
-class AttentionFloat16Float16Float16Float32(_CpuBackendCaseBenchmark):
+class AttentionFloat16Float32Inputs4(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float16', 'float16', 'float16', 'float32')
 
 
-class AttentionFloat16Float16Float16Int64(_CpuBackendCaseBenchmark):
+class AttentionFloat16Int64Inputs4(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float16', 'float16', 'float16', 'int64')
 
 
-class AttentionFloat32Float32Float32(_CpuBackendCaseBenchmark):
+class AttentionFloat32Inputs3(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float32', 'float32', 'float32')
 
 
-class AttentionFloat32Float32Float32Bool(_CpuBackendCaseBenchmark):
+class AttentionFloat32BoolInputs4(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float32', 'float32', 'float32', 'bool')
 
 
-class AttentionFloat32Float32Float32Float32(_CpuBackendCaseBenchmark):
+class AttentionFloat32Inputs4(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float32', 'float32', 'float32', 'float32')
 
 
-class AttentionFloat32Float32Float32Float32Float32(_CpuBackendCaseBenchmark):
+class AttentionFloat32Inputs5(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float32', 'float32', 'float32', 'float32', 'float32')
 
 
-class AttentionFloat32Float32Float32Int64(_CpuBackendCaseBenchmark):
+class AttentionFloat32Int64Inputs4(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
     case_dtypes = ('float32', 'float32', 'float32', 'int64')

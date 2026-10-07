@@ -3,56 +3,56 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class GreaterorequalBfloat16Bfloat16(_CpuBackendCaseBenchmark):
+class GreaterOrEqualBfloat16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('bfloat16', 'bfloat16')
 
 
-class GreaterorequalFloat16Float16(_CpuBackendCaseBenchmark):
+class GreaterOrEqualFloat16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('float16', 'float16')
 
 
-class GreaterorequalFloat32Float32(_CpuBackendCaseBenchmark):
+class GreaterOrEqualFloat32Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('float32', 'float32')
 
 
-class GreaterorequalInt16Int16(_CpuBackendCaseBenchmark):
+class GreaterOrEqualInt16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('int16', 'int16')
 
 
-class GreaterorequalInt32Int32(_CpuBackendCaseBenchmark):
+class GreaterOrEqualInt32Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('int32', 'int32')
 
 
-class GreaterorequalInt64Int64(_CpuBackendCaseBenchmark):
+class GreaterOrEqualInt64Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('int64', 'int64')
 
 
-class GreaterorequalInt8Int8(_CpuBackendCaseBenchmark):
+class GreaterOrEqualInt8Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('int8', 'int8')
 
 
-class GreaterorequalUint16Uint16(_CpuBackendCaseBenchmark):
+class GreaterOrEqualUint16Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('uint16', 'uint16')
 
 
-class GreaterorequalUint32Uint32(_CpuBackendCaseBenchmark):
+class GreaterOrEqualUint32Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('uint32', 'uint32')
 
 
-class GreaterorequalUint64Uint64(_CpuBackendCaseBenchmark):
+class GreaterOrEqualUint64Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('uint64', 'uint64')
 
 
-class GreaterorequalUint8Uint8(_CpuBackendCaseBenchmark):
+class GreaterOrEqualUint8Inputs2(_CpuBackendCaseBenchmark):
     case_prefix = "greaterorequal"
     case_dtypes = ('uint8', 'uint8')

@@ -3,26 +3,26 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class LinearattentionBfloat16Bfloat16Bfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
+class LinearAttentionBfloat16Inputs5(_CpuBackendCaseBenchmark):
     case_prefix = "linear"
     case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16')
 
 
-class LinearattentionBfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
+class LinearAttentionBfloat16Inputs6(_CpuBackendCaseBenchmark):
     case_prefix = "linear"
     case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16')
 
 
-class LinearattentionFloat32Float32Float32Float32Float32(_CpuBackendCaseBenchmark):
+class LinearAttentionFloat32Inputs5(_CpuBackendCaseBenchmark):
     case_prefix = "linear"
     case_dtypes = ('float32', 'float32', 'float32', 'float32', 'float32')
 
 
-class LinearattentionFloat32Float32Float32Float32Float32Float32(_CpuBackendCaseBenchmark):
+class LinearAttentionFloat32Inputs6(_CpuBackendCaseBenchmark):
     case_prefix = "linear"
     case_dtypes = ('float32', 'float32', 'float32', 'float32', 'float32', 'float32')
 
 
-class LinearattentionFloat32Float32Float32Float32Float32Float32Microsoft(_CpuBackendCaseBenchmark):
+class LinearAttentionFloat32Inputs6Microsoft(_CpuBackendCaseBenchmark):
     case_prefix = "microsoft"
     case_dtypes = ('float32', 'float32', 'float32', 'float32', 'float32', 'float32')
