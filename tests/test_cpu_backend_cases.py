@@ -7,10 +7,13 @@ from benchmarks.cpu_backend_cases._base import (
     _all_case_names,
 )
 from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
+from benchmarks.cpu_backend_cases._metadata import CASE_METADATA
 from tools.generate_cpu_backend_case_manifest import (
     build_shards,
+    case_metadata,
     case_prefix,
     operator_locations,
+    simplified_case_name,
 )
 
 
@@ -53,28 +56,11 @@ class TestCpuBackendCases(unittest.TestCase):
             benchmark_types[category, module_name, class_name] = benchmark_type
 
         self.assertEqual(len(benchmark_types), len(CASE_SHARDS))
-        names = [
-            name
-            for benchmark_type in benchmark_types.values()
-            for name in benchmark_type.params[0]
-        ]
-        self.assertEqual(len(names), len(set(names)))
-        self.assertEqual(set(names), set(_all_case_names()))
+        self.assertEqual(set(CASE_METADATA), set(_all_case_names()))
         self.assertTrue(
             all(
-                name.startswith("test_cpu_") and name.endswith("_benchmark")
-                for name in names
-            )
-        )
-        self.assertTrue(
-            all(
-                len(benchmark_type.params[0]) <= 100
-                for benchmark_type in benchmark_types.values()
-            )
-        )
-        self.assertTrue(
-            all(
-                benchmark_type.params[1] == ("onnx-light-cpu", "onnxruntime")
+                benchmark_type.case_stop is None
+                or benchmark_type.case_stop - benchmark_type.case_start <= 100
                 for benchmark_type in benchmark_types.values()
             )
         )
@@ -82,15 +68,17 @@ class TestCpuBackendCases(unittest.TestCase):
     def test_one_case_on_both_backends(self):
         module = importlib.import_module("benchmarks.cpu_backend_cases.math.abs")
         benchmark_type = module.Abs
-        case_name = next(
-            name for name in benchmark_type.params[0] if "_float32_" in name
+        benchmark_name = next(
+            name for name in dir(benchmark_type) if name.startswith("time_")
         )
-        for backend in benchmark_type.params[1]:
+        method = getattr(benchmark_type, benchmark_name)
+        for backend in method.params[-1]:
             with self.subTest(backend=backend):
                 benchmark = benchmark_type()
-                benchmark.setup(case_name, backend)
-                benchmark.time_run(case_name, backend)
-                benchmark.teardown(case_name, backend)
+                parameters = tuple(axis[0] for axis in method.params[:-1]) + (backend,)
+                method.setup(*parameters)
+                getattr(benchmark, benchmark_name)(*parameters)
+                method.teardown(*parameters)
 
     def test_manifest_chunking(self):
         source = [
@@ -128,3 +116,13 @@ class TestCpuBackendCases(unittest.TestCase):
         self.assertEqual(case_prefix("test_cpu_abs_float32_benchmark"), "abs")
         with self.assertRaises(ValueError):
             case_prefix("test_cc_abs_float32_benchmark")
+
+    def test_simplified_case_name(self):
+        self.assertEqual(
+            simplified_case_name(
+                "test_cpu_sub_v14_row_float64xfloat64_to_float64_"
+                "swapped_n1048576_benchmark",
+                ("float64", "float64"),
+            ),
+            "sub_v14_row",
+        )
