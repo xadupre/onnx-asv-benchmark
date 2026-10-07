@@ -5,5 +5,7 @@ from benchmarks.cpu_backend_cases._base import (
 
 class QLinearMatMul(_CpuBackendCaseBenchmark):
     case_prefix = "qlinearmatmul"
-    case_start = 0
-    case_stop = None
+    case_names = (
+        'test_cpu_qlinearmatmul_square_64_int8_benchmark',
+        'test_cpu_qlinearmatmul_square_64_uint8_benchmark',
+    )

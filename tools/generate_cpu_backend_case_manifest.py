@@ -76,7 +76,7 @@ def build_shards(cases, chunk_size, locations):
             used_names.add(name)
             start = part * chunk_size
             stop = None if part + 1 == part_count else start + chunk_size
-            shards.append((category, module, name, prefix, start, stop))
+            shards.append((category, module, name, prefix, tuple(names[start:stop])))
     return shards
 
 
@@ -130,17 +130,13 @@ def write_manifest(path, shards):
         "",
         "CASE_SHARDS = (",
     ]
-    for category, module, name, prefix, start, stop in shards:
-        stop_value = "None" if stop is None else str(stop)
+    for category, module, name, _, _ in shards:
         lines.extend(
             (
                 "    (",
                 f"        {json.dumps(category)},",
                 f"        {json.dumps(module)},",
                 f"        {json.dumps(name)},",
-                f"        {json.dumps(prefix)},",
-                f"        {start},",
-                f"        {stop_value},",
                 "    ),",
             )
         )
@@ -151,8 +147,8 @@ def write_manifest(path, shards):
 def write_modules(root, shards):
     root = Path(root)
     grouped = defaultdict(list)
-    for category, module, name, prefix, start, stop in shards:
-        grouped[category, module].append((name, prefix, start, stop))
+    for category, module, name, prefix, case_names in shards:
+        grouped[category, module].append((name, prefix, case_names))
 
     expected = set()
     for (category, module), classes in grouped.items():
@@ -170,17 +166,18 @@ def write_modules(root, shards):
             "",
             "",
         ]
-        for index, (name, prefix, start, stop) in enumerate(classes):
+        for index, (name, prefix, case_names) in enumerate(classes):
             if index:
                 lines.extend(("", ""))
             lines.extend(
                 (
                     f"class {name}(_CpuBackendCaseBenchmark):",
                     f"    case_prefix = {json.dumps(prefix)}",
-                    f"    case_start = {start}",
-                    f"    case_stop = {'None' if stop is None else stop}",
+                    "    case_names = (",
                 )
             )
+            lines.extend(f"        {case_name!r}," for case_name in case_names)
+            lines.append("    )")
         lines.append("")
         path.write_text("\n".join(lines), encoding="utf-8")
 

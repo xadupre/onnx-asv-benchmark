@@ -22,7 +22,7 @@ def discover_shards(root):
     )
     cpu_backend_cases = [
         f"cpu_backend_cases/{category}/{module}/{class_name}"
-        for category, module, class_name, _, _, _ in case_shards
+        for category, module, class_name in case_shards
     ]
     return operators + modules + cpu_backend_cases
 

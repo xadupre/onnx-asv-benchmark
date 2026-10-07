@@ -5,5 +5,6 @@ from benchmarks.cpu_backend_cases._base import (
 
 class Max(_CpuBackendCaseBenchmark):
     case_prefix = "max"
-    case_start = 0
-    case_stop = None
+    case_names = (
+        'test_cpu_max_n4096_3inputs_float32_benchmark',
+    )

@@ -198,17 +198,14 @@ class _CpuBackendCaseBenchmark:
     number = 1
     timeout = 60
     case_prefix = None
-    case_start = 0
-    case_stop = None
+    case_names = ()
 
     def __init_subclass__(cls):
         super().__init_subclass__()
         if cls.case_prefix is None:
             return
         grouped = {}
-        for case_name in _case_names(
-            cls.case_prefix, cls.case_start, cls.case_stop
-        ):
+        for case_name in cls.case_names:
             simplified_name = CASE_METADATA[case_name][0]
             grouped.setdefault(simplified_name, []).append(case_name)
         for case_names in grouped.values():

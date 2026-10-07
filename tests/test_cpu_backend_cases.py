@@ -45,7 +45,7 @@ class _Node:
 class TestCpuBackendCases(unittest.TestCase):
     def test_manifest_classes_cover_distinct_cases(self):
         benchmark_types = {}
-        for category, module_name, class_name, _, _, _ in CASE_SHARDS:
+        for category, module_name, class_name in CASE_SHARDS:
             module = importlib.import_module(
                 f"benchmarks.cpu_backend_cases.{category}.{module_name}"
             )
@@ -59,8 +59,7 @@ class TestCpuBackendCases(unittest.TestCase):
         self.assertEqual(set(CASE_METADATA), set(_all_case_names()))
         self.assertTrue(
             all(
-                benchmark_type.case_stop is None
-                or benchmark_type.case_stop - benchmark_type.case_start <= 100
+                len(benchmark_type.case_names) <= 100
                 for benchmark_type in benchmark_types.values()
             )
         )
@@ -93,9 +92,33 @@ class TestCpuBackendCases(unittest.TestCase):
         self.assertEqual(
             shards,
             [
-                ("math", "abs", "AbsPart01", "abs", 0, 2),
-                ("math", "abs", "AbsPart02", "abs", 2, 4),
-                ("math", "abs", "AbsPart03", "abs", 4, None),
+                (
+                    "math",
+                    "abs",
+                    "AbsPart01",
+                    "abs",
+                    (
+                        "test_cpu_abs_n0_float32_benchmark",
+                        "test_cpu_abs_n1_float32_benchmark",
+                    ),
+                ),
+                (
+                    "math",
+                    "abs",
+                    "AbsPart02",
+                    "abs",
+                    (
+                        "test_cpu_abs_n2_float32_benchmark",
+                        "test_cpu_abs_n3_float32_benchmark",
+                    ),
+                ),
+                (
+                    "math",
+                    "abs",
+                    "AbsPart03",
+                    "abs",
+                    ("test_cpu_abs_n4_float32_benchmark",),
+                ),
             ],
         )
         self.assertTrue(source[0].unloaded)
