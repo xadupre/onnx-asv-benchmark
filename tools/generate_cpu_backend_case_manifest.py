@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 
 from onnx_light.onnx.backend import TestMode, collect_test_cases_by_name
+from onnx_light.onnx.helper import tensor_dtype_to_np_dtype
 from onnx_light_cpu import register_backend_test_cases
 
 CUSTOM_OPERATOR_LOCATIONS = {
@@ -28,11 +29,18 @@ def case_prefix(name):
     return match.group(1)
 
 
-def class_name(operator, part, part_count):
-    name = re.sub(r"[^A-Za-z0-9]", "", operator)
+def class_name(operator, dtypes):
+    distinct_dtypes = tuple(dict.fromkeys(dtypes))
+    operator_name = re.sub(r"[^A-Za-z0-9]", "", operator)
+    dtype_name = "".join(
+        "".join(part.title() for part in re.split(r"[^A-Za-z0-9]+", dtype))
+        for dtype in distinct_dtypes
+    )
+    input_count = f"Inputs{len(dtypes)}" if len(distinct_dtypes) < len(dtypes) else ""
+    name = operator_name + dtype_name + input_count
     if not name or name[0].isdigit():
         raise ValueError(f"Cannot derive a benchmark class name from {operator!r}.")
-    return name if part_count == 1 else f"{name}Part{part + 1:02d}"
+    return name
 
 
 def operator_locations(ops_root):
@@ -50,33 +58,58 @@ def operator_locations(ops_root):
     return locations
 
 
-def build_shards(cases, chunk_size, locations):
+def build_shards(cases, locations):
     grouped = defaultdict(list)
     operators = {}
     for case in cases:
         prefix = case_prefix(case.name)
-        grouped[prefix].append(case.name)
+        _, dtypes, _ = case_metadata(case)
+        grouped[prefix, dtypes].append(case.name)
         if prefix not in operators:
             operators[prefix] = case.model.graph.node[0].op_type
-            case.unload()
+        case.unload()
 
     shards = []
     used_names = set()
-    for prefix, names in sorted(grouped.items()):
+    for (prefix, dtypes), names in sorted(grouped.items()):
         operator = operators[prefix]
         if operator not in locations:
             raise RuntimeError(f"No ops benchmark location found for {operator!r}.")
         category, module = locations[operator]
-        part_count = (len(names) + chunk_size - 1) // chunk_size
-        for part in range(part_count):
-            name = class_name(operator, part, part_count)
-            if name in used_names:
-                name = f"{name}{prefix.title()}"
-            used_names.add(name)
-            start = part * chunk_size
-            stop = None if part + 1 == part_count else start + chunk_size
-            shards.append((category, module, name, prefix, start, stop))
+        name = class_name(operator, dtypes)
+        if name in used_names:
+            name = f"{name}{prefix.title()}"
+        used_names.add(name)
+        shards.append((category, module, name, prefix, dtypes))
     return shards
+
+
+def simplified_case_name(name, dtypes):
+    value = name.removeprefix("test_cpu_").removesuffix("_benchmark")
+    for dtype in sorted(set(dtypes), key=len, reverse=True):
+        value = value.replace(dtype, "")
+    value = re.sub(r"_to_(?=_|$)", "_", value)
+    value = re.sub(r"_n\d+(?=_|$)", "_", value)
+    value = value.replace("_swapped", "")
+    value = re.sub(r"(^|_)x(?=_|$)", "_", value)
+    value = re.sub(r"_+", "_", value).strip("_")
+    if not value:
+        raise ValueError(f"Cannot simplify backend case name {name!r}.")
+    return value
+
+
+def case_metadata(case):
+    if not case.data_sets:
+        raise RuntimeError(f"Backend case {case.name!r} has no data sets.")
+    inputs = case.data_sets[0].inputs
+    dtypes = tuple(
+        str(tensor_dtype_to_np_dtype(int(tensor.data_type))) for tensor in inputs
+    )
+    shapes = " x ".join(
+        str(tuple(int(dimension) for dimension in tensor.shape))
+        for tensor in inputs
+    )
+    return simplified_case_name(case.name, dtypes), dtypes, shapes
 
 
 def write_manifest(path, shards):
@@ -85,17 +118,14 @@ def write_manifest(path, shards):
         "",
         "CASE_SHARDS = (",
     ]
-    for category, module, name, prefix, start, stop in shards:
-        stop_value = "None" if stop is None else str(stop)
+    for category, _, name, prefix, dtypes in shards:
         lines.extend(
             (
                 "    (",
                 f"        {json.dumps(category)},",
-                f"        {json.dumps(module)},",
                 f"        {json.dumps(name)},",
                 f"        {json.dumps(prefix)},",
-                f"        {start},",
-                f"        {stop_value},",
+                f"        {dtypes!r},",
                 "    ),",
             )
         )
@@ -105,38 +135,25 @@ def write_manifest(path, shards):
 
 def write_modules(root, shards):
     root = Path(root)
-    grouped = defaultdict(list)
-    for category, module, name, prefix, start, stop in shards:
-        grouped[category, module].append((name, prefix, start, stop))
-
+    categories = sorted({category for category, _, _, _, _ in shards})
     expected = set()
-    for (category, module), classes in grouped.items():
+    for category in categories:
         directory = root / category
         directory.mkdir(parents=True, exist_ok=True)
         init = directory / "__init__.py"
         if not init.exists():
             init.write_text("", encoding="utf-8")
-        path = directory / f"{module}.py"
+        path = directory / "cases.py"
         expected.add(path)
         lines = [
             "from benchmarks.cpu_backend_cases._base import (",
-            "    _CpuBackendCaseBenchmark,",
+            "    create_benchmark_classes,",
             ")",
             "",
             "",
+            f"create_benchmark_classes(globals(), {category!r})",
+            "",
         ]
-        for index, (name, prefix, start, stop) in enumerate(classes):
-            if index:
-                lines.extend(("", ""))
-            lines.extend(
-                (
-                    f"class {name}(_CpuBackendCaseBenchmark):",
-                    f"    case_prefix = {json.dumps(prefix)}",
-                    f"    case_start = {start}",
-                    f"    case_stop = {'None' if stop is None else stop}",
-                )
-            )
-        lines.append("")
         path.write_text("\n".join(lines), encoding="utf-8")
 
     for path in root.glob("*/*.py"):
@@ -148,7 +165,6 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generate ASV shards for onnx-light-cpu BENCHMARK backend cases."
     )
-    parser.add_argument("--chunk-size", type=int, default=100)
     parser.add_argument(
         "--output",
         type=Path,
@@ -160,8 +176,6 @@ def main():
         default=Path("benchmarks"),
     )
     args = parser.parse_args()
-    if args.chunk_size <= 0:
-        parser.error("--chunk-size must be greater than zero")
 
     register_backend_test_cases()
     cases = collect_test_cases_by_name(
@@ -170,7 +184,7 @@ def main():
         generate_benchmark_expected_outputs=False,
     )
     locations = operator_locations(args.benchmark_root / "ops")
-    shards = build_shards(cases, args.chunk_size, locations)
+    shards = build_shards(cases, locations)
     write_manifest(args.output, shards)
     write_modules(args.benchmark_root / "cpu_backend_cases", shards)
     print(f"Wrote {len(shards)} shards covering {len(cases)} backend cases.")

@@ -68,7 +68,7 @@ RUNTIME_OVERVIEW = """\
             <button class="btn btn-default" type="button" data-family="models">Models</button>
             <button class="btn btn-default" type="button" data-family="ops">Operators</button>
             <button class="btn btn-default" type="button" data-family="cpu_backend_cases">
-              CPU backend cases
+              Performance
             </button>
           </div>
           <div id="benchmark-category-filters"></div>
@@ -117,6 +117,16 @@ def customize_pages(html_dir):
         "'(prefers-color-scheme: dark)').matches;",
     )
     graph = _replace_once(graph, "var date_scale = false;", "var date_scale = true;")
+    graph = _replace_once(
+        graph,
+        '$("#title").text(bm_name);',
+        "var title = bm_name;\n"
+        "        if (bm_name.indexOf('cpu_backend_cases.') == 0) {\n"
+        "            title = bm_name.split('.').pop().replace(/^time_/, '')\n"
+        "                .replace(/_/g, ' ');\n"
+        "        }\n"
+        '        $("#title").text(title);',
+    )
     graph = _replace_once(
         graph,
         '                            parts.push(key + "-" + value);',
@@ -244,7 +254,9 @@ def customize_pages(html_dir):
         "            var group = bm_name.slice(0, i);\n"
         "            var name = bm_name.slice(i + 1);",
         "            var parts = bm_name.split('.');\n"
-        "            var group = parts.slice(0, 2).join(' / ');",
+        "            var group = parts[0] == 'cpu_backend_cases'\n"
+        "                ? 'Performance / ' + parts[1]\n"
+        "                : parts.slice(0, 2).join(' / ');",
     )
     grid = _replace_once(
         grid,
@@ -252,7 +264,9 @@ def customize_pages(html_dir):
         "bm.name.slice(bm.name.indexOf('.') + 1);",
         "var parts = bm.name.split('.');\n"
         "        var display_name = bm.pretty_name || "
-        "(parts[0] == 'ops' && parts[parts.length - 1] == 'time_run'\n"
+        "(parts[0] == 'cpu_backend_cases'\n"
+        "            ? parts[parts.length - 1].replace(/^time_/, '').replace(/_/g, ' ')\n"
+        "            : parts[0] == 'ops' && parts[parts.length - 1] == 'time_run'\n"
         "            ? parts[parts.length - 2]\n"
         "            : parts.slice(2).join('.'));",
     )
