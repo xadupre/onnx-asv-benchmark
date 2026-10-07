@@ -5,12 +5,15 @@ from benchmarks.builder._onnx_io import (
     SHAPES,
     _OnnxCpp,
     _OnnxSave,
+    case_parameters,
 )
 
 
 class OnnxSave(_OnnxSave):
-    params = (SHAPES, DTYPES, SAVE_CASES)
+    cases = SAVE_CASES
+    params = (SHAPES, DTYPES, *case_parameters(cases))
 
 
 class OnnxSaveCpp(_OnnxCpp):
-    params = (SHAPES, DTYPES, SAVE_CPP_CASES)
+    cases = SAVE_CPP_CASES
+    params = (SHAPES, DTYPES, *case_parameters(cases))

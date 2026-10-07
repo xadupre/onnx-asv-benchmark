@@ -114,17 +114,7 @@ def customize_pages(html_dir):
         "'use strict';",
         "'use strict';\n\n"
         "var system_dark_theme = window.matchMedia("
-        "'(prefers-color-scheme: dark)').matches;\n\n"
-        "function split_case_library(value) {\n"
-        "    if (typeof value != 'string') {\n"
-        "        return null;\n"
-        "    }\n"
-        "    var parts = value.split('/');\n"
-        "    if (parts.length != 3) {\n"
-        "        return null;\n"
-        "    }\n"
-        "    return {case_name: parts.slice(0, 2).join('/'), library: parts[2]};\n"
-        "}",
+        "'(prefers-color-scheme: dark)').matches;",
     )
     graph = _replace_once(graph, "var date_scale = false;", "var date_scale = true;")
     graph = _replace_once(
@@ -138,15 +128,6 @@ def customize_pages(html_dir):
         "                                    key == 'env-ONNX_LIGHT_CPU_VERSION' ||\n"
         "                                    key == 'env-ONNX_LIGHT_VERSION') {\n"
         "                                return;\n"
-        "                            }\n"
-        "                            if (key == 'case') {\n"
-        "                                var case_library =\n"
-        "                                    split_case_library(normalized_value);\n"
-        "                                if (case_library !== null) {\n"
-        "                                    parts.push('case-' + case_library.case_name);\n"
-        "                                    parts.push('library-' + case_library.library);\n"
-        "                                    return;\n"
-        "                                }\n"
         "                            }\n"
         "                            if (key == 'backend' &&\n"
         "                                    normalized_value == 'onnxruntime') {\n"
@@ -224,16 +205,6 @@ def customize_pages(html_dir):
         "                            };\n"
         "                            var name = parameter_names[key] ||\n"
         "                                key.replace(/^env-/, '');\n"
-        "                            if (key == 'case') {\n"
-        "                                var case_library = split_case_library(value);\n"
-        "                                if (case_library !== null) {\n"
-        "                                    contents.push($('<span>').text('case: ' +\n"
-        "                                        case_library.case_name).html());\n"
-        "                                    contents.push($('<span>').text('library: ' +\n"
-        "                                        case_library.library).html());\n"
-        "                                    return;\n"
-        "                                }\n"
-        "                            }\n"
         "                            var text = name + ': ' + value;\n"
         '                            contents.push($("<span>").text(text).html());\n'
         "                        }\n"
@@ -256,21 +227,6 @@ def customize_pages(html_dir):
         '"color:var(--asv-muted);background:var(--asv-background);'
         "padding-left:0.25em;font-size:smaller;'",
     )
-    graph = _replace_once(
-        graph,
-        "                button.text(value_display);\n\n"
-        "                if ($.inArray(value_idx, benchmark_param_selection[axis]) == -1) {",
-        "                if (name == 'case') {\n"
-        "                    var case_library = split_case_library(value_display);\n"
-        "                    if (case_library !== null) {\n"
-        "                        value_display = 'case: ' + case_library.case_name +\n"
-        "                            ' | library: ' + case_library.library;\n"
-        "                    }\n"
-        "                }\n"
-        "                button.text(value_display);\n\n"
-        "                if ($.inArray(value_idx, benchmark_param_selection[axis]) == -1) {",
-    )
-
     summary_path = html_dir / "summarylist.js"
     summary = summary_path.read_text(encoding="utf-8")
     summary = _replace_once(

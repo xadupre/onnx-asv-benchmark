@@ -3,8 +3,10 @@ from benchmarks.builder._onnx_io import (
     SERIALIZE_CASES,
     SHAPES,
     _OnnxBytes,
+    case_parameters,
 )
 
 
 class OnnxSerialize(_OnnxBytes):
-    params = (SHAPES, DTYPES, SERIALIZE_CASES)
+    cases = SERIALIZE_CASES
+    params = (SHAPES, DTYPES, *case_parameters(cases))
