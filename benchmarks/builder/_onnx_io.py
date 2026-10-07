@@ -15,7 +15,6 @@ import onnxruntime as ort
 from onnx_light.doc import find_standalone_executable, measure_cpp_with_example
 from onnx_light.onnx.reference import ReferenceEvaluator
 
-
 SHAPES = ("X=dynamicx2048 (40 Gemm)",)
 DTYPES = ("float32",)
 
@@ -75,6 +74,18 @@ SAVE_CPP_CASES = (
 )
 
 
+def case_parameters(cases):
+    case_names = []
+    libraries = []
+    for value in cases:
+        case_name, library = value.rsplit("/", 1)
+        if case_name not in case_names:
+            case_names.append(case_name)
+        if library not in libraries:
+            libraries.append(library)
+    return tuple(case_names), tuple(libraries)
+
+
 def _make_model(n_init, dim):
     rng = np.random.default_rng(0)
     initializers = []
@@ -112,10 +123,20 @@ class _OnnxIOBase:
     dim = 2048
     number = 1
     timeout = 600
-    param_names = ("shape", "dtype", "case")
+    param_names = ("shape", "dtype", "case", "library")
+    cases = ()
 
-    def setup(self, shape, dtype, case):
+    def _full_case(self, case, library):
+        full_case = f"{case}/{library}"
+        if full_case not in self.cases:
+            raise NotImplementedError(
+                f"Unsupported case/library combination {case!r}, {library!r}"
+            )
+        return full_case
+
+    def setup(self, shape, dtype, case, library):
         self.tmp = None
+        case = self._full_case(case, library)
         if shape != f"X=dynamicx{self.dim} ({self.n_init} Gemm)" or dtype != "float32":
             raise ValueError(f"Unexpected model parameters {shape!r}, {dtype!r}")
         if "/ir-py" in case and importlib.util.find_spec("onnx_ir") is None:
@@ -141,7 +162,7 @@ class _OnnxIOBase:
             if case.startswith("save/"):
                 self.ir_model = onnx_ir.load(self.path)
 
-    def teardown(self, shape, dtype, case):
+    def teardown(self, shape, dtype, case, library):
         for name in (
             "data",
             "ir_model",
@@ -158,16 +179,18 @@ class _OnnxIOBase:
 
 
 class _OnnxLoad(_OnnxIOBase):
-    def setup(self, shape, dtype, case):
+    def setup(self, shape, dtype, case, library):
         self.loaded_model = None
-        super().setup(shape, dtype, case)
+        super().setup(shape, dtype, case, library)
+        case = self._full_case(case, library)
         if case.endswith("/ort"):
             self.ort_options = ort.SessionOptions()
             self.ort_options.graph_optimization_level = (
                 ort.GraphOptimizationLevel.ORT_DISABLE_ALL
             )
 
-    def time_run(self, shape, dtype, case):
+    def time_run(self, shape, dtype, case, library):
+        case = self._full_case(case, library)
         _, files, library = case.split("/")
         path = self.external_path if files.startswith("2file") else self.path
         threads = 4 if files.endswith("x4") else 1
@@ -202,12 +225,13 @@ class _OnnxLoad(_OnnxIOBase):
 class _OnnxSave(_OnnxIOBase):
     repeat = 1
 
-    def setup(self, shape, dtype, case):
-        super().setup(shape, dtype, case)
+    def setup(self, shape, dtype, case, library):
+        super().setup(shape, dtype, case, library)
         self.out = str(Path(self.tmp.name) / "out.onnx")
         self.out_data = self.out + ".data"
 
-    def time_run(self, shape, dtype, case):
+    def time_run(self, shape, dtype, case, library):
+        case = self._full_case(case, library)
         _, files, library = case.split("/")
         external = files.startswith("2file")
         threads = 4 if files.endswith("x4") else 1
@@ -225,7 +249,9 @@ class _OnnxSave(_OnnxIOBase):
                 onnx.save(self.onnx_model, self.out)
         elif library == "ir-py":
             if external:
-                self.ir.save(self.ir_model, self.out, external_data=Path(self.out_data).name)
+                self.ir.save(
+                    self.ir_model, self.out, external_data=Path(self.out_data).name
+                )
             else:
                 self.ir.save(self.ir_model, self.out)
         else:
@@ -242,8 +268,9 @@ class _OnnxSave(_OnnxIOBase):
 
 
 class _OnnxBytes(_OnnxIOBase):
-    def setup(self, shape, dtype, case):
-        super().setup(shape, dtype, case)
+    def setup(self, shape, dtype, case, library):
+        super().setup(shape, dtype, case, library)
+        case = self._full_case(case, library)
         if case.startswith("parse/"):
             self.data = (
                 self.onnx_model.SerializeToString()
@@ -260,7 +287,8 @@ class _OnnxBytes(_OnnxIOBase):
                 self.options.no_copy = mode.startswith("nc")
                 self.options.num_threads = 4 if mode.endswith("x4") else 1
 
-    def time_run(self, shape, dtype, case):
+    def time_run(self, shape, dtype, case, library):
+        case = self._full_case(case, library)
         operation, mode, library = case.split("/")
         if operation == "serialize":
             model = self.onnx_model if library == "onnx" else self.light_model
@@ -279,12 +307,13 @@ class _OnnxBytes(_OnnxIOBase):
 class _OnnxCpp(_OnnxIOBase):
     unit = "seconds"
 
-    def setup(self, shape, dtype, case):
+    def setup(self, shape, dtype, case, library):
         self.out_dir = None
-        operation, _, library = case.split("/")
+        full_case = self._full_case(case, library)
+        operation, _, benchmark_library = full_case.split("/")
         executable = (
             "load_onnx_time"
-            if library == "onnx-cpp"
+            if benchmark_library == "onnx-cpp"
             else f"{operation}_onnx_light_time"
         )
         paths = {
@@ -309,19 +338,24 @@ class _OnnxCpp(_OnnxIOBase):
         )
         if self.executable is None:
             raise NotImplementedError(f"{executable} is unavailable")
-        super().setup(shape, dtype, case)
+        super().setup(shape, dtype, case, library)
         self.out_dir = tempfile.TemporaryDirectory()
 
-    def teardown(self, shape, dtype, case):
+    def teardown(self, shape, dtype, case, library):
         if self.out_dir is not None:
             self.out_dir.cleanup()
             self.out_dir = None
-        super().teardown(shape, dtype, case)
+        super().teardown(shape, dtype, case, library)
 
-    def track_run(self, shape, dtype, case):
+    def track_run(self, shape, dtype, case, library):
+        case = self._full_case(case, library)
         operation, files, library = case.split("/")
         threads = 4 if files.endswith("x4") else 1
-        path = self.external_path if operation == "load" and files.startswith("2file") else self.path
+        path = (
+            self.external_path
+            if operation == "load" and files.startswith("2file")
+            else self.path
+        )
         if operation == "load":
             args = [path, "20", str(threads)]
             if files.startswith("2file"):

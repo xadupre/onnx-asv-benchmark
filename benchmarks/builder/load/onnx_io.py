@@ -5,12 +5,15 @@ from benchmarks.builder._onnx_io import (
     SHAPES,
     _OnnxCpp,
     _OnnxLoad,
+    case_parameters,
 )
 
 
 class OnnxLoad(_OnnxLoad):
-    params = (SHAPES, DTYPES, LOAD_CASES)
+    cases = LOAD_CASES
+    params = (SHAPES, DTYPES, *case_parameters(cases))
 
 
 class OnnxLoadCpp(_OnnxCpp):
-    params = (SHAPES, DTYPES, LOAD_CPP_CASES)
+    cases = LOAD_CPP_CASES
+    params = (SHAPES, DTYPES, *case_parameters(cases))
