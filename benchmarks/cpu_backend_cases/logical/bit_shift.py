@@ -6,10 +6,22 @@ from benchmarks.cpu_backend_cases._base import (
 class BitShiftPart01(_CpuBackendCaseBenchmark):
     case_prefix = "bitshift"
     case_start = 0
-    case_stop = 200
+    case_stop = 100
 
 
 class BitShiftPart02(_CpuBackendCaseBenchmark):
     case_prefix = "bitshift"
+    case_start = 100
+    case_stop = 200
+
+
+class BitShiftPart03(_CpuBackendCaseBenchmark):
+    case_prefix = "bitshift"
     case_start = 200
+    case_stop = 300
+
+
+class BitShiftPart04(_CpuBackendCaseBenchmark):
+    case_prefix = "bitshift"
+    case_start = 300
     case_stop = None
