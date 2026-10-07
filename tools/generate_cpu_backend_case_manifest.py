@@ -148,7 +148,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generate ASV shards for onnx-light-cpu BENCHMARK backend cases."
     )
-    parser.add_argument("--chunk-size", type=int, default=200)
+    parser.add_argument("--chunk-size", type=int, default=100)
     parser.add_argument(
         "--output",
         type=Path,

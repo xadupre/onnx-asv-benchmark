@@ -68,7 +68,7 @@ class TestCpuBackendCases(unittest.TestCase):
         )
         self.assertTrue(
             all(
-                len(benchmark_type.params[0]) <= 200
+                len(benchmark_type.params[0]) <= 100
                 for benchmark_type in benchmark_types.values()
             )
         )

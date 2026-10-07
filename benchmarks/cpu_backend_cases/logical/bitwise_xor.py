@@ -6,10 +6,16 @@ from benchmarks.cpu_backend_cases._base import (
 class BitwiseXorPart01(_CpuBackendCaseBenchmark):
     case_prefix = "bitwisexor"
     case_start = 0
-    case_stop = 200
+    case_stop = 100
 
 
 class BitwiseXorPart02(_CpuBackendCaseBenchmark):
+    case_prefix = "bitwisexor"
+    case_start = 100
+    case_stop = 200
+
+
+class BitwiseXorPart03(_CpuBackendCaseBenchmark):
     case_prefix = "bitwisexor"
     case_start = 200
     case_stop = None
