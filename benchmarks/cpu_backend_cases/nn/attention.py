@@ -3,90 +3,76 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class Attention(_CpuBackendCaseBenchmark):
+class AttentionBfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "attention"
-    case_names = (
-        'test_cpu_attention_llm_qwen3_6_27b_opset23_rank3_gqa_q128_kv128_hd256_qh24_kvh4_causal_stateless_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_6_27b_opset23_rank3_gqa_q1_kv1024_hd256_qh24_kvh4_causal_internal_cache_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_6_27b_opset23_rank3_gqa_q1_kv128_hd256_qh24_kvh4_causal_internal_cache_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_6_27b_opset23_rank3_gqa_q1_kv4096_hd256_qh24_kvh4_causal_internal_cache_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_6_35b_a3b_opset23_rank3_gqa_q128_kv128_hd256_qh16_kvh2_causal_stateless_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_6_35b_a3b_opset23_rank3_gqa_q1_kv1024_hd256_qh16_kvh2_causal_internal_cache_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_6_35b_a3b_opset23_rank3_gqa_q1_kv128_hd256_qh16_kvh2_causal_internal_cache_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_6_35b_a3b_opset23_rank3_gqa_q1_kv4096_hd256_qh16_kvh2_causal_internal_cache_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_8b_opset23_rank3_gqa_q128_kv128_hd128_qh32_kvh8_causal_stateless_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_8b_opset23_rank3_gqa_q1_kv1024_hd128_qh32_kvh8_causal_internal_cache_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_8b_opset23_rank3_gqa_q1_kv128_hd128_qh32_kvh8_causal_internal_cache_float16_benchmark',
-        'test_cpu_attention_llm_qwen3_8b_opset23_rank3_gqa_q1_kv4096_hd128_qh32_kvh8_causal_internal_cache_float16_benchmark',
-        'test_cpu_attention_opset23_rank3_mha_q128_kv128_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank3_mha_q128_kv128_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank3_mha_q128_kv128_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank3_mha_q129_kv257_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank3_mha_q129_kv257_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_gqa_q128_kv128_hd64_causal_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_gqa_q128_kv128_hd64_causal_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_gqa_q128_kv128_hd64_causal_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv1024_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv1024_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv1024_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd128_causal_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd128_causal_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd128_causal_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd128_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd128_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd256_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd256_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_additive_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_additive_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_additive_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_bool_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_bool_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_bool_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_causal_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_causal_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_causal_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv128_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv1_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv1_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv1_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv4096_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv4096_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv4096_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv8192_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv8192_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q128_kv8192_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q129_kv257_hd256_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q129_kv257_hd256_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q16_kv128_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q16_kv128_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q16_kv128_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q16_kv257_hd63_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q16_kv257_hd63_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q1_kv1024_hd64_none_internal_cache_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q1_kv1024_hd64_none_internal_cache_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q1_kv1024_hd64_none_internal_cache_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q1_kv128_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q1_kv128_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q1_kv128_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q1_kv257_hd63_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q1_kv257_hd63_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q2_kv128_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q2_kv128_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q2_kv128_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q512_kv128_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q512_kv128_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q512_kv128_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q8_kv128_hd64_none_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q8_kv128_hd64_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q8_kv128_hd64_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q8_kv257_hd128_none_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mha_q8_kv257_hd128_none_stateless_float32_benchmark',
-        'test_cpu_attention_opset23_rank4_mqa_q128_kv128_hd64_causal_stateless_bfloat16_benchmark',
-        'test_cpu_attention_opset23_rank4_mqa_q128_kv128_hd64_causal_stateless_float16_benchmark',
-        'test_cpu_attention_opset23_rank4_mqa_q128_kv128_hd64_causal_stateless_float32_benchmark',
-        'test_cpu_attention_opset24_rank4_mha_q8_kv1024_hd64_causal_nonpad_bfloat16_benchmark',
-        'test_cpu_attention_opset24_rank4_mha_q8_kv1024_hd64_causal_nonpad_float16_benchmark',
-        'test_cpu_attention_opset24_rank4_mha_q8_kv1024_hd64_causal_nonpad_float32_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16')
+
+
+class AttentionBfloat16Bfloat16Bfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16')
+
+
+class AttentionBfloat16Bfloat16Bfloat16Bool(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'bool')
+
+
+class AttentionBfloat16Bfloat16Bfloat16Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'float32')
+
+
+class AttentionBfloat16Bfloat16Bfloat16Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'int64')
+
+
+class AttentionFloat16Float16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float16', 'float16', 'float16')
+
+
+class AttentionFloat16Float16Float16Bool(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float16', 'float16', 'float16', 'bool')
+
+
+class AttentionFloat16Float16Float16Float16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float16', 'float16', 'float16', 'float16', 'float16')
+
+
+class AttentionFloat16Float16Float16Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float16', 'float16', 'float16', 'float32')
+
+
+class AttentionFloat16Float16Float16Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float16', 'float16', 'float16', 'int64')
+
+
+class AttentionFloat32Float32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float32', 'float32', 'float32')
+
+
+class AttentionFloat32Float32Float32Bool(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float32', 'float32', 'float32', 'bool')
+
+
+class AttentionFloat32Float32Float32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float32', 'float32', 'float32', 'float32')
+
+
+class AttentionFloat32Float32Float32Float32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float32', 'float32', 'float32', 'float32', 'float32')
+
+
+class AttentionFloat32Float32Float32Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "attention"
+    case_dtypes = ('float32', 'float32', 'float32', 'int64')

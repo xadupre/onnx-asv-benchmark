@@ -17,8 +17,6 @@ from onnx_light_cpu import (
     used_kernel_names,
 )
 
-from benchmarks.cpu_backend_cases._metadata import CASE_METADATA
-
 BACKENDS = ("onnx-light-cpu", "onnxruntime")
 CPU_COUNT = (
     len(os.sched_getaffinity(0))
@@ -33,24 +31,54 @@ def _to_numpy(tensor):
     return np.frombuffer(tensor.raw_data(), dtype=dtype).reshape(shape)
 
 
+def _simplified_case_name(name, dtypes):
+    value = name.removeprefix("test_cpu_").removesuffix("_benchmark")
+    for dtype in sorted(set(dtypes), key=len, reverse=True):
+        value = value.replace(dtype, "")
+    value = re.sub(r"_to_(?=_|$)", "_", value)
+    value = re.sub(r"_n\d+(?=_|$)", "_", value)
+    value = value.replace("_swapped", "")
+    value = re.sub(r"(^|_)x(?=_|$)", "_", value)
+    return re.sub(r"_+", "_", value).strip("_")
+
+
+def _case_metadata(case):
+    inputs = case.data_sets[0].inputs
+    dtypes = tuple(
+        str(tensor_dtype_to_np_dtype(int(tensor.data_type))) for tensor in inputs
+    )
+    shapes = " x ".join(
+        str(tuple(int(dimension) for dimension in tensor.shape))
+        for tensor in inputs
+    )
+    return _simplified_case_name(case.name, dtypes), dtypes, shapes
+
+
 @lru_cache(maxsize=1)
-def _all_case_names():
+def _all_case_records():
     register_backend_test_cases()
     cases = collect_test_cases_by_name(
         "^test_cpu_.*_benchmark$",
         mode=TestMode.BENCHMARK,
         generate_benchmark_expected_outputs=False,
     )
-    return tuple(sorted(case.name for case in cases))
+    records = []
+    for case in cases:
+        records.append((case.name, *_case_metadata(case)))
+        case.unload()
+    return tuple(sorted(records))
 
 
-def _case_names(prefix, start, stop):
+def _case_records(prefix, dtypes):
     marker = f"test_cpu_{prefix}_"
-    names = tuple(name for name in _all_case_names() if name.startswith(marker))
-    selected = names[start:stop]
+    selected = tuple(
+        record
+        for record in _all_case_records()
+        if record[0].startswith(marker) and record[2] == dtypes
+    )
     if not selected:
         raise RuntimeError(
-            f"No onnx-light-cpu BENCHMARK cases found for {prefix!r}[{start}:{stop}]."
+            f"No onnx-light-cpu BENCHMARK cases found for {prefix!r} and {dtypes!r}."
         )
     return selected
 
@@ -141,8 +169,7 @@ def _prepare_case(case_name, backend):
     return case, feeds, session
 
 
-def _make_benchmark(case_names):
-    records = [(name, *CASE_METADATA[name]) for name in case_names]
+def _make_benchmark(records):
     input_count = len(records[0][2])
     if any(len(dtypes) != input_count for _, _, dtypes, _ in records):
         raise RuntimeError("Grouped backend cases have different input counts.")
@@ -198,17 +225,16 @@ class _CpuBackendCaseBenchmark:
     number = 1
     timeout = 60
     case_prefix = None
-    case_names = ()
+    case_dtypes = ()
 
     def __init_subclass__(cls):
         super().__init_subclass__()
         if cls.case_prefix is None:
             return
         grouped = {}
-        for case_name in cls.case_names:
-            simplified_name = CASE_METADATA[case_name][0]
-            grouped.setdefault(simplified_name, []).append(case_name)
-        for case_names in grouped.values():
-            simplified_name, benchmark = _make_benchmark(case_names)
+        for record in _case_records(cls.case_prefix, cls.case_dtypes):
+            grouped.setdefault(record[1], []).append(record)
+        for records in grouped.values():
+            simplified_name, benchmark = _make_benchmark(records)
             benchmark.__name__ = f"time_{simplified_name}"
             setattr(cls, benchmark.__name__, benchmark)

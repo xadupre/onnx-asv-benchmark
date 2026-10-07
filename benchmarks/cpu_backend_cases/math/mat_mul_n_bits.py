@@ -3,91 +3,16 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class MatMulNBits(_CpuBackendCaseBenchmark):
+class MatmulnbitsBfloat16Uint8Bfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "matmulnbits"
-    case_names = (
-        'test_cpu_matmulnbits_muse_glimmer_attention_gate_m128_k6656_n4096_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_gate_m128_k6656_n4096_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_gate_m128_k6656_n4096_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_gate_m1_k6656_n4096_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_gate_m1_k6656_n4096_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_gate_m1_k6656_n4096_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_gate_m8_k6656_n4096_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_gate_m8_k6656_n4096_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_gate_m8_k6656_n4096_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_output_m128_k4096_n6656_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_output_m128_k4096_n6656_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_output_m128_k4096_n6656_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_output_m1_k4096_n6656_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_output_m1_k4096_n6656_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_output_m1_k4096_n6656_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_output_m8_k4096_n6656_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_output_m8_k4096_n6656_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_attention_output_m8_k4096_n6656_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_down_m128_k19968_n6656_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_down_m128_k19968_n6656_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_down_m128_k19968_n6656_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_down_m1_k19968_n6656_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_down_m1_k19968_n6656_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_down_m1_k19968_n6656_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_down_m8_k19968_n6656_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_down_m8_k19968_n6656_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_down_m8_k19968_n6656_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_gate_m128_k6656_n19968_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_gate_m128_k6656_n19968_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_gate_m128_k6656_n19968_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_gate_m1_k6656_n19968_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_gate_m1_k6656_n19968_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_gate_m1_k6656_n19968_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_gate_m8_k6656_n19968_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_gate_m8_k6656_n19968_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_gate_m8_k6656_n19968_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_k_m128_k6656_n256_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_k_m128_k6656_n256_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_k_m128_k6656_n256_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_k_m1_k6656_n256_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_k_m1_k6656_n256_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_k_m1_k6656_n256_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_k_m8_k6656_n256_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_k_m8_k6656_n256_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_k_m8_k6656_n256_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_q_m128_k6656_n4096_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_q_m128_k6656_n4096_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_q_m128_k6656_n4096_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_q_m1_k6656_n4096_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_q_m1_k6656_n4096_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_q_m1_k6656_n4096_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_q_m8_k6656_n4096_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_q_m8_k6656_n4096_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_q_m8_k6656_n4096_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_up_m128_k6656_n19968_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_up_m128_k6656_n19968_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_up_m128_k6656_n19968_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_up_m1_k6656_n19968_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_up_m1_k6656_n19968_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_up_m1_k6656_n19968_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_up_m8_k6656_n19968_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_up_m8_k6656_n19968_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_up_m8_k6656_n19968_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_v_m128_k6656_n256_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_v_m128_k6656_n256_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_v_m128_k6656_n256_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_v_m1_k6656_n256_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_v_m1_k6656_n256_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_v_m1_k6656_n256_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_v_m8_k6656_n256_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_v_m8_k6656_n256_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_muse_glimmer_v_m8_k6656_n256_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_qwen2_gate_up_decode_m1_k4096_n11008_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_qwen2_qkv_decode_m1_k4096_n6144_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_qwen3_qkv_short_prefill_m8_k1024_n4096_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_type_coverage_m2_k256_n128_bits2_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_type_coverage_m2_k256_n128_bits2_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_type_coverage_m2_k256_n128_bits2_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_type_coverage_m2_k256_n128_bits4_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_type_coverage_m2_k256_n128_bits4_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_type_coverage_m2_k256_n128_bits4_block32_accuracy4_float32_benchmark',
-        'test_cpu_matmulnbits_type_coverage_m2_k256_n128_bits8_block32_accuracy4_bfloat16_benchmark',
-        'test_cpu_matmulnbits_type_coverage_m2_k256_n128_bits8_block32_accuracy4_float16_benchmark',
-        'test_cpu_matmulnbits_type_coverage_m2_k256_n128_bits8_block32_accuracy4_float32_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'uint8', 'bfloat16')
+
+
+class MatmulnbitsFloat16Uint8Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "matmulnbits"
+    case_dtypes = ('float16', 'uint8', 'float16')
+
+
+class MatmulnbitsFloat32Uint8Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "matmulnbits"
+    case_dtypes = ('float32', 'uint8', 'float32')

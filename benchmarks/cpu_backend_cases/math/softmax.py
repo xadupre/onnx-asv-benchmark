@@ -3,19 +3,21 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class Softmax(_CpuBackendCaseBenchmark):
+class SoftmaxBfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "softmax"
-    case_names = (
-        'test_cpu_softmax_1024x1024_bfloat16_benchmark',
-        'test_cpu_softmax_1024x1024_float16_benchmark',
-        'test_cpu_softmax_1024x1024_float32_benchmark',
-        'test_cpu_softmax_1024x1024_float64_benchmark',
-        'test_cpu_softmax_1x1024_bfloat16_benchmark',
-        'test_cpu_softmax_1x1024_float16_benchmark',
-        'test_cpu_softmax_1x1024_float32_benchmark',
-        'test_cpu_softmax_1x1024_float64_benchmark',
-        'test_cpu_softmax_32x1024_bfloat16_benchmark',
-        'test_cpu_softmax_32x1024_float16_benchmark',
-        'test_cpu_softmax_32x1024_float32_benchmark',
-        'test_cpu_softmax_32x1024_float64_benchmark',
-    )
+    case_dtypes = ('bfloat16',)
+
+
+class SoftmaxFloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "softmax"
+    case_dtypes = ('float16',)
+
+
+class SoftmaxFloat32(_CpuBackendCaseBenchmark):
+    case_prefix = "softmax"
+    case_dtypes = ('float32',)
+
+
+class SoftmaxFloat64(_CpuBackendCaseBenchmark):
+    case_prefix = "softmax"
+    case_dtypes = ('float64',)

@@ -3,67 +3,151 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class Concat(_CpuBackendCaseBenchmark):
+class ConcatBfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "concat"
-    case_names = (
-        'test_cpu_concat_axis0_bfloat16_benchmark',
-        'test_cpu_concat_axis0_float16_benchmark',
-        'test_cpu_concat_axis0_float32_benchmark',
-        'test_cpu_concat_axis0_float64_benchmark',
-        'test_cpu_concat_axis0_int64_benchmark',
-        'test_cpu_concat_axis0_int8_benchmark',
-        'test_cpu_concat_empty_input_bfloat16_benchmark',
-        'test_cpu_concat_empty_input_float16_benchmark',
-        'test_cpu_concat_empty_input_float32_benchmark',
-        'test_cpu_concat_empty_input_float64_benchmark',
-        'test_cpu_concat_empty_input_int64_benchmark',
-        'test_cpu_concat_empty_input_int8_benchmark',
-        'test_cpu_concat_last_axis_bfloat16_benchmark',
-        'test_cpu_concat_last_axis_float16_benchmark',
-        'test_cpu_concat_last_axis_float32_benchmark',
-        'test_cpu_concat_last_axis_float64_benchmark',
-        'test_cpu_concat_last_axis_int64_benchmark',
-        'test_cpu_concat_last_axis_int8_benchmark',
-        'test_cpu_concat_many_inputs_bfloat16_benchmark',
-        'test_cpu_concat_many_inputs_float16_benchmark',
-        'test_cpu_concat_many_inputs_float32_benchmark',
-        'test_cpu_concat_many_inputs_float64_benchmark',
-        'test_cpu_concat_many_inputs_int64_benchmark',
-        'test_cpu_concat_many_inputs_int8_benchmark',
-        'test_cpu_concat_middle_axis_bfloat16_benchmark',
-        'test_cpu_concat_middle_axis_float16_benchmark',
-        'test_cpu_concat_middle_axis_float32_benchmark',
-        'test_cpu_concat_middle_axis_float64_benchmark',
-        'test_cpu_concat_middle_axis_int64_benchmark',
-        'test_cpu_concat_middle_axis_int8_benchmark',
-        'test_cpu_concat_narrow_bfloat16_benchmark',
-        'test_cpu_concat_narrow_float16_benchmark',
-        'test_cpu_concat_narrow_float32_benchmark',
-        'test_cpu_concat_narrow_float64_benchmark',
-        'test_cpu_concat_narrow_int64_benchmark',
-        'test_cpu_concat_narrow_int8_benchmark',
-        'test_cpu_concat_single_bfloat16_benchmark',
-        'test_cpu_concat_single_float16_benchmark',
-        'test_cpu_concat_single_float32_benchmark',
-        'test_cpu_concat_single_float64_benchmark',
-        'test_cpu_concat_single_int64_benchmark',
-        'test_cpu_concat_single_int8_benchmark',
-        'test_cpu_concat_tail_bfloat16_benchmark',
-        'test_cpu_concat_tail_float16_benchmark',
-        'test_cpu_concat_tail_float32_benchmark',
-        'test_cpu_concat_tail_float64_benchmark',
-        'test_cpu_concat_tail_int64_benchmark',
-        'test_cpu_concat_tail_int8_benchmark',
-        'test_cpu_concat_uneven_bfloat16_benchmark',
-        'test_cpu_concat_uneven_float16_benchmark',
-        'test_cpu_concat_uneven_float32_benchmark',
-        'test_cpu_concat_uneven_float64_benchmark',
-        'test_cpu_concat_uneven_int64_benchmark',
-        'test_cpu_concat_uneven_int8_benchmark',
-        'test_cpu_concat_vector_bfloat16_benchmark',
-        'test_cpu_concat_vector_float16_benchmark',
-        'test_cpu_concat_vector_float32_benchmark',
-        'test_cpu_concat_vector_float64_benchmark',
-        'test_cpu_concat_vector_int64_benchmark',
-        'test_cpu_concat_vector_int8_benchmark',
-    )
+    case_dtypes = ('bfloat16',)
+
+
+class ConcatBfloat16Bfloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('bfloat16', 'bfloat16')
+
+
+class ConcatBfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16')
+
+
+class ConcatBfloat16Bfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'bfloat16')
+
+
+class ConcatBfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16', 'bfloat16')
+
+
+class ConcatFloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float16',)
+
+
+class ConcatFloat16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float16', 'float16')
+
+
+class ConcatFloat16Float16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float16', 'float16', 'float16')
+
+
+class ConcatFloat16Float16Float16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float16', 'float16', 'float16', 'float16')
+
+
+class ConcatFloat16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16', 'float16')
+
+
+class ConcatFloat32(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float32',)
+
+
+class ConcatFloat32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float32', 'float32')
+
+
+class ConcatFloat32Float32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float32', 'float32', 'float32')
+
+
+class ConcatFloat32Float32Float32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float32', 'float32', 'float32', 'float32')
+
+
+class ConcatFloat32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32', 'float32')
+
+
+class ConcatFloat64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float64',)
+
+
+class ConcatFloat64Float64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float64', 'float64')
+
+
+class ConcatFloat64Float64Float64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float64', 'float64', 'float64')
+
+
+class ConcatFloat64Float64Float64Float64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float64', 'float64', 'float64', 'float64')
+
+
+class ConcatFloat64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64Float64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64', 'float64')
+
+
+class ConcatInt64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int64',)
+
+
+class ConcatInt64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int64', 'int64')
+
+
+class ConcatInt64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int64', 'int64', 'int64')
+
+
+class ConcatInt64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int64', 'int64', 'int64', 'int64')
+
+
+class ConcatInt64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64', 'int64')
+
+
+class ConcatInt8(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int8',)
+
+
+class ConcatInt8Int8(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int8', 'int8')
+
+
+class ConcatInt8Int8Int8(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int8', 'int8', 'int8')
+
+
+class ConcatInt8Int8Int8Int8(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int8', 'int8', 'int8', 'int8')
+
+
+class ConcatInt8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8Int8(_CpuBackendCaseBenchmark):
+    case_prefix = "concat"
+    case_dtypes = ('int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8', 'int8')

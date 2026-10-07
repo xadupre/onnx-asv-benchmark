@@ -3,8 +3,6 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class Min(_CpuBackendCaseBenchmark):
+class MinFloat32Float32Float32(_CpuBackendCaseBenchmark):
     case_prefix = "min"
-    case_names = (
-        'test_cpu_min_n4096_3inputs_float32_benchmark',
-    )
+    case_dtypes = ('float32', 'float32', 'float32')

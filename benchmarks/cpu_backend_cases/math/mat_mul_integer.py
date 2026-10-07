@@ -3,27 +3,21 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class MatMulInteger(_CpuBackendCaseBenchmark):
+class MatmulintegerInt8Int8(_CpuBackendCaseBenchmark):
     case_prefix = "matmulinteger"
-    case_names = (
-        'test_cpu_matmulinteger_large_k_int8xint8_benchmark',
-        'test_cpu_matmulinteger_large_k_int8xuint8_benchmark',
-        'test_cpu_matmulinteger_large_k_uint8xint8_benchmark',
-        'test_cpu_matmulinteger_large_k_uint8xuint8_benchmark',
-        'test_cpu_matmulinteger_skinny_m_int8xint8_benchmark',
-        'test_cpu_matmulinteger_skinny_m_int8xuint8_benchmark',
-        'test_cpu_matmulinteger_skinny_m_uint8xint8_benchmark',
-        'test_cpu_matmulinteger_skinny_m_uint8xuint8_benchmark',
-        'test_cpu_matmulinteger_square_128_int8xint8_benchmark',
-        'test_cpu_matmulinteger_square_128_int8xuint8_benchmark',
-        'test_cpu_matmulinteger_square_128_uint8xint8_benchmark',
-        'test_cpu_matmulinteger_square_128_uint8xuint8_benchmark',
-        'test_cpu_matmulinteger_square_512_int8xint8_benchmark',
-        'test_cpu_matmulinteger_square_512_int8xuint8_benchmark',
-        'test_cpu_matmulinteger_square_512_uint8xint8_benchmark',
-        'test_cpu_matmulinteger_square_512_uint8xuint8_benchmark',
-        'test_cpu_matmulinteger_square_64_int8xint8_benchmark',
-        'test_cpu_matmulinteger_square_64_int8xuint8_benchmark',
-        'test_cpu_matmulinteger_square_64_uint8xint8_benchmark',
-        'test_cpu_matmulinteger_square_64_uint8xuint8_benchmark',
-    )
+    case_dtypes = ('int8', 'int8')
+
+
+class MatmulintegerInt8Uint8(_CpuBackendCaseBenchmark):
+    case_prefix = "matmulinteger"
+    case_dtypes = ('int8', 'uint8')
+
+
+class MatmulintegerUint8Int8(_CpuBackendCaseBenchmark):
+    case_prefix = "matmulinteger"
+    case_dtypes = ('uint8', 'int8')
+
+
+class MatmulintegerUint8Uint8(_CpuBackendCaseBenchmark):
+    case_prefix = "matmulinteger"
+    case_dtypes = ('uint8', 'uint8')

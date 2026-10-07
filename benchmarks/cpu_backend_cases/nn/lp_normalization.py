@@ -3,14 +3,16 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class LpNormalization(_CpuBackendCaseBenchmark):
+class LpnormalizationBfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "lpnormalization"
-    case_names = (
-        'test_cpu_lpnormalization_b16_r32_w128_axis2_p2_float32_benchmark',
-        'test_cpu_lpnormalization_b8_r16_w128_axis2_p2_bfloat16_benchmark',
-        'test_cpu_lpnormalization_b8_r16_w128_axis2_p2_float16_benchmark',
-        'test_cpu_lpnormalization_b8_r64_w32_axis1_p2_float32_benchmark',
-        'test_cpu_lpnormalization_n4_c8_h16_w16_axis1_p1_float32_benchmark',
-        'test_cpu_lpnormalization_r256_w128_axis1_p2_float32_benchmark',
-        'test_cpu_lpnormalization_wide_r16_w4096_axis1_p1_float32_benchmark',
-    )
+    case_dtypes = ('bfloat16',)
+
+
+class LpnormalizationFloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "lpnormalization"
+    case_dtypes = ('float16',)
+
+
+class LpnormalizationFloat32(_CpuBackendCaseBenchmark):
+    case_prefix = "lpnormalization"
+    case_dtypes = ('float32',)

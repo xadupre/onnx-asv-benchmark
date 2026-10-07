@@ -4,10 +4,9 @@ import unittest
 
 from benchmarks.cpu_backend_cases._base import (
     _CpuBackendCaseBenchmark,
-    _all_case_names,
+    _all_case_records,
 )
 from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
-from benchmarks.cpu_backend_cases._metadata import CASE_METADATA
 from tools.generate_cpu_backend_case_manifest import (
     build_shards,
     case_metadata,
@@ -21,6 +20,7 @@ class _Case:
     def __init__(self, name, operator):
         self.name = name
         self.model = _Model(operator)
+        self.data_sets = [_DataSet()]
         self.unloaded = False
 
     def unload(self):
@@ -30,6 +30,16 @@ class _Case:
 class _Model:
     def __init__(self, operator):
         self.graph = _Graph(operator)
+
+
+class _DataSet:
+    def __init__(self):
+        self.inputs = [_Tensor()]
+
+
+class _Tensor:
+    data_type = 1
+    shape = (1,)
 
 
 class _Graph:
@@ -56,13 +66,16 @@ class TestCpuBackendCases(unittest.TestCase):
             benchmark_types[category, module_name, class_name] = benchmark_type
 
         self.assertEqual(len(benchmark_types), len(CASE_SHARDS))
-        self.assertEqual(set(CASE_METADATA), set(_all_case_names()))
-        self.assertTrue(
-            all(
-                len(benchmark_type.case_names) <= 100
-                for benchmark_type in benchmark_types.values()
+        covered = {
+            record[0]
+            for benchmark_type in benchmark_types.values()
+            for record in _all_case_records()
+            if record[0].startswith(
+                f"test_cpu_{benchmark_type.case_prefix}_"
             )
-        )
+            and record[2] == benchmark_type.case_dtypes
+        }
+        self.assertEqual(covered, {record[0] for record in _all_case_records()})
 
     def test_one_case_on_both_backends(self):
         module = importlib.import_module("benchmarks.cpu_backend_cases.math.abs")
@@ -84,41 +97,11 @@ class TestCpuBackendCases(unittest.TestCase):
             _Case(f"test_cpu_abs_n{index}_float32_benchmark", "Abs")
             for index in range(5)
         ]
-        shards = build_shards(
-            source,
-            chunk_size=2,
-            locations={"Abs": ("math", "abs")},
-        )
+        shards = build_shards(source, locations={"Abs": ("math", "abs")})
         self.assertEqual(
             shards,
             [
-                (
-                    "math",
-                    "abs",
-                    "AbsPart01",
-                    "abs",
-                    (
-                        "test_cpu_abs_n0_float32_benchmark",
-                        "test_cpu_abs_n1_float32_benchmark",
-                    ),
-                ),
-                (
-                    "math",
-                    "abs",
-                    "AbsPart02",
-                    "abs",
-                    (
-                        "test_cpu_abs_n2_float32_benchmark",
-                        "test_cpu_abs_n3_float32_benchmark",
-                    ),
-                ),
-                (
-                    "math",
-                    "abs",
-                    "AbsPart03",
-                    "abs",
-                    ("test_cpu_abs_n4_float32_benchmark",),
-                ),
+                ("math", "abs", "AbsFloat32", "abs", ("float32",)),
             ],
         )
         self.assertTrue(source[0].unloaded)

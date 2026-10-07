@@ -3,103 +3,21 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class SimplifiedLayerNormalization(_CpuBackendCaseBenchmark):
+class SimplifiedlayernormalizationBfloat16Bfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "simplified"
-    case_names = (
-        'test_cpu_simplified_layer_normalization_decode_w128_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_decode_w128_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_decode_w128_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_decode_w128_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_decode_w128_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_decode_w128_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_decode_w128_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_decode_w128_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_medium_r64_w512_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_medium_r64_w512_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_medium_r64_w512_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_medium_r64_w512_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_medium_r64_w512_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_medium_r64_w512_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_medium_r64_w512_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_medium_r64_w512_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_outer_broadcast_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_outer_broadcast_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_outer_broadcast_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_outer_broadcast_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_outer_broadcast_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_outer_broadcast_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_outer_broadcast_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_outer_broadcast_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden1024_decode_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden1024_decode_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden1024_decode_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden1024_decode_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden1024_decode_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden1024_decode_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden1024_decode_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden1024_decode_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden2048_prefill_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden2048_prefill_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden2048_prefill_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden2048_prefill_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden2048_prefill_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden2048_prefill_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden2048_prefill_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden2048_prefill_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_decode_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_decode_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_decode_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_decode_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_decode_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_decode_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_decode_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_decode_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_prefill_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_prefill_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_prefill_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_prefill_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_prefill_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_prefill_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_prefill_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden4096_prefill_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden5120_prefill_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden5120_prefill_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden5120_prefill_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden5120_prefill_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden5120_prefill_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden5120_prefill_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden5120_prefill_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_hidden5120_prefill_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_q_norm_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_q_norm_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_q_norm_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_q_norm_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_q_norm_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_q_norm_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_q_norm_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_qwen_q_norm_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_small_r8_w32_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_small_r8_w32_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_small_r8_w32_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_small_r8_w32_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_small_r8_w32_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_small_r8_w32_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_small_r8_w32_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_small_r8_w32_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_suffix_axis1_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_suffix_axis1_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_suffix_axis1_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_suffix_axis1_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_suffix_axis1_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_suffix_axis1_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_suffix_axis1_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_suffix_axis1_x_float64_stash1_y_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_tail_r257_w65_x_bfloat16_stash1_with_inv_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_tail_r257_w65_x_bfloat16_stash1_y_bfloat16_benchmark',
-        'test_cpu_simplified_layer_normalization_tail_r257_w65_x_float16_stash1_with_inv_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_tail_r257_w65_x_float16_stash1_y_float16_benchmark',
-        'test_cpu_simplified_layer_normalization_tail_r257_w65_x_float32_stash1_with_inv_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_tail_r257_w65_x_float32_stash1_y_float32_benchmark',
-        'test_cpu_simplified_layer_normalization_tail_r257_w65_x_float64_stash1_with_inv_float64_benchmark',
-        'test_cpu_simplified_layer_normalization_tail_r257_w65_x_float64_stash1_y_float64_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'bfloat16')
+
+
+class SimplifiedlayernormalizationFloat16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "simplified"
+    case_dtypes = ('float16', 'float16')
+
+
+class SimplifiedlayernormalizationFloat32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "simplified"
+    case_dtypes = ('float32', 'float32')
+
+
+class SimplifiedlayernormalizationFloat64Float64(_CpuBackendCaseBenchmark):
+    case_prefix = "simplified"
+    case_dtypes = ('float64', 'float64')

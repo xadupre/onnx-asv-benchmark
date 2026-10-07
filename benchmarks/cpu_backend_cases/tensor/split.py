@@ -3,79 +3,61 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class Split(_CpuBackendCaseBenchmark):
+class SplitBfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "split"
-    case_names = (
-        'test_cpu_split_first_axis_bfloat16_benchmark',
-        'test_cpu_split_first_axis_float16_benchmark',
-        'test_cpu_split_first_axis_float32_benchmark',
-        'test_cpu_split_first_axis_float64_benchmark',
-        'test_cpu_split_first_axis_int64_benchmark',
-        'test_cpu_split_first_axis_int8_benchmark',
-        'test_cpu_split_last_axis_bfloat16_benchmark',
-        'test_cpu_split_last_axis_float16_benchmark',
-        'test_cpu_split_last_axis_float32_benchmark',
-        'test_cpu_split_last_axis_float64_benchmark',
-        'test_cpu_split_last_axis_int64_benchmark',
-        'test_cpu_split_last_axis_int8_benchmark',
-        'test_cpu_split_many_outputs_bfloat16_benchmark',
-        'test_cpu_split_many_outputs_float16_benchmark',
-        'test_cpu_split_many_outputs_float32_benchmark',
-        'test_cpu_split_many_outputs_float64_benchmark',
-        'test_cpu_split_many_outputs_int64_benchmark',
-        'test_cpu_split_many_outputs_int8_benchmark',
-        'test_cpu_split_middle_axis_bfloat16_benchmark',
-        'test_cpu_split_middle_axis_float16_benchmark',
-        'test_cpu_split_middle_axis_float32_benchmark',
-        'test_cpu_split_middle_axis_float64_benchmark',
-        'test_cpu_split_middle_axis_int64_benchmark',
-        'test_cpu_split_middle_axis_int8_benchmark',
-        'test_cpu_split_narrow_bfloat16_benchmark',
-        'test_cpu_split_narrow_float16_benchmark',
-        'test_cpu_split_narrow_float32_benchmark',
-        'test_cpu_split_narrow_float64_benchmark',
-        'test_cpu_split_narrow_int64_benchmark',
-        'test_cpu_split_narrow_int8_benchmark',
-        'test_cpu_split_qkv_batched_bfloat16_benchmark',
-        'test_cpu_split_qkv_batched_float16_benchmark',
-        'test_cpu_split_qkv_batched_float32_benchmark',
-        'test_cpu_split_qkv_batched_float64_benchmark',
-        'test_cpu_split_qkv_batched_int64_benchmark',
-        'test_cpu_split_qkv_batched_int8_benchmark',
-        'test_cpu_split_qkv_decode_bfloat16_benchmark',
-        'test_cpu_split_qkv_decode_float16_benchmark',
-        'test_cpu_split_qkv_decode_float32_benchmark',
-        'test_cpu_split_qkv_decode_float64_benchmark',
-        'test_cpu_split_qkv_decode_int64_benchmark',
-        'test_cpu_split_qkv_decode_int8_benchmark',
-        'test_cpu_split_qkv_prefill_bfloat16_benchmark',
-        'test_cpu_split_qkv_prefill_float16_benchmark',
-        'test_cpu_split_qkv_prefill_float32_benchmark',
-        'test_cpu_split_qkv_prefill_float64_benchmark',
-        'test_cpu_split_qkv_prefill_int64_benchmark',
-        'test_cpu_split_qkv_prefill_int8_benchmark',
-        'test_cpu_split_qkv_small_bfloat16_benchmark',
-        'test_cpu_split_qkv_small_float16_benchmark',
-        'test_cpu_split_qkv_small_float32_benchmark',
-        'test_cpu_split_qkv_small_float64_benchmark',
-        'test_cpu_split_qkv_small_int64_benchmark',
-        'test_cpu_split_qkv_small_int8_benchmark',
-        'test_cpu_split_tail_bfloat16_benchmark',
-        'test_cpu_split_tail_float16_benchmark',
-        'test_cpu_split_tail_float32_benchmark',
-        'test_cpu_split_tail_float64_benchmark',
-        'test_cpu_split_tail_int64_benchmark',
-        'test_cpu_split_tail_int8_benchmark',
-        'test_cpu_split_uneven_bfloat16_benchmark',
-        'test_cpu_split_uneven_float16_benchmark',
-        'test_cpu_split_uneven_float32_benchmark',
-        'test_cpu_split_uneven_float64_benchmark',
-        'test_cpu_split_uneven_int64_benchmark',
-        'test_cpu_split_uneven_int8_benchmark',
-        'test_cpu_split_vector_bfloat16_benchmark',
-        'test_cpu_split_vector_float16_benchmark',
-        'test_cpu_split_vector_float32_benchmark',
-        'test_cpu_split_vector_float64_benchmark',
-        'test_cpu_split_vector_int64_benchmark',
-        'test_cpu_split_vector_int8_benchmark',
-    )
+    case_dtypes = ('bfloat16',)
+
+
+class SplitBfloat16Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('bfloat16', 'int64')
+
+
+class SplitFloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('float16',)
+
+
+class SplitFloat16Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('float16', 'int64')
+
+
+class SplitFloat32(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('float32',)
+
+
+class SplitFloat32Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('float32', 'int64')
+
+
+class SplitFloat64(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('float64',)
+
+
+class SplitFloat64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('float64', 'int64')
+
+
+class SplitInt64(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('int64',)
+
+
+class SplitInt64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('int64', 'int64')
+
+
+class SplitInt8(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('int8',)
+
+
+class SplitInt8Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "split"
+    case_dtypes = ('int8', 'int64')

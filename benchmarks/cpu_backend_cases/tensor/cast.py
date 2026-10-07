@@ -3,145 +3,51 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class CastPart01(_CpuBackendCaseBenchmark):
+class CastBfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "cast"
-    case_names = (
-        'test_cpu_cast_large_bfloat16_to_float32_benchmark',
-        'test_cpu_cast_large_bool_to_float32_benchmark',
-        'test_cpu_cast_large_float16_to_float32_benchmark',
-        'test_cpu_cast_large_float32_to_bfloat16_benchmark',
-        'test_cpu_cast_large_float32_to_bool_benchmark',
-        'test_cpu_cast_large_float32_to_float16_benchmark',
-        'test_cpu_cast_large_float32_to_float32_benchmark',
-        'test_cpu_cast_large_float32_to_float64_benchmark',
-        'test_cpu_cast_large_float32_to_int32_benchmark',
-        'test_cpu_cast_large_float32_to_int64_benchmark',
-        'test_cpu_cast_large_float32_to_int8_benchmark',
-        'test_cpu_cast_large_float32_to_uint8_benchmark',
-        'test_cpu_cast_large_float64_to_float32_benchmark',
-        'test_cpu_cast_large_int16_to_int32_benchmark',
-        'test_cpu_cast_large_int32_to_float32_benchmark',
-        'test_cpu_cast_large_int32_to_int64_benchmark',
-        'test_cpu_cast_large_int64_to_float32_benchmark',
-        'test_cpu_cast_large_int64_to_int32_benchmark',
-        'test_cpu_cast_large_int64_to_int64_benchmark',
-        'test_cpu_cast_large_int64_to_int8_benchmark',
-        'test_cpu_cast_large_int8_to_float32_benchmark',
-        'test_cpu_cast_large_uint8_to_float32_benchmark',
-        'test_cpu_cast_matrix_bfloat16_to_float32_benchmark',
-        'test_cpu_cast_matrix_bool_to_float32_benchmark',
-        'test_cpu_cast_matrix_float16_to_float32_benchmark',
-        'test_cpu_cast_matrix_float32_to_bfloat16_benchmark',
-        'test_cpu_cast_matrix_float32_to_bool_benchmark',
-        'test_cpu_cast_matrix_float32_to_float16_benchmark',
-        'test_cpu_cast_matrix_float32_to_float32_benchmark',
-        'test_cpu_cast_matrix_float32_to_float64_benchmark',
-        'test_cpu_cast_matrix_float32_to_int32_benchmark',
-        'test_cpu_cast_matrix_float32_to_int64_benchmark',
-        'test_cpu_cast_matrix_float32_to_int8_benchmark',
-        'test_cpu_cast_matrix_float32_to_uint8_benchmark',
-        'test_cpu_cast_matrix_float64_to_float32_benchmark',
-        'test_cpu_cast_matrix_int16_to_int32_benchmark',
-        'test_cpu_cast_matrix_int32_to_float32_benchmark',
-        'test_cpu_cast_matrix_int32_to_int64_benchmark',
-        'test_cpu_cast_matrix_int64_to_float32_benchmark',
-        'test_cpu_cast_matrix_int64_to_int32_benchmark',
-        'test_cpu_cast_matrix_int64_to_int64_benchmark',
-        'test_cpu_cast_matrix_int64_to_int8_benchmark',
-        'test_cpu_cast_matrix_int8_to_float32_benchmark',
-        'test_cpu_cast_matrix_uint8_to_float32_benchmark',
-        'test_cpu_cast_medium_bfloat16_to_float32_benchmark',
-        'test_cpu_cast_medium_bool_to_float32_benchmark',
-        'test_cpu_cast_medium_float16_to_float32_benchmark',
-        'test_cpu_cast_medium_float32_to_bfloat16_benchmark',
-        'test_cpu_cast_medium_float32_to_bool_benchmark',
-        'test_cpu_cast_medium_float32_to_float16_benchmark',
-        'test_cpu_cast_medium_float32_to_float32_benchmark',
-        'test_cpu_cast_medium_float32_to_float64_benchmark',
-        'test_cpu_cast_medium_float32_to_int32_benchmark',
-        'test_cpu_cast_medium_float32_to_int64_benchmark',
-        'test_cpu_cast_medium_float32_to_int8_benchmark',
-        'test_cpu_cast_medium_float32_to_uint8_benchmark',
-        'test_cpu_cast_medium_float64_to_float32_benchmark',
-        'test_cpu_cast_medium_int16_to_int32_benchmark',
-        'test_cpu_cast_medium_int32_to_float32_benchmark',
-        'test_cpu_cast_medium_int32_to_int64_benchmark',
-        'test_cpu_cast_medium_int64_to_float32_benchmark',
-        'test_cpu_cast_medium_int64_to_int32_benchmark',
-        'test_cpu_cast_medium_int64_to_int64_benchmark',
-        'test_cpu_cast_medium_int64_to_int8_benchmark',
-        'test_cpu_cast_medium_int8_to_float32_benchmark',
-        'test_cpu_cast_medium_uint8_to_float32_benchmark',
-        'test_cpu_cast_scalar_bfloat16_to_float32_benchmark',
-        'test_cpu_cast_scalar_bool_to_float32_benchmark',
-        'test_cpu_cast_scalar_float16_to_float32_benchmark',
-        'test_cpu_cast_scalar_float32_to_bfloat16_benchmark',
-        'test_cpu_cast_scalar_float32_to_bool_benchmark',
-        'test_cpu_cast_scalar_float32_to_float16_benchmark',
-        'test_cpu_cast_scalar_float32_to_float32_benchmark',
-        'test_cpu_cast_scalar_float32_to_float64_benchmark',
-        'test_cpu_cast_scalar_float32_to_int32_benchmark',
-        'test_cpu_cast_scalar_float32_to_int64_benchmark',
-        'test_cpu_cast_scalar_float32_to_int8_benchmark',
-        'test_cpu_cast_scalar_float32_to_uint8_benchmark',
-        'test_cpu_cast_scalar_float64_to_float32_benchmark',
-        'test_cpu_cast_scalar_int16_to_int32_benchmark',
-        'test_cpu_cast_scalar_int32_to_float32_benchmark',
-        'test_cpu_cast_scalar_int32_to_int64_benchmark',
-        'test_cpu_cast_scalar_int64_to_float32_benchmark',
-        'test_cpu_cast_scalar_int64_to_int32_benchmark',
-        'test_cpu_cast_scalar_int64_to_int64_benchmark',
-        'test_cpu_cast_scalar_int64_to_int8_benchmark',
-        'test_cpu_cast_scalar_int8_to_float32_benchmark',
-        'test_cpu_cast_scalar_uint8_to_float32_benchmark',
-        'test_cpu_cast_small_bfloat16_to_float32_benchmark',
-        'test_cpu_cast_small_bool_to_float32_benchmark',
-        'test_cpu_cast_small_float16_to_float32_benchmark',
-        'test_cpu_cast_small_float32_to_bfloat16_benchmark',
-        'test_cpu_cast_small_float32_to_bool_benchmark',
-        'test_cpu_cast_small_float32_to_float16_benchmark',
-        'test_cpu_cast_small_float32_to_float32_benchmark',
-        'test_cpu_cast_small_float32_to_float64_benchmark',
-        'test_cpu_cast_small_float32_to_int32_benchmark',
-        'test_cpu_cast_small_float32_to_int64_benchmark',
-        'test_cpu_cast_small_float32_to_int8_benchmark',
-        'test_cpu_cast_small_float32_to_uint8_benchmark',
-    )
+    case_dtypes = ('bfloat16',)
 
 
-class CastPart02(_CpuBackendCaseBenchmark):
+class CastBool(_CpuBackendCaseBenchmark):
     case_prefix = "cast"
-    case_names = (
-        'test_cpu_cast_small_float64_to_float32_benchmark',
-        'test_cpu_cast_small_int16_to_int32_benchmark',
-        'test_cpu_cast_small_int32_to_float32_benchmark',
-        'test_cpu_cast_small_int32_to_int64_benchmark',
-        'test_cpu_cast_small_int64_to_float32_benchmark',
-        'test_cpu_cast_small_int64_to_int32_benchmark',
-        'test_cpu_cast_small_int64_to_int64_benchmark',
-        'test_cpu_cast_small_int64_to_int8_benchmark',
-        'test_cpu_cast_small_int8_to_float32_benchmark',
-        'test_cpu_cast_small_uint8_to_float32_benchmark',
-        'test_cpu_cast_tail_bfloat16_to_float32_benchmark',
-        'test_cpu_cast_tail_bool_to_float32_benchmark',
-        'test_cpu_cast_tail_float16_to_float32_benchmark',
-        'test_cpu_cast_tail_float32_to_bfloat16_benchmark',
-        'test_cpu_cast_tail_float32_to_bool_benchmark',
-        'test_cpu_cast_tail_float32_to_float16_benchmark',
-        'test_cpu_cast_tail_float32_to_float32_benchmark',
-        'test_cpu_cast_tail_float32_to_float64_benchmark',
-        'test_cpu_cast_tail_float32_to_int32_benchmark',
-        'test_cpu_cast_tail_float32_to_int64_benchmark',
-        'test_cpu_cast_tail_float32_to_int8_benchmark',
-        'test_cpu_cast_tail_float32_to_uint8_benchmark',
-        'test_cpu_cast_tail_float64_to_float32_benchmark',
-        'test_cpu_cast_tail_int16_to_int32_benchmark',
-        'test_cpu_cast_tail_int32_to_float32_benchmark',
-        'test_cpu_cast_tail_int32_to_int64_benchmark',
-        'test_cpu_cast_tail_int64_to_float32_benchmark',
-        'test_cpu_cast_tail_int64_to_int32_benchmark',
-        'test_cpu_cast_tail_int64_to_int64_benchmark',
-        'test_cpu_cast_tail_int64_to_int8_benchmark',
-        'test_cpu_cast_tail_int8_to_float32_benchmark',
-        'test_cpu_cast_tail_uint8_to_float32_benchmark',
-    )
+    case_dtypes = ('bool',)
+
+
+class CastFloat16(_CpuBackendCaseBenchmark):
+    case_prefix = "cast"
+    case_dtypes = ('float16',)
+
+
+class CastFloat32(_CpuBackendCaseBenchmark):
+    case_prefix = "cast"
+    case_dtypes = ('float32',)
+
+
+class CastFloat64(_CpuBackendCaseBenchmark):
+    case_prefix = "cast"
+    case_dtypes = ('float64',)
+
+
+class CastInt16(_CpuBackendCaseBenchmark):
+    case_prefix = "cast"
+    case_dtypes = ('int16',)
+
+
+class CastInt32(_CpuBackendCaseBenchmark):
+    case_prefix = "cast"
+    case_dtypes = ('int32',)
+
+
+class CastInt64(_CpuBackendCaseBenchmark):
+    case_prefix = "cast"
+    case_dtypes = ('int64',)
+
+
+class CastInt8(_CpuBackendCaseBenchmark):
+    case_prefix = "cast"
+    case_dtypes = ('int8',)
+
+
+class CastUint8(_CpuBackendCaseBenchmark):
+    case_prefix = "cast"
+    case_dtypes = ('uint8',)

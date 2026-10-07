@@ -3,133 +3,121 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class SlicePart01(_CpuBackendCaseBenchmark):
+class SliceBfloat16Int32Int32Int32(_CpuBackendCaseBenchmark):
     case_prefix = "slice"
-    case_names = (
-        'test_cpu_slice_contiguous_params32_bfloat16_benchmark',
-        'test_cpu_slice_contiguous_params32_float16_benchmark',
-        'test_cpu_slice_contiguous_params32_float32_benchmark',
-        'test_cpu_slice_contiguous_params32_float64_benchmark',
-        'test_cpu_slice_contiguous_params32_int64_benchmark',
-        'test_cpu_slice_contiguous_params32_int8_benchmark',
-        'test_cpu_slice_contiguous_params64_bfloat16_benchmark',
-        'test_cpu_slice_contiguous_params64_float16_benchmark',
-        'test_cpu_slice_contiguous_params64_float32_benchmark',
-        'test_cpu_slice_contiguous_params64_float64_benchmark',
-        'test_cpu_slice_contiguous_params64_int64_benchmark',
-        'test_cpu_slice_contiguous_params64_int8_benchmark',
-        'test_cpu_slice_inner_crop_params32_bfloat16_benchmark',
-        'test_cpu_slice_inner_crop_params32_float16_benchmark',
-        'test_cpu_slice_inner_crop_params32_float32_benchmark',
-        'test_cpu_slice_inner_crop_params32_float64_benchmark',
-        'test_cpu_slice_inner_crop_params32_int64_benchmark',
-        'test_cpu_slice_inner_crop_params32_int8_benchmark',
-        'test_cpu_slice_inner_crop_params64_bfloat16_benchmark',
-        'test_cpu_slice_inner_crop_params64_float16_benchmark',
-        'test_cpu_slice_inner_crop_params64_float32_benchmark',
-        'test_cpu_slice_inner_crop_params64_float64_benchmark',
-        'test_cpu_slice_inner_crop_params64_int64_benchmark',
-        'test_cpu_slice_inner_crop_params64_int8_benchmark',
-        'test_cpu_slice_inner_stride_params32_bfloat16_benchmark',
-        'test_cpu_slice_inner_stride_params32_float16_benchmark',
-        'test_cpu_slice_inner_stride_params32_float32_benchmark',
-        'test_cpu_slice_inner_stride_params32_float64_benchmark',
-        'test_cpu_slice_inner_stride_params32_int64_benchmark',
-        'test_cpu_slice_inner_stride_params32_int8_benchmark',
-        'test_cpu_slice_inner_stride_params64_bfloat16_benchmark',
-        'test_cpu_slice_inner_stride_params64_float16_benchmark',
-        'test_cpu_slice_inner_stride_params64_float32_benchmark',
-        'test_cpu_slice_inner_stride_params64_float64_benchmark',
-        'test_cpu_slice_inner_stride_params64_int64_benchmark',
-        'test_cpu_slice_inner_stride_params64_int8_benchmark',
-        'test_cpu_slice_multi_axis_params32_bfloat16_benchmark',
-        'test_cpu_slice_multi_axis_params32_float16_benchmark',
-        'test_cpu_slice_multi_axis_params32_float32_benchmark',
-        'test_cpu_slice_multi_axis_params32_float64_benchmark',
-        'test_cpu_slice_multi_axis_params32_int64_benchmark',
-        'test_cpu_slice_multi_axis_params32_int8_benchmark',
-        'test_cpu_slice_multi_axis_params64_bfloat16_benchmark',
-        'test_cpu_slice_multi_axis_params64_float16_benchmark',
-        'test_cpu_slice_multi_axis_params64_float32_benchmark',
-        'test_cpu_slice_multi_axis_params64_float64_benchmark',
-        'test_cpu_slice_multi_axis_params64_int64_benchmark',
-        'test_cpu_slice_multi_axis_params64_int8_benchmark',
-        'test_cpu_slice_outer_stride_params32_bfloat16_benchmark',
-        'test_cpu_slice_outer_stride_params32_float16_benchmark',
-        'test_cpu_slice_outer_stride_params32_float32_benchmark',
-        'test_cpu_slice_outer_stride_params32_float64_benchmark',
-        'test_cpu_slice_outer_stride_params32_int64_benchmark',
-        'test_cpu_slice_outer_stride_params32_int8_benchmark',
-        'test_cpu_slice_outer_stride_params64_bfloat16_benchmark',
-        'test_cpu_slice_outer_stride_params64_float16_benchmark',
-        'test_cpu_slice_outer_stride_params64_float32_benchmark',
-        'test_cpu_slice_outer_stride_params64_float64_benchmark',
-        'test_cpu_slice_outer_stride_params64_int64_benchmark',
-        'test_cpu_slice_outer_stride_params64_int8_benchmark',
-        'test_cpu_slice_reverse_inner_params32_bfloat16_benchmark',
-        'test_cpu_slice_reverse_inner_params32_float16_benchmark',
-        'test_cpu_slice_reverse_inner_params32_float32_benchmark',
-        'test_cpu_slice_reverse_inner_params32_float64_benchmark',
-        'test_cpu_slice_reverse_inner_params32_int64_benchmark',
-        'test_cpu_slice_reverse_inner_params32_int8_benchmark',
-        'test_cpu_slice_reverse_inner_params64_bfloat16_benchmark',
-        'test_cpu_slice_reverse_inner_params64_float16_benchmark',
-        'test_cpu_slice_reverse_inner_params64_float32_benchmark',
-        'test_cpu_slice_reverse_inner_params64_float64_benchmark',
-        'test_cpu_slice_reverse_inner_params64_int64_benchmark',
-        'test_cpu_slice_reverse_inner_params64_int8_benchmark',
-        'test_cpu_slice_reverse_outer_params32_bfloat16_benchmark',
-        'test_cpu_slice_reverse_outer_params32_float16_benchmark',
-        'test_cpu_slice_reverse_outer_params32_float32_benchmark',
-        'test_cpu_slice_reverse_outer_params32_float64_benchmark',
-        'test_cpu_slice_reverse_outer_params32_int64_benchmark',
-        'test_cpu_slice_reverse_outer_params32_int8_benchmark',
-        'test_cpu_slice_reverse_outer_params64_bfloat16_benchmark',
-        'test_cpu_slice_reverse_outer_params64_float16_benchmark',
-        'test_cpu_slice_reverse_outer_params64_float32_benchmark',
-        'test_cpu_slice_reverse_outer_params64_float64_benchmark',
-        'test_cpu_slice_reverse_outer_params64_int64_benchmark',
-        'test_cpu_slice_reverse_outer_params64_int8_benchmark',
-        'test_cpu_slice_reverse_vector_params32_bfloat16_benchmark',
-        'test_cpu_slice_reverse_vector_params32_float16_benchmark',
-        'test_cpu_slice_reverse_vector_params32_float32_benchmark',
-        'test_cpu_slice_reverse_vector_params32_float64_benchmark',
-        'test_cpu_slice_reverse_vector_params32_int64_benchmark',
-        'test_cpu_slice_reverse_vector_params32_int8_benchmark',
-        'test_cpu_slice_reverse_vector_params64_bfloat16_benchmark',
-        'test_cpu_slice_reverse_vector_params64_float16_benchmark',
-        'test_cpu_slice_reverse_vector_params64_float32_benchmark',
-        'test_cpu_slice_reverse_vector_params64_float64_benchmark',
-        'test_cpu_slice_reverse_vector_params64_int64_benchmark',
-        'test_cpu_slice_reverse_vector_params64_int8_benchmark',
-        'test_cpu_slice_small_params32_bfloat16_benchmark',
-        'test_cpu_slice_small_params32_float16_benchmark',
-        'test_cpu_slice_small_params32_float32_benchmark',
-        'test_cpu_slice_small_params32_float64_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'int32', 'int32', 'int32')
 
 
-class SlicePart02(_CpuBackendCaseBenchmark):
+class SliceBfloat16Int32Int32Int32Int32(_CpuBackendCaseBenchmark):
     case_prefix = "slice"
-    case_names = (
-        'test_cpu_slice_small_params32_int64_benchmark',
-        'test_cpu_slice_small_params32_int8_benchmark',
-        'test_cpu_slice_small_params64_bfloat16_benchmark',
-        'test_cpu_slice_small_params64_float16_benchmark',
-        'test_cpu_slice_small_params64_float32_benchmark',
-        'test_cpu_slice_small_params64_float64_benchmark',
-        'test_cpu_slice_small_params64_int64_benchmark',
-        'test_cpu_slice_small_params64_int8_benchmark',
-        'test_cpu_slice_tail_params32_bfloat16_benchmark',
-        'test_cpu_slice_tail_params32_float16_benchmark',
-        'test_cpu_slice_tail_params32_float32_benchmark',
-        'test_cpu_slice_tail_params32_float64_benchmark',
-        'test_cpu_slice_tail_params32_int64_benchmark',
-        'test_cpu_slice_tail_params32_int8_benchmark',
-        'test_cpu_slice_tail_params64_bfloat16_benchmark',
-        'test_cpu_slice_tail_params64_float16_benchmark',
-        'test_cpu_slice_tail_params64_float32_benchmark',
-        'test_cpu_slice_tail_params64_float64_benchmark',
-        'test_cpu_slice_tail_params64_int64_benchmark',
-        'test_cpu_slice_tail_params64_int8_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'int32', 'int32', 'int32', 'int32')
+
+
+class SliceBfloat16Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('bfloat16', 'int64', 'int64', 'int64')
+
+
+class SliceBfloat16Int64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('bfloat16', 'int64', 'int64', 'int64', 'int64')
+
+
+class SliceFloat16Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float16', 'int32', 'int32', 'int32')
+
+
+class SliceFloat16Int32Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float16', 'int32', 'int32', 'int32', 'int32')
+
+
+class SliceFloat16Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float16', 'int64', 'int64', 'int64')
+
+
+class SliceFloat16Int64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float16', 'int64', 'int64', 'int64', 'int64')
+
+
+class SliceFloat32Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float32', 'int32', 'int32', 'int32')
+
+
+class SliceFloat32Int32Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float32', 'int32', 'int32', 'int32', 'int32')
+
+
+class SliceFloat32Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float32', 'int64', 'int64', 'int64')
+
+
+class SliceFloat32Int64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float32', 'int64', 'int64', 'int64', 'int64')
+
+
+class SliceFloat64Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float64', 'int32', 'int32', 'int32')
+
+
+class SliceFloat64Int32Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float64', 'int32', 'int32', 'int32', 'int32')
+
+
+class SliceFloat64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float64', 'int64', 'int64', 'int64')
+
+
+class SliceFloat64Int64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('float64', 'int64', 'int64', 'int64', 'int64')
+
+
+class SliceInt64Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('int64', 'int32', 'int32', 'int32')
+
+
+class SliceInt64Int32Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('int64', 'int32', 'int32', 'int32', 'int32')
+
+
+class SliceInt64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('int64', 'int64', 'int64', 'int64')
+
+
+class SliceInt64Int64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('int64', 'int64', 'int64', 'int64', 'int64')
+
+
+class SliceInt8Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('int8', 'int32', 'int32', 'int32')
+
+
+class SliceInt8Int32Int32Int32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('int8', 'int32', 'int32', 'int32', 'int32')
+
+
+class SliceInt8Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('int8', 'int64', 'int64', 'int64')
+
+
+class SliceInt8Int64Int64Int64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "slice"
+    case_dtypes = ('int8', 'int64', 'int64', 'int64', 'int64')

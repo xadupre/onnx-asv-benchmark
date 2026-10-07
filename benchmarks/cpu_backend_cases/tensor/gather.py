@@ -3,121 +3,61 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class GatherPart01(_CpuBackendCaseBenchmark):
+class GatherBfloat16Int32(_CpuBackendCaseBenchmark):
     case_prefix = "gather"
-    case_names = (
-        'test_cpu_gather_embedding_large_indices32_bfloat16_benchmark',
-        'test_cpu_gather_embedding_large_indices32_float16_benchmark',
-        'test_cpu_gather_embedding_large_indices32_float32_benchmark',
-        'test_cpu_gather_embedding_large_indices32_float64_benchmark',
-        'test_cpu_gather_embedding_large_indices32_int64_benchmark',
-        'test_cpu_gather_embedding_large_indices32_int8_benchmark',
-        'test_cpu_gather_embedding_large_indices64_bfloat16_benchmark',
-        'test_cpu_gather_embedding_large_indices64_float16_benchmark',
-        'test_cpu_gather_embedding_large_indices64_float32_benchmark',
-        'test_cpu_gather_embedding_large_indices64_float64_benchmark',
-        'test_cpu_gather_embedding_large_indices64_int64_benchmark',
-        'test_cpu_gather_embedding_large_indices64_int8_benchmark',
-        'test_cpu_gather_embedding_multidim_indices32_bfloat16_benchmark',
-        'test_cpu_gather_embedding_multidim_indices32_float16_benchmark',
-        'test_cpu_gather_embedding_multidim_indices32_float32_benchmark',
-        'test_cpu_gather_embedding_multidim_indices32_float64_benchmark',
-        'test_cpu_gather_embedding_multidim_indices32_int64_benchmark',
-        'test_cpu_gather_embedding_multidim_indices32_int8_benchmark',
-        'test_cpu_gather_embedding_multidim_indices64_bfloat16_benchmark',
-        'test_cpu_gather_embedding_multidim_indices64_float16_benchmark',
-        'test_cpu_gather_embedding_multidim_indices64_float32_benchmark',
-        'test_cpu_gather_embedding_multidim_indices64_float64_benchmark',
-        'test_cpu_gather_embedding_multidim_indices64_int64_benchmark',
-        'test_cpu_gather_embedding_multidim_indices64_int8_benchmark',
-        'test_cpu_gather_embedding_single_indices32_bfloat16_benchmark',
-        'test_cpu_gather_embedding_single_indices32_float16_benchmark',
-        'test_cpu_gather_embedding_single_indices32_float32_benchmark',
-        'test_cpu_gather_embedding_single_indices32_float64_benchmark',
-        'test_cpu_gather_embedding_single_indices32_int64_benchmark',
-        'test_cpu_gather_embedding_single_indices32_int8_benchmark',
-        'test_cpu_gather_embedding_single_indices64_bfloat16_benchmark',
-        'test_cpu_gather_embedding_single_indices64_float16_benchmark',
-        'test_cpu_gather_embedding_single_indices64_float32_benchmark',
-        'test_cpu_gather_embedding_single_indices64_float64_benchmark',
-        'test_cpu_gather_embedding_single_indices64_int64_benchmark',
-        'test_cpu_gather_embedding_single_indices64_int8_benchmark',
-        'test_cpu_gather_embedding_small_indices32_bfloat16_benchmark',
-        'test_cpu_gather_embedding_small_indices32_float16_benchmark',
-        'test_cpu_gather_embedding_small_indices32_float32_benchmark',
-        'test_cpu_gather_embedding_small_indices32_float64_benchmark',
-        'test_cpu_gather_embedding_small_indices32_int64_benchmark',
-        'test_cpu_gather_embedding_small_indices32_int8_benchmark',
-        'test_cpu_gather_embedding_small_indices64_bfloat16_benchmark',
-        'test_cpu_gather_embedding_small_indices64_float16_benchmark',
-        'test_cpu_gather_embedding_small_indices64_float32_benchmark',
-        'test_cpu_gather_embedding_small_indices64_float64_benchmark',
-        'test_cpu_gather_embedding_small_indices64_int64_benchmark',
-        'test_cpu_gather_embedding_small_indices64_int8_benchmark',
-        'test_cpu_gather_embedding_tail_indices32_bfloat16_benchmark',
-        'test_cpu_gather_embedding_tail_indices32_float16_benchmark',
-        'test_cpu_gather_embedding_tail_indices32_float32_benchmark',
-        'test_cpu_gather_embedding_tail_indices32_float64_benchmark',
-        'test_cpu_gather_embedding_tail_indices32_int64_benchmark',
-        'test_cpu_gather_embedding_tail_indices32_int8_benchmark',
-        'test_cpu_gather_embedding_tail_indices64_bfloat16_benchmark',
-        'test_cpu_gather_embedding_tail_indices64_float16_benchmark',
-        'test_cpu_gather_embedding_tail_indices64_float32_benchmark',
-        'test_cpu_gather_embedding_tail_indices64_float64_benchmark',
-        'test_cpu_gather_embedding_tail_indices64_int64_benchmark',
-        'test_cpu_gather_embedding_tail_indices64_int8_benchmark',
-        'test_cpu_gather_large_slice_indices32_bfloat16_benchmark',
-        'test_cpu_gather_large_slice_indices32_float16_benchmark',
-        'test_cpu_gather_large_slice_indices32_float32_benchmark',
-        'test_cpu_gather_large_slice_indices32_float64_benchmark',
-        'test_cpu_gather_large_slice_indices32_int64_benchmark',
-        'test_cpu_gather_large_slice_indices32_int8_benchmark',
-        'test_cpu_gather_large_slice_indices64_bfloat16_benchmark',
-        'test_cpu_gather_large_slice_indices64_float16_benchmark',
-        'test_cpu_gather_large_slice_indices64_float32_benchmark',
-        'test_cpu_gather_large_slice_indices64_float64_benchmark',
-        'test_cpu_gather_large_slice_indices64_int64_benchmark',
-        'test_cpu_gather_large_slice_indices64_int8_benchmark',
-        'test_cpu_gather_last_axis_indices32_bfloat16_benchmark',
-        'test_cpu_gather_last_axis_indices32_float16_benchmark',
-        'test_cpu_gather_last_axis_indices32_float32_benchmark',
-        'test_cpu_gather_last_axis_indices32_float64_benchmark',
-        'test_cpu_gather_last_axis_indices32_int64_benchmark',
-        'test_cpu_gather_last_axis_indices32_int8_benchmark',
-        'test_cpu_gather_last_axis_indices64_bfloat16_benchmark',
-        'test_cpu_gather_last_axis_indices64_float16_benchmark',
-        'test_cpu_gather_last_axis_indices64_float32_benchmark',
-        'test_cpu_gather_last_axis_indices64_float64_benchmark',
-        'test_cpu_gather_last_axis_indices64_int64_benchmark',
-        'test_cpu_gather_last_axis_indices64_int8_benchmark',
-        'test_cpu_gather_middle_axis_indices32_bfloat16_benchmark',
-        'test_cpu_gather_middle_axis_indices32_float16_benchmark',
-        'test_cpu_gather_middle_axis_indices32_float32_benchmark',
-        'test_cpu_gather_middle_axis_indices32_float64_benchmark',
-        'test_cpu_gather_middle_axis_indices32_int64_benchmark',
-        'test_cpu_gather_middle_axis_indices32_int8_benchmark',
-        'test_cpu_gather_middle_axis_indices64_bfloat16_benchmark',
-        'test_cpu_gather_middle_axis_indices64_float16_benchmark',
-        'test_cpu_gather_middle_axis_indices64_float32_benchmark',
-        'test_cpu_gather_middle_axis_indices64_float64_benchmark',
-        'test_cpu_gather_middle_axis_indices64_int64_benchmark',
-        'test_cpu_gather_middle_axis_indices64_int8_benchmark',
-        'test_cpu_gather_vector_random_indices32_bfloat16_benchmark',
-        'test_cpu_gather_vector_random_indices32_float16_benchmark',
-        'test_cpu_gather_vector_random_indices32_float32_benchmark',
-        'test_cpu_gather_vector_random_indices32_float64_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'int32')
 
 
-class GatherPart02(_CpuBackendCaseBenchmark):
+class GatherBfloat16Int64(_CpuBackendCaseBenchmark):
     case_prefix = "gather"
-    case_names = (
-        'test_cpu_gather_vector_random_indices32_int64_benchmark',
-        'test_cpu_gather_vector_random_indices32_int8_benchmark',
-        'test_cpu_gather_vector_random_indices64_bfloat16_benchmark',
-        'test_cpu_gather_vector_random_indices64_float16_benchmark',
-        'test_cpu_gather_vector_random_indices64_float32_benchmark',
-        'test_cpu_gather_vector_random_indices64_float64_benchmark',
-        'test_cpu_gather_vector_random_indices64_int64_benchmark',
-        'test_cpu_gather_vector_random_indices64_int8_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'int64')
+
+
+class GatherFloat16Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('float16', 'int32')
+
+
+class GatherFloat16Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('float16', 'int64')
+
+
+class GatherFloat32Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('float32', 'int32')
+
+
+class GatherFloat32Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('float32', 'int64')
+
+
+class GatherFloat64Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('float64', 'int32')
+
+
+class GatherFloat64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('float64', 'int64')
+
+
+class GatherInt64Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('int64', 'int32')
+
+
+class GatherInt64Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('int64', 'int64')
+
+
+class GatherInt8Int32(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('int8', 'int32')
+
+
+class GatherInt8Int64(_CpuBackendCaseBenchmark):
+    case_prefix = "gather"
+    case_dtypes = ('int8', 'int64')

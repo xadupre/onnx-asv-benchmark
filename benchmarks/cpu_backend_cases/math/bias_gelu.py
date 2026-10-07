@@ -3,19 +3,21 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class BiasGelu(_CpuBackendCaseBenchmark):
+class BiasgeluBfloat16Bfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "biasgelu"
-    case_names = (
-        'test_cpu_biasgelu_o1024_i1024_bfloat16_benchmark',
-        'test_cpu_biasgelu_o1024_i1024_float16_benchmark',
-        'test_cpu_biasgelu_o1024_i1024_float32_benchmark',
-        'test_cpu_biasgelu_o1024_i1024_float64_benchmark',
-        'test_cpu_biasgelu_o256_i4096_bfloat16_benchmark',
-        'test_cpu_biasgelu_o256_i4096_float16_benchmark',
-        'test_cpu_biasgelu_o256_i4096_float32_benchmark',
-        'test_cpu_biasgelu_o256_i4096_float64_benchmark',
-        'test_cpu_biasgelu_o4096_i256_bfloat16_benchmark',
-        'test_cpu_biasgelu_o4096_i256_float16_benchmark',
-        'test_cpu_biasgelu_o4096_i256_float32_benchmark',
-        'test_cpu_biasgelu_o4096_i256_float64_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'bfloat16')
+
+
+class BiasgeluFloat16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "biasgelu"
+    case_dtypes = ('float16', 'float16')
+
+
+class BiasgeluFloat32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "biasgelu"
+    case_dtypes = ('float32', 'float32')
+
+
+class BiasgeluFloat64Float64(_CpuBackendCaseBenchmark):
+    case_prefix = "biasgelu"
+    case_dtypes = ('float64', 'float64')

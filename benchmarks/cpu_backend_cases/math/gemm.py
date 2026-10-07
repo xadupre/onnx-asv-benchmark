@@ -3,118 +3,46 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class GemmPart01(_CpuBackendCaseBenchmark):
+class GemmBfloat16Bfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "gemm"
-    case_names = (
-        'test_cpu_gemm_chain_alternating_float32_benchmark',
-        'test_cpu_gemm_chain_square_projection_float32_benchmark',
-        'test_cpu_gemm_chain_transformer_float32_benchmark',
-        'test_cpu_gemm_direct_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_direct_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_direct_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_direct_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_direct_k32_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_direct_k32_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_direct_k32_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_direct_k32_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_1024_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_1024_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_1024_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_1024_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_16384_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_16384_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_16384_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_16384_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_large_k_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_m_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_m_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_m_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_m_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_m_small_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_m_small_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_m_small_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_m_small_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_n_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_n_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_n_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_n_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_n_small_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_n_small_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_n_small_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_skinny_n_small_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_split_k_16384_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_split_k_16384_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_split_k_16384_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_split_k_16384_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_split_k_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_split_k_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_split_k_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_split_k_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_1024_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_1024_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_1024_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_1024_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_128_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_128_bfloat16_transA_0_transB_1_bias_none_benchmark',
-        'test_cpu_gemm_square_128_bfloat16_transA_1_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_128_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_128_float16_transA_0_transB_1_bias_none_benchmark',
-        'test_cpu_gemm_square_128_float16_transA_1_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_128_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_128_float32_transA_0_transB_1_bias_none_benchmark',
-        'test_cpu_gemm_square_128_float32_transA_1_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_128_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_128_float64_transA_0_transB_1_bias_none_benchmark',
-        'test_cpu_gemm_square_128_float64_transA_1_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_2048_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_2048_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_2048_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_256_bfloat16_transA_0_transB_0_bias_column_benchmark',
-        'test_cpu_gemm_square_256_bfloat16_transA_0_transB_0_bias_matrix_benchmark',
-        'test_cpu_gemm_square_256_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_256_bfloat16_transA_0_transB_0_bias_row_benchmark',
-        'test_cpu_gemm_square_256_bfloat16_transA_0_transB_0_bias_scalar_benchmark',
-        'test_cpu_gemm_square_256_float16_transA_0_transB_0_bias_column_benchmark',
-        'test_cpu_gemm_square_256_float16_transA_0_transB_0_bias_matrix_benchmark',
-        'test_cpu_gemm_square_256_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_256_float16_transA_0_transB_0_bias_row_benchmark',
-        'test_cpu_gemm_square_256_float16_transA_0_transB_0_bias_scalar_benchmark',
-        'test_cpu_gemm_square_256_float32_transA_0_transB_0_bias_column_benchmark',
-        'test_cpu_gemm_square_256_float32_transA_0_transB_0_bias_matrix_benchmark',
-        'test_cpu_gemm_square_256_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_256_float32_transA_0_transB_0_bias_row_benchmark',
-        'test_cpu_gemm_square_256_float32_transA_0_transB_0_bias_scalar_benchmark',
-        'test_cpu_gemm_square_256_float64_transA_0_transB_0_bias_column_benchmark',
-        'test_cpu_gemm_square_256_float64_transA_0_transB_0_bias_matrix_benchmark',
-        'test_cpu_gemm_square_256_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_256_float64_transA_0_transB_0_bias_row_benchmark',
-        'test_cpu_gemm_square_256_float64_transA_0_transB_0_bias_scalar_benchmark',
-        'test_cpu_gemm_square_4096_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_4096_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_4096_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_512_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_512_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_512_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_square_512_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_tiny_dynamic_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_tiny_dynamic_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_tiny_dynamic_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_tiny_dynamic_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_transformer_projection_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_transformer_projection_decode_bfloat16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_transformer_projection_decode_float16_transA_0_transB_0_bias_none_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'bfloat16')
 
 
-class GemmPart02(_CpuBackendCaseBenchmark):
+class GemmBfloat16Bfloat16Bfloat16(_CpuBackendCaseBenchmark):
     case_prefix = "gemm"
-    case_names = (
-        'test_cpu_gemm_transformer_projection_decode_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_transformer_projection_decode_float64_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_transformer_projection_float16_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_transformer_projection_float32_transA_0_transB_0_bias_none_benchmark',
-        'test_cpu_gemm_transformer_projection_float64_transA_0_transB_0_bias_none_benchmark',
-    )
+    case_dtypes = ('bfloat16', 'bfloat16', 'bfloat16')
+
+
+class GemmFloat16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "gemm"
+    case_dtypes = ('float16', 'float16')
+
+
+class GemmFloat16Float16Float16(_CpuBackendCaseBenchmark):
+    case_prefix = "gemm"
+    case_dtypes = ('float16', 'float16', 'float16')
+
+
+class GemmFloat32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "gemm"
+    case_dtypes = ('float32', 'float32')
+
+
+class GemmFloat32Float32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "gemm"
+    case_dtypes = ('float32', 'float32', 'float32')
+
+
+class GemmFloat32Float32Float32Float32(_CpuBackendCaseBenchmark):
+    case_prefix = "gemm"
+    case_dtypes = ('float32', 'float32', 'float32', 'float32')
+
+
+class GemmFloat64Float64(_CpuBackendCaseBenchmark):
+    case_prefix = "gemm"
+    case_dtypes = ('float64', 'float64')
+
+
+class GemmFloat64Float64Float64(_CpuBackendCaseBenchmark):
+    case_prefix = "gemm"
+    case_dtypes = ('float64', 'float64', 'float64')

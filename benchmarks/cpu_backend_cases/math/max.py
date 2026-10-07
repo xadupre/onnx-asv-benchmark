@@ -3,8 +3,6 @@ from benchmarks.cpu_backend_cases._base import (
 )
 
 
-class Max(_CpuBackendCaseBenchmark):
+class MaxFloat32Float32Float32(_CpuBackendCaseBenchmark):
     case_prefix = "max"
-    case_names = (
-        'test_cpu_max_n4096_3inputs_float32_benchmark',
-    )
+    case_dtypes = ('float32', 'float32', 'float32')
