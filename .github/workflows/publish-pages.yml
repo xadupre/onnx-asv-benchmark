@@ -30,16 +30,16 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Check out benchmark results
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: xadupre/cache_data
           path: cache-data
           sparse-checkout: onnx-asv-benchmark
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Build ASV site
@@ -55,10 +55,10 @@ jobs:
           python tools/site_data.py configure \
             .asv/html \
             https://raw.githubusercontent.com/xadupre/cache_data/main/onnx-asv-benchmark/site-data/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: .asv/html
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
