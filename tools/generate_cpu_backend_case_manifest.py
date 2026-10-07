@@ -118,13 +118,14 @@ def write_manifest(path, shards):
         "",
         "CASE_SHARDS = (",
     ]
-    for category, module, name, _, _ in shards:
+    for category, _, name, prefix, dtypes in shards:
         lines.extend(
             (
                 "    (",
                 f"        {json.dumps(category)},",
-                f"        {json.dumps(module)},",
                 f"        {json.dumps(name)},",
+                f"        {json.dumps(prefix)},",
+                f"        {dtypes!r},",
                 "    ),",
             )
         )
@@ -134,37 +135,25 @@ def write_manifest(path, shards):
 
 def write_modules(root, shards):
     root = Path(root)
-    grouped = defaultdict(list)
-    for category, module, name, prefix, dtypes in shards:
-        grouped[category, module].append((name, prefix, dtypes))
-
+    categories = sorted({category for category, _, _, _, _ in shards})
     expected = set()
-    for (category, module), classes in grouped.items():
+    for category in categories:
         directory = root / category
         directory.mkdir(parents=True, exist_ok=True)
         init = directory / "__init__.py"
         if not init.exists():
             init.write_text("", encoding="utf-8")
-        path = directory / f"{module}.py"
+        path = directory / "cases.py"
         expected.add(path)
         lines = [
             "from benchmarks.cpu_backend_cases._base import (",
-            "    _CpuBackendCaseBenchmark,",
+            "    create_benchmark_classes,",
             ")",
             "",
             "",
+            f"create_benchmark_classes(globals(), {category!r})",
+            "",
         ]
-        for index, (name, prefix, dtypes) in enumerate(classes):
-            if index:
-                lines.extend(("", ""))
-            lines.extend(
-                (
-                    f"class {name}(_CpuBackendCaseBenchmark):",
-                    f"    case_prefix = {json.dumps(prefix)}",
-                    f"    case_dtypes = {dtypes!r}",
-                )
-            )
-        lines.append("")
         path.write_text("\n".join(lines), encoding="utf-8")
 
     for path in root.glob("*/*.py"):

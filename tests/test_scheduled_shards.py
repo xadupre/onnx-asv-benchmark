@@ -44,11 +44,11 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn("builder/serialize/onnx_io", shards)
         self.assertIn("builder/parse/onnx_io", shards)
         self.assertTrue(
-            any(shard.startswith("cpu_backend_cases/math/abs/") for shard in shards)
+            any(shard.startswith("cpu_backend_cases/math/cases/") for shard in shards)
         )
         self.assertTrue(
             any(
-                shard.startswith("cpu_backend_cases/nn/batch_normalization/")
+                shard.startswith("cpu_backend_cases/nn/cases/")
                 for shard in shards
             )
         )

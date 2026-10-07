@@ -238,3 +238,21 @@ class _CpuBackendCaseBenchmark:
             simplified_name, benchmark = _make_benchmark(records)
             benchmark.__name__ = f"time_{simplified_name}"
             setattr(cls, benchmark.__name__, benchmark)
+
+
+def create_benchmark_classes(namespace, category):
+    from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
+
+    module_name = namespace["__name__"]
+    for shard_category, class_name, prefix, dtypes in CASE_SHARDS:
+        if shard_category != category:
+            continue
+        namespace[class_name] = type(
+            class_name,
+            (_CpuBackendCaseBenchmark,),
+            {
+                "__module__": module_name,
+                "case_prefix": prefix,
+                "case_dtypes": dtypes,
+            },
+        )

@@ -56,15 +56,15 @@ class _Node:
 class TestCpuBackendCases(unittest.TestCase):
     def test_manifest_classes_cover_distinct_cases(self):
         benchmark_types = {}
-        for category, module_name, class_name in CASE_SHARDS:
+        for category, class_name, _, _ in CASE_SHARDS:
             module = importlib.import_module(
-                f"benchmarks.cpu_backend_cases.{category}.{module_name}"
+                f"benchmarks.cpu_backend_cases.{category}.cases"
             )
             benchmark_type = getattr(module, class_name)
             self.assertTrue(inspect.isclass(benchmark_type))
             self.assertTrue(issubclass(benchmark_type, _CpuBackendCaseBenchmark))
             self.assertEqual(benchmark_type.__module__, module.__name__)
-            benchmark_types[category, module_name, class_name] = benchmark_type
+            benchmark_types[category, class_name] = benchmark_type
 
         self.assertEqual(len(benchmark_types), len(CASE_SHARDS))
         covered = {
@@ -79,8 +79,8 @@ class TestCpuBackendCases(unittest.TestCase):
         self.assertEqual(covered, {record[0] for record in _all_case_records()})
 
     def test_one_case_on_both_backends(self):
-        module = importlib.import_module("benchmarks.cpu_backend_cases.math.abs")
-        benchmark_type = module.Abs
+        module = importlib.import_module("benchmarks.cpu_backend_cases.math.cases")
+        benchmark_type = module.AbsFloat32
         benchmark_name = next(
             name for name in dir(benchmark_type) if name.startswith("time_")
         )

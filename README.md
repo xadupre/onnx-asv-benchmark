@@ -144,7 +144,9 @@ visible as failed measurements. Cases use the same category and module
 hierarchy as `benchmarks/ops`; the generated manifest creates one shard per
 operator and input-dtype signature. Each shard discovers matching cases at
 runtime, so additional shapes and variants are included without relying on
-case names or positional slices. Regenerate the modules and manifest after
+case names or positional slices. The benchmark classes are created dynamically
+from that manifest in one `cases.py` module per category rather than generated
+as individual source files. Regenerate the category modules and manifest after
 updating the pinned onnx-light-cpu release to include new dtype signatures:
 
 ```bash
