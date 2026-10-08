@@ -55,13 +55,6 @@ PARSE_CASES = (
     "parse/nc/onnxlight",
     "parse/ncx4/onnxlight",
 )
-LOAD_CPP_CASES = (
-    "load/1filex1/onnxlight-cpp",
-    "load/1filex4/onnxlight-cpp",
-    "load/2filex1/onnxlight-cpp-nocopy",
-    "load/2filex1/onnxlight-cpp",
-    "load/1filex1/onnx-cpp",
-)
 SAVE_CPP_CASES = (
     "save/1filex1/onnxlight-cpp",
     "save/1filex4/onnxlight-cpp",
@@ -325,32 +318,15 @@ class _OnnxCpp(_OnnxIOBase):
 
     def setup(self, shape, dtype, case, library):
         self.out_dir = None
-        full_case = self._full_case(case, library)
-        operation, _, benchmark_library = full_case.split("/")
-        executable = (
-            "load_onnx_time"
-            if benchmark_library == "onnx-cpp"
-            else f"{operation}_onnx_light_time"
+        self._full_case(case, library)
+        executable = "save_onnx_light_time"
+        paths = (
+            "build/save-onnx-light-time-example/save_onnx_light_time",
+            "build/examples/save_onnx_light_time/save_onnx_light_time",
+            "build-save-onnx-light-time/save_onnx_light_time",
         )
-        paths = {
-            "load_onnx_time": (
-                "build/load-onnx-time-example/load_onnx_time",
-                "build/examples/load_onnx_time/load_onnx_time",
-                "build-load-onnx-time/load_onnx_time",
-            ),
-            "load_onnx_light_time": (
-                "build/load-onnx-light-time-example/load_onnx_light_time",
-                "build/examples/load_onnx_light_time/load_onnx_light_time",
-                "build-load-onnx-light-time/load_onnx_light_time",
-            ),
-            "save_onnx_light_time": (
-                "build/save-onnx-light-time-example/save_onnx_light_time",
-                "build/examples/save_onnx_light_time/save_onnx_light_time",
-                "build-save-onnx-light-time/save_onnx_light_time",
-            ),
-        }
         self.executable = find_standalone_executable(
-            executable, list(map(Path, paths[executable])), script_file=None
+            executable, list(map(Path, paths)), script_file=None
         )
         if self.executable is None:
             raise NotImplementedError(f"{executable} is unavailable")
@@ -365,28 +341,15 @@ class _OnnxCpp(_OnnxIOBase):
 
     def track_run(self, shape, dtype, case, library):
         case = self._full_case(case, library)
-        operation, files, library = case.split("/")
+        operation, files, _ = case.split("/")
         threads = 4 if files.endswith("x4") else 1
-        path = (
-            self.external_path
-            if operation == "load" and files.startswith("2file")
-            else self.path
-        )
-        if operation == "load":
-            args = [path, "20", str(threads)]
-            if files.startswith("2file"):
-                args += [
-                    "nocopy_touch" if library.endswith("-nocopy") else "default",
-                    self.external_data,
-                ]
-        else:
-            args = [
-                path,
-                self.out_dir.name,
-                "20",
-                str(threads),
-                "external" if files.startswith("2file") else "onefile",
-            ]
+        args = [
+            self.path,
+            self.out_dir.name,
+            "20",
+            str(threads),
+            "external" if files.startswith("2file") else "onefile",
+        ]
         metric = re.compile(
             rf"^\s*(Average|Median|Min|Max|Std|Standard deviation) {operation} "
             r"\(ms\)\s*:\s*([0-9.eE+-]+)\s*$"

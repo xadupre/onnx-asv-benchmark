@@ -9,16 +9,15 @@ import onnx_light.onnx as onnxl
 
 from benchmarks.builder._onnx_io import (
     LOAD_CASES,
-    LOAD_CPP_CASES,
     PARSE_CASES,
     SAVE_CASES,
     SAVE_CPP_CASES,
     SERIALIZE_CASES,
     case_parameters,
 )
+from benchmarks.builder.load import onnx_io as load_onnx_io
 from benchmarks.builder.load.onnx_io import (
     OnnxLoad,
-    OnnxLoadCpp,
     OnnxReferenceEvaluator,
 )
 from benchmarks.builder.parse.onnx_io import OnnxParse
@@ -33,14 +32,13 @@ class TestOnnxIO(unittest.TestCase):
             *SAVE_CASES,
             *SERIALIZE_CASES,
             *PARSE_CASES,
-            *LOAD_CPP_CASES,
             *SAVE_CPP_CASES,
         )
-        self.assertEqual(len(cases), 38)
-        self.assertEqual(len(set(cases)), 38)
+        self.assertEqual(len(cases), 33)
+        self.assertEqual(len(set(cases)), 33)
+        self.assertFalse(hasattr(load_onnx_io, "OnnxLoadCpp"))
         for benchmark in (
             OnnxLoad,
-            OnnxLoadCpp,
             OnnxSave,
             OnnxSaveCpp,
             OnnxSerialize,
@@ -143,12 +141,12 @@ class TestOnnxIO(unittest.TestCase):
         os.environ["CI"] = "1"
         os.environ.pop("CICPP", None)
         try:
-            benchmark = OnnxLoadCpp()
+            benchmark = OnnxSaveCpp()
             parameters = (
                 "X=dynamicx2048 (40 Gemm)",
                 "float32",
-                "load/1filex1",
-                "onnx-cpp",
+                "save/1filex1",
+                "onnxlight-cpp",
             )
             with self.assertRaises(NotImplementedError):
                 benchmark.setup(*parameters)
@@ -165,49 +163,39 @@ class TestOnnxIO(unittest.TestCase):
 
     def test_cpp_cases(self):
         with tempfile.TemporaryDirectory() as directory:
-            for name in (
-                "load_onnx_time",
-                "load_onnx_light_time",
-                "save_onnx_light_time",
-            ):
-                operation = name.split("_", 1)[0]
-                executable = Path(directory) / name
-                executable.write_text(
-                    "#!/bin/sh\n"
-                    f"echo 'Average {operation} (ms): 2'\n"
-                    f"echo 'Median {operation} (ms): 2'\n"
-                    f"echo 'Min {operation} (ms): 2'\n"
-                    f"echo 'Max {operation} (ms): 2'\n"
-                )
-                executable.chmod(0o755)
+            executable = Path(directory) / "save_onnx_light_time"
+            executable.write_text(
+                "#!/bin/sh\n"
+                "echo 'Average save (ms): 2'\n"
+                "echo 'Median save (ms): 2'\n"
+                "echo 'Min save (ms): 2'\n"
+                "echo 'Max save (ms): 2'\n"
+            )
+            executable.chmod(0o755)
             old_path = os.environ.get("PATH", "")
             old_cicpp = os.environ.get("CICPP")
             os.environ["PATH"] = directory + os.pathsep + old_path
             os.environ["CICPP"] = "1"
             try:
-                for benchmark_type in (OnnxLoadCpp, OnnxSaveCpp):
+                class SmallCpp(OnnxSaveCpp):
+                    n_init = 2
+                    dim = 8
 
-                    class SmallCpp(benchmark_type):
-                        n_init = 2
-                        dim = 8
-
-                    for full_case in benchmark_type.cases:
-                        case, library = full_case.rsplit("/", 1)
-                        with self.subTest(case=case, library=library):
-                            benchmark = SmallCpp()
-                            parameters = (
-                                "X=dynamicx8 (2 Gemm)",
-                                "float32",
-                                case,
-                                library,
-                            )
-                            benchmark.setup(*parameters)
-                            try:
-                                self.assertEqual(
-                                    benchmark.track_run(*parameters), 0.002
-                                )
-                            finally:
-                                benchmark.teardown(*parameters)
+                for full_case in OnnxSaveCpp.cases:
+                    case, library = full_case.rsplit("/", 1)
+                    with self.subTest(case=case, library=library):
+                        benchmark = SmallCpp()
+                        parameters = (
+                            "X=dynamicx8 (2 Gemm)",
+                            "float32",
+                            case,
+                            library,
+                        )
+                        benchmark.setup(*parameters)
+                        try:
+                            self.assertEqual(benchmark.track_run(*parameters), 0.002)
+                        finally:
+                            benchmark.teardown(*parameters)
             finally:
                 os.environ["PATH"] = old_path
                 if old_cicpp is None:

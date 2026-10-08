@@ -15,7 +15,7 @@ class TestRemoveTrackBenchmarks(unittest.TestCase):
                     {
                         "version": 2,
                         "ops.math.add.Add.time_run": {"type": "time"},
-                        "builder.load.onnx_io.OnnxLoadCpp.track_run": {
+                        "builder.save.onnx_io.OnnxSaveCpp.track_run": {
                             "type": "track"
                         },
                         "machine.track_processor": {"type": "track"},
@@ -32,7 +32,7 @@ class TestRemoveTrackBenchmarks(unittest.TestCase):
                 {
                     "version": 2,
                     "ops.math.add.Add.time_run": {"type": "time"},
-                    "builder.load.onnx_io.OnnxLoadCpp.track_run": {
+                    "builder.save.onnx_io.OnnxSaveCpp.track_run": {
                         "type": "track"
                     },
                 },
