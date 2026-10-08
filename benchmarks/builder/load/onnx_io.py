@@ -3,6 +3,7 @@ from benchmarks.builder._onnx_io import (
     LOAD_CASES,
     SHAPES,
     _OnnxLoad,
+    _OnnxReferenceEvaluator,
     case_parameters,
 )
 
@@ -10,3 +11,7 @@ from benchmarks.builder._onnx_io import (
 class OnnxLoad(_OnnxLoad):
     cases = LOAD_CASES
     params = (SHAPES, DTYPES, *case_parameters(cases))
+
+
+class OnnxReferenceEvaluator(_OnnxReferenceEvaluator):
+    pass

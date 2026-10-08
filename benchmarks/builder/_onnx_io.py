@@ -25,16 +25,12 @@ LOAD_CASES = (
     "load/1filex1/onnxlight-mmap",
     "load/1filex1/onnxlight-ifstream",
     "load/1filex1/ir-py",
-    "load/1filex1/reference",
-    "load/1filex4/reference",
     "load/1filex1/ort",
     "load/2filex1/onnx",
     "load/2filex1/onnxlight",
     "load/2filex4/onnxlight",
     "load/2filex1/onnxlight-nocopy",
     "load/2filex1/ir-py",
-    "load/2filex1/reference",
-    "load/2filex4/reference",
     "load/2filex1/ort",
 )
 SAVE_CASES = (
@@ -209,10 +205,30 @@ class _OnnxLoad(_OnnxIOBase):
             elif library == "onnxlight-nocopy":
                 options["no_copy"] = True
                 options["touch_raw_data_pages"] = True
-            model = onnxl.load(path, **options)
-            if library == "reference":
-                model = ReferenceEvaluator(model)
-            self.loaded_model = model
+            self.loaded_model = onnxl.load(path, **options)
+
+
+class _OnnxReferenceEvaluator:
+    n_init = 40
+    dim = 2048
+    number = 1
+    repeat = 5
+    timeout = 600
+    param_names = ("shape", "dtype")
+    params = (SHAPES, DTYPES)
+
+    def setup(self, shape, dtype):
+        if shape != f"X=dynamicx{self.dim} ({self.n_init} Gemm)" or dtype != "float32":
+            raise ValueError(f"Unexpected model parameters {shape!r}, {dtype!r}")
+        self.model = _make_model(self.n_init, self.dim)
+        self.session = None
+
+    def teardown(self, shape, dtype):
+        self.session = None
+        self.model = None
+
+    def time_run(self, shape, dtype):
+        self.session = ReferenceEvaluator(self.model)
 
 
 class _OnnxSave(_OnnxIOBase):
