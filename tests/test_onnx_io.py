@@ -6,16 +6,21 @@ from pathlib import Path
 
 import onnx
 import onnx_light.onnx as onnxl
+
 from benchmarks.builder._onnx_io import (
-    LOAD_CPP_CASES,
     LOAD_CASES,
+    LOAD_CPP_CASES,
     PARSE_CASES,
-    SAVE_CPP_CASES,
     SAVE_CASES,
+    SAVE_CPP_CASES,
     SERIALIZE_CASES,
     case_parameters,
 )
-from benchmarks.builder.load.onnx_io import OnnxLoad, OnnxLoadCpp
+from benchmarks.builder.load.onnx_io import (
+    OnnxLoad,
+    OnnxLoadCpp,
+    OnnxReferenceEvaluator,
+)
 from benchmarks.builder.parse.onnx_io import OnnxParse
 from benchmarks.builder.save.onnx_io import OnnxSave, OnnxSaveCpp
 from benchmarks.builder.serialize.onnx_io import OnnxSerialize
@@ -31,8 +36,8 @@ class TestOnnxIO(unittest.TestCase):
             *LOAD_CPP_CASES,
             *SAVE_CPP_CASES,
         )
-        self.assertEqual(len(cases), 42)
-        self.assertEqual(len(set(cases)), 42)
+        self.assertEqual(len(cases), 38)
+        self.assertEqual(len(set(cases)), 38)
         for benchmark in (
             OnnxLoad,
             OnnxLoadCpp,
@@ -49,6 +54,24 @@ class TestOnnxIO(unittest.TestCase):
             self.assertEqual(benchmark.params[2:], case_parameters(benchmark.cases))
             self.assertTrue(all(value.count("/") == 1 for value in benchmark.params[2]))
             self.assertTrue(all("/" not in value for value in benchmark.params[3]))
+
+    def test_reference_evaluator_creation(self):
+        class SmallBenchmark(OnnxReferenceEvaluator):
+            n_init = 2
+            dim = 8
+
+        benchmark = SmallBenchmark()
+        parameters = ("X=dynamicx8 (2 Gemm)", "float32")
+        benchmark.setup(*parameters)
+        try:
+            self.assertIsNone(benchmark.session)
+            benchmark.time_run(*parameters)
+            self.assertIsNotNone(benchmark.session)
+            self.assertIs(benchmark.session._model, benchmark.model)
+        finally:
+            benchmark.teardown(*parameters)
+        self.assertIsNone(benchmark.model)
+        self.assertIsNone(benchmark.session)
 
     def test_python_cases(self):
         for benchmark_type in (OnnxLoad, OnnxSave, OnnxSerialize, OnnxParse):
