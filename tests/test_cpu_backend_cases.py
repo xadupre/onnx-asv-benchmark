@@ -5,6 +5,7 @@ import unittest
 from benchmarks.cpu_backend_cases._base import (
     _CpuBackendCaseBenchmark,
     _all_case_records,
+    _case_records,
 )
 from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
 from tools.generate_cpu_backend_case_manifest import (
@@ -56,7 +57,7 @@ class _Node:
 class TestCpuBackendCases(unittest.TestCase):
     def test_manifest_classes_cover_distinct_cases(self):
         benchmark_types = {}
-        for category, class_name, _, _ in CASE_SHARDS:
+        for category, class_name, _, _, _ in CASE_SHARDS:
             module = importlib.import_module(
                 f"benchmarks.cpu_backend_cases.{category}.cases"
             )
@@ -67,16 +68,47 @@ class TestCpuBackendCases(unittest.TestCase):
             benchmark_types[category, class_name] = benchmark_type
 
         self.assertEqual(len(benchmark_types), len(CASE_SHARDS))
-        covered = {
+        covered = [
             record[0]
             for benchmark_type in benchmark_types.values()
-            for record in _all_case_records()
-            if record[0].startswith(
-                f"test_cpu_{benchmark_type.case_prefix}_"
+            for record in _case_records(
+                benchmark_type.case_prefix,
+                benchmark_type.case_dtypes,
+                benchmark_type.case_shard_index,
             )
-            and record[2] == benchmark_type.case_dtypes
-        }
-        self.assertEqual(covered, {record[0] for record in _all_case_records()})
+        ]
+        self.assertCountEqual(
+            covered, [record[0] for record in _all_case_records()]
+        )
+
+    def test_binary_shards_partition_cases(self):
+        shards = [
+            (name, index)
+            for _, name, prefix, dtypes, index in CASE_SHARDS
+            if prefix == "mul" and dtypes == ("uint32", "uint32")
+        ]
+        self.assertEqual(
+            shards,
+            [(f"MulUint32Inputs2Shard{index + 1}", index) for index in range(4)],
+        )
+        all_records = [
+            record for record in _all_case_records()
+            if record[0].startswith("test_cpu_mul_")
+            and record[2] == ("uint32", "uint32")
+        ]
+        self.assertGreaterEqual(len(all_records), 4)
+        partitioned = [
+            record
+            for _, index in shards
+            for record in _case_records("mul", ("uint32", "uint32"), index)
+        ]
+        self.assertCountEqual(partitioned, all_records)
+        self.assertTrue(
+            all(
+                len(_case_records("mul", ("uint32", "uint32"), index)) > 0
+                for _, index in shards
+            )
+        )
 
     def test_one_case_on_both_backends(self):
         module = importlib.import_module("benchmarks.cpu_backend_cases.math.cases")
@@ -102,10 +134,28 @@ class TestCpuBackendCases(unittest.TestCase):
         self.assertEqual(
             shards,
             [
-                ("math", "abs", "AbsFloat32", "abs", ("float32",)),
+                ("math", "abs", "AbsFloat32", "abs", ("float32",), 0),
             ],
         )
         self.assertTrue(source[0].unloaded)
+
+    def test_binary_manifest_chunking(self):
+        source = [
+            _Case(f"test_cpu_mul_n{index}_float32_benchmark", "Mul")
+            for index in range(5)
+        ]
+        for case in source:
+            case.data_sets[0].inputs.append(_Tensor())
+        shards = build_shards(source, locations={"Mul": ("math", "mul")})
+        self.assertEqual(
+            shards,
+            [
+                ("math", "mul", f"MulFloat32Inputs2Shard{index + 1}", "mul",
+                 ("float32", "float32"), index)
+                for index in range(4)
+            ],
+        )
+        self.assertTrue(all(case.unloaded for case in source))
 
     def test_operator_locations_match_ops_hierarchy(self):
         locations = operator_locations("benchmarks/ops")
