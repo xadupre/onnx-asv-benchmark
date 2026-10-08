@@ -103,12 +103,12 @@ and generation shapes. Qwen2 also records `Qwen/Qwen2-0.5B` as its `model`
 parameter and uses `Qwen2-0.5B` in graph titles.
 
 `builder/load/onnx_io`, `builder/save/onnx_io`, `builder/serialize/onnx_io`,
-and `builder/parse/onnx_io` benchmark the 42 load, save, serialize, parse, and
+and `builder/parse/onnx_io` benchmark the 37 load, save, serialize, parse, and
 standalone C++ cases in onnx-light's `plot_onnx_time.py`. They use that
 example's 40-Gemm float32 model with 2048-wide weights; model creation and
 fixture file preparation happen outside the timed call. Install `onnx-ir` to
 run the `ir-py` cases. The C++ cases require the onnx-light example executables
-(`load_onnx_time`, `load_onnx_light_time`, `save_onnx_light_time`) on `PATH`
+(`save_onnx_light_time`) on `PATH`
 or in their onnx-light build directories. `CICPP=1` only permits executable
 discovery when `CI` is set; it does not build the executables. Without it,
 unavailable C++ cases are skipped. These C++ results are tracked seconds per
