@@ -62,6 +62,17 @@ class TestScheduledShards(unittest.TestCase):
         ]
         self.assertTrue(cpu_case_shards)
         self.assertTrue(all(len(shard.split("/")) == 4 for shard in cpu_case_shards))
+        self.assertEqual(
+            [
+                shard
+                for shard in cpu_case_shards
+                if shard.startswith("cpu_backend_cases/math/cases/MulUint32Inputs2Shard")
+            ],
+            [
+                f"cpu_backend_cases/math/cases/MulUint32Inputs2Shard{index}"
+                for index in range(1, 5)
+            ],
+        )
 
         buckets = [
             {shard for index, shard in enumerate(shards) if index % 7 == bucket}

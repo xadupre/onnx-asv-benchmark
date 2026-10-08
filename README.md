@@ -141,10 +141,11 @@ The separate `cpu_backend_cases` benchmark family runs every
 `test_cpu_*_benchmark` case registered by onnx-light-cpu. Each case is measured
 with both onnx-light-cpu and ONNX Runtime; unsupported ONNX Runtime cases remain
 visible as failed measurements. Cases use the same category and module
-hierarchy as `benchmarks/ops`; the generated manifest creates one shard per
-operator and input-dtype signature. Each shard discovers matching cases at
-runtime, so additional shapes and variants are included without relying on
-case names or positional slices. The benchmark classes are created dynamically
+hierarchy as `benchmarks/ops`; the generated manifest creates up to four
+balanced shards for two-input operator/dtype groups, and one for other groups.
+Each shard discovers matching cases at runtime and assigns them by sorted case
+name, so additional shapes and variants are included automatically. The
+benchmark classes are created dynamically
 from that manifest in one `cases.py` module per category rather than generated
 as individual source files. Regenerate the category modules and manifest after
 updating the pinned onnx-light-cpu release to include new dtype signatures:

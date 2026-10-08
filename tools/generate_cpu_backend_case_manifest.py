@@ -80,8 +80,11 @@ def build_shards(cases, locations):
         if name in used_names:
             name = f"{name}{prefix.title()}"
         used_names.add(name)
-        shards.append((category, module, name, prefix, dtypes))
-    return shards
+        shard_count = min(4, len(names)) if len(dtypes) == 2 else 1
+        for shard_index in range(shard_count):
+            shard_name = f"{name}Shard{shard_index + 1}" if shard_count > 1 else name
+            shards.append((category, module, shard_name, prefix, dtypes, shard_index))
+    return sorted(shards, key=lambda shard: (shard[0], shard[3], shard[2]))
 
 
 def simplified_case_name(name, dtypes):
@@ -118,7 +121,7 @@ def write_manifest(path, shards):
         "",
         "CASE_SHARDS = (",
     ]
-    for category, _, name, prefix, dtypes in shards:
+    for category, _, name, prefix, dtypes, shard_index in shards:
         lines.extend(
             (
                 "    (",
@@ -126,6 +129,7 @@ def write_manifest(path, shards):
                 f"        {json.dumps(name)},",
                 f"        {json.dumps(prefix)},",
                 f"        {dtypes!r},",
+                f"        {shard_index},",
                 "    ),",
             )
         )
@@ -135,7 +139,7 @@ def write_manifest(path, shards):
 
 def write_modules(root, shards):
     root = Path(root)
-    categories = sorted({category for category, _, _, _, _ in shards})
+    categories = sorted({category for category, _, _, _, _, _ in shards})
     expected = set()
     for category in categories:
         directory = root / category

@@ -69,7 +69,7 @@ def _all_case_records():
     return tuple(sorted(records))
 
 
-def _case_records(prefix, dtypes):
+def _case_records(prefix, dtypes, shard_index=0):
     marker = f"test_cpu_{prefix}_"
     selected = tuple(
         record
@@ -80,7 +80,7 @@ def _case_records(prefix, dtypes):
         raise RuntimeError(
             f"No onnx-light-cpu BENCHMARK cases found for {prefix!r} and {dtypes!r}."
         )
-    return selected
+    return selected[shard_index::4] if len(dtypes) == 2 else selected
 
 
 def _load_case(name):
@@ -226,13 +226,14 @@ class _CpuBackendCaseBenchmark:
     timeout = 60
     case_prefix = None
     case_dtypes = ()
+    case_shard_index = 0
 
     def __init_subclass__(cls):
         super().__init_subclass__()
         if cls.case_prefix is None:
             return
         grouped = {}
-        for record in _case_records(cls.case_prefix, cls.case_dtypes):
+        for record in _case_records(cls.case_prefix, cls.case_dtypes, cls.case_shard_index):
             grouped.setdefault(record[1], []).append(record)
         for records in grouped.values():
             simplified_name, benchmark = _make_benchmark(records)
@@ -244,7 +245,7 @@ def create_benchmark_classes(namespace, category):
     from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
 
     module_name = namespace["__name__"]
-    for shard_category, class_name, prefix, dtypes in CASE_SHARDS:
+    for shard_category, class_name, prefix, dtypes, shard_index in CASE_SHARDS:
         if shard_category != category:
             continue
         namespace[class_name] = type(
@@ -254,5 +255,6 @@ def create_benchmark_classes(namespace, category):
                 "__module__": module_name,
                 "case_prefix": prefix,
                 "case_dtypes": dtypes,
+                "case_shard_index": shard_index,
             },
         )
