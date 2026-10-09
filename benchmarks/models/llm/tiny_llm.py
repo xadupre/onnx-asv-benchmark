@@ -174,6 +174,12 @@ class _CausalLLMBase:
             self._generate_genai()
         elif backend in {"onnx-light", "onnx-light-cpu"}:
             model = onnx_light.load(model_path, load_external_data=True)
+            if not self.measure_inference and not model.graph.persistent_bindings:
+                for layer in range(config.num_hidden_layers):
+                    for suffix in ("key", "value"):
+                        binding = model.graph.persistent_bindings.add()
+                        binding.input_name = f"past_key_values.{layer}.{suffix}"
+                        binding.output_name = f"present.{layer}.{suffix}"
             self.session = OnnxLightReferenceEvaluator(model)
             if backend == "onnx-light-cpu":
                 register_kernels_for_session(self.session)

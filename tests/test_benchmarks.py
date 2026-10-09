@@ -216,6 +216,18 @@ class TestBenchmarks(unittest.TestCase):
         baseline = TinyLLMGenAI()
         baseline.setup(shape, "fp16", "onnx-light")
         self.addCleanup(baseline.teardown, shape, "fp16", "onnx-light")
+        expected_bindings = {
+            (f"past_key_values.0.{suffix}", f"present.0.{suffix}")
+            for suffix in ("key", "value")
+        }
+        for session in (benchmark.session, baseline.session):
+            self.assertEqual(
+                {
+                    (binding.input_name, binding.output_name)
+                    for binding in session._model.graph.persistent_bindings
+                },
+                expected_bindings,
+            )
         set_kernel_usage_recording(baseline.session, True)
         baseline.time_generate(shape, "fp16", "onnx-light")
         self.assertTrue(
