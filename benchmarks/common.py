@@ -13,10 +13,11 @@ MODEL_DTYPES = ("float16", "float32", "float64")
 def input_shape_label(feeds):
     parts = []
     for name, value in feeds.items():
-        if not isinstance(value, np.ndarray):
-            continue
-        dimensions = "x".join(map(str, value.shape)) if value.shape else "scalar"
-        parts.append(f"{name}={dimensions}")
+        if isinstance(value, np.ndarray):
+            dimensions = "x".join(map(str, value.shape)) if value.shape else "scalar"
+            parts.append(f"{name}={dimensions}")
+        elif isinstance(value, dict):
+            parts.append(f"{name}=map[{len(value)}->{len(value)}]")
     return ", ".join(parts) or "no inputs"
 
 
