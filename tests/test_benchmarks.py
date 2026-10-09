@@ -17,6 +17,7 @@ from benchmarks.models.dummies.mlp import MLP
 from benchmarks.models.llm.qwen2 import Qwen2, Qwen2GenAI
 from benchmarks.models.llm.tiny_llm import PRECISIONS, TinyLLM, TinyLLMGenAI
 from onnx_light_cpu import (
+    clear_used_kernel_names,
     registered_kernel_names,
     set_kernel_usage_recording,
     used_kernel_names,
@@ -198,6 +199,31 @@ class TestBenchmarks(unittest.TestCase):
         self.assertIn(
             registered_kernel_names()["Add"],
             used_kernel_names(benchmark.session),
+        )
+
+    @requires_onnx_light("0.1.30")
+    @requires_onnx_light_cpu("0.1.18")
+    def test_tiny_llm_fp16_generation_uses_cpu_matmul(self):
+        shape = TinyLLMGenAI.params[0][0]
+        benchmark = TinyLLMGenAI()
+        benchmark.setup(shape, "fp16", "onnx-light-cpu")
+        self.addCleanup(benchmark.teardown, shape, "fp16", "onnx-light-cpu")
+        set_kernel_usage_recording(benchmark.session, True)
+        clear_used_kernel_names(benchmark.session)
+        benchmark.time_generate(shape, "fp16", "onnx-light-cpu")
+        self.assertIn(
+            registered_kernel_names()["MatMul"],
+            used_kernel_names(benchmark.session),
+        )
+        baseline = TinyLLMGenAI()
+        baseline.setup(shape, "fp16", "onnx-light")
+        self.addCleanup(baseline.teardown, shape, "fp16", "onnx-light")
+        set_kernel_usage_recording(baseline.session, True)
+        baseline.time_generate(shape, "fp16", "onnx-light")
+        self.assertTrue(
+            set(used_kernel_names(baseline.session)).isdisjoint(
+                registered_kernel_names().values()
+            )
         )
 
     def test_operator_dtypes(self):

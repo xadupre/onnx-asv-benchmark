@@ -9,7 +9,12 @@ import torch
 from onnx.reference import ReferenceEvaluator as OnnxReferenceEvaluator
 from onnx_light import onnx as onnx_light
 from onnx_light.onnx.reference import ReferenceEvaluator as OnnxLightReferenceEvaluator
-from onnx_light_cpu import register_kernels_for_session
+from onnx_light_cpu import (
+    register_kernels_for_session,
+    registered_kernel_names,
+    set_kernel_usage_recording,
+    used_kernel_names,
+)
 from modelbuilder.builder import create_model
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
@@ -177,12 +182,24 @@ class _CausalLLMBase:
             self.session = OnnxLightReferenceEvaluator(model)
             if backend == "onnx-light-cpu":
                 register_kernels_for_session(self.session)
+                set_kernel_usage_recording(self.session, True)
             if self.measure_inference:
                 output_names = [output.name for output in model.graph.output]
                 self._setup_inference(output_names, precision, config)
             else:
                 self._setup_generation_feeds(precision)
                 self._generate_onnx_light()
+            if backend == "onnx-light-cpu":
+                used = set(used_kernel_names(self.session))
+                set_kernel_usage_recording(self.session, False)
+                registered = registered_kernel_names()
+                if not used.intersection(registered.values()) or (
+                    precision in {"fp32", "fp16", "bf16"}
+                    and registered["MatMul"] not in used
+                ):
+                    raise AssertionError(
+                        "onnx-light-cpu did not execute the expected CPU kernels."
+                    )
         else:
             raise ValueError(f"Unexpected backend {backend!r}.")
 
