@@ -86,6 +86,7 @@ def _case_records(prefix, dtypes, shard_index=0):
 def _load_case(name):
     if re.fullmatch(r"[A-Za-z0-9_]+", name) is None:
         raise ValueError(f"Unexpected backend case name {name!r}.")
+    register_backend_test_cases()
     cases = collect_test_cases_by_name(
         f"^{name}$",
         mode=TestMode.BENCHMARK,
@@ -232,8 +233,10 @@ class _CpuBackendCaseBenchmark:
         super().__init_subclass__()
         if cls.case_prefix is None:
             return
+        from benchmarks.cpu_backend_cases._case_records import CASE_RECORDS
+
         grouped = {}
-        for record in _case_records(cls.case_prefix, cls.case_dtypes, cls.case_shard_index):
+        for record in CASE_RECORDS[cls.__module__.split(".")[-2], cls.__name__]:
             grouped.setdefault(record[1], []).append(record)
         for records in grouped.values():
             simplified_name, benchmark = _make_benchmark(records)
