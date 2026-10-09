@@ -1,5 +1,7 @@
 import importlib
 import inspect
+import subprocess
+import sys
 import unittest
 
 from benchmarks.cpu_backend_cases._base import (
@@ -8,6 +10,7 @@ from benchmarks.cpu_backend_cases._base import (
     _case_records,
 )
 from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
+from benchmarks.cpu_backend_cases._case_records import CASE_RECORDS
 from tools.generate_cpu_backend_case_manifest import (
     build_shards,
     case_metadata,
@@ -80,6 +83,31 @@ class TestCpuBackendCases(unittest.TestCase):
         self.assertCountEqual(
             covered, [record[0] for record in _all_case_records()]
         )
+
+    def test_generated_case_records_match_registered_cases(self):
+        self.assertEqual(
+            set(CASE_RECORDS),
+            {(category, name) for category, name, _, _, _ in CASE_SHARDS},
+        )
+        for category, name, prefix, dtypes, shard_index in CASE_SHARDS:
+            self.assertEqual(
+                CASE_RECORDS[category, name],
+                _case_records(prefix, dtypes, shard_index),
+            )
+
+    def test_case_module_import_does_not_collect_all_cases(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "from benchmarks.cpu_backend_cases._base import _all_case_records; "
+                "import benchmarks.cpu_backend_cases.math.cases; "
+                "assert _all_case_records.cache_info().misses == 0",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_binary_shards_partition_cases(self):
         shards = [
