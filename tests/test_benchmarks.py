@@ -17,7 +17,6 @@ from benchmarks.models.dummies.mlp import MLP
 from benchmarks.models.llm.qwen2 import Qwen2, Qwen2GenAI
 from benchmarks.models.llm.tiny_llm import PRECISIONS, TinyLLM, TinyLLMGenAI
 from onnx_light_cpu import (
-    clear_used_kernel_names,
     registered_kernel_names,
     set_kernel_usage_recording,
     used_kernel_names,
@@ -209,7 +208,6 @@ class TestBenchmarks(unittest.TestCase):
         benchmark.setup(shape, "fp16", "onnx-light-cpu")
         self.addCleanup(benchmark.teardown, shape, "fp16", "onnx-light-cpu")
         set_kernel_usage_recording(benchmark.session, True)
-        clear_used_kernel_names(benchmark.session)
         benchmark.time_generate(shape, "fp16", "onnx-light-cpu")
         self.assertIn(
             registered_kernel_names()["MatMul"],
