@@ -75,6 +75,14 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("param != 'instruction_sets'", summary)
             self.assertIn("param_names[axis-1] == 'backend'", graph)
             self.assertIn("parameters: graph_content[2]", graph)
+            self.assertIn("function configuration_color(parameters)", graph)
+            self.assertIn("Object.keys(parameters).sort()", graph)
+            self.assertIn("key != 'commit'", graph)
+            self.assertIn("Math.imul(hash, 16777619)", graph)
+            self.assertIn(
+                "color: configuration_color(graph_content[2])",
+                graph,
+            )
             self.assertIn("new Date(item.datapoint[0]).toLocaleString()", graph)
             self.assertIn("item.series.parameters", graph)
             self.assertIn("cpu: 'processor'", graph)

@@ -114,7 +114,22 @@ def customize_pages(html_dir):
         "'use strict';",
         "'use strict';\n\n"
         "var system_dark_theme = window.matchMedia("
-        "'(prefers-color-scheme: dark)').matches;",
+        "'(prefers-color-scheme: dark)').matches;\n\n"
+        "function configuration_color(parameters) {\n"
+        "    var parts = [];\n"
+        "    $.each(Object.keys(parameters).sort(), function(i, key) {\n"
+        "        if (key != 'commit' && parameters[key] !== null) {\n"
+        "            parts.push(key + '=' + parameters[key]);\n"
+        "        }\n"
+        "    });\n"
+        "    var value = parts.join('|');\n"
+        "    var hash = 2166136261;\n"
+        "    for (var i = 0; i < value.length; ++i) {\n"
+        "        hash ^= value.charCodeAt(i);\n"
+        "        hash = Math.imul(hash, 16777619);\n"
+        "    }\n"
+        "    return 'hsl(' + ((hash >>> 0) % 360) + ', 65%, 48%)';\n"
+        "}",
     )
     graph = _replace_once(graph, "var date_scale = false;", "var date_scale = true;")
     graph = _replace_once(
@@ -186,6 +201,7 @@ def customize_pages(html_dir):
         "label: graph_content[1],\n" "                        bars: { order: count, },",
         "label: graph_content[1],\n"
         "                        parameters: graph_content[2],\n"
+        "                        color: configuration_color(graph_content[2]),\n"
         "                        bars: { order: count, },",
     )
     graph = _replace_once(
