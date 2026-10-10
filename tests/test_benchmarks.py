@@ -4,7 +4,7 @@ import itertools
 import pkgutil
 import unittest
 from pathlib import Path
-
+import numpy as np
 import onnx_light
 import onnx_light_cpu
 from benchmarks._operator import (
@@ -15,7 +15,13 @@ from benchmarks.common import MODEL_DTYPES
 from benchmarks.models.dummies.matmul_add import MatMulAdd
 from benchmarks.models.dummies.mlp import MLP
 from benchmarks.models.llm.qwen2 import Qwen2, Qwen2GenAI
-from benchmarks.models.llm.tiny_llm import PRECISIONS, TinyLLM, TinyLLMGenAI
+from benchmarks.models.llm.tiny_llm import (
+    CACHE_LENGTH,
+    PRECISIONS,
+    TinyLLM,
+    TinyLLMGenAI,
+    _cache_dtype,
+)
 from onnx_light_cpu import (
     registered_kernel_names,
     set_kernel_usage_recording,
@@ -371,6 +377,85 @@ class TestBenchmarks(unittest.TestCase):
                 parameters=parameter_values,
             ):
                 self.run_benchmark(benchmark_type, parameter_values)
+
+    def test_qwen_inference_input_contracts(self):
+        outputs = ["logits", "present.0.key", "present.0.value"]
+        base_inputs = [
+            "input_ids",
+            "attention_mask",
+            "past_key_values.0.key",
+            "past_key_values.0.value",
+        ]
+        self_test = self
+
+        class Session:
+            def __init__(self, dtype, logits_dtype):
+                self.dtype = dtype
+                self.logits_dtype = logits_dtype
+
+            def run(self, output_names, feeds):
+                length = feeds["input_ids"].shape[1]
+                past_length = feeds["past_key_values.0.key"].shape[2]
+                self_test.assertEqual(
+                    feeds["attention_mask"].shape, (1, past_length + length)
+                )
+                if "position_ids" in feeds:
+                    np.testing.assert_array_equal(
+                        feeds["position_ids"],
+                        np.arange(past_length, past_length + length).reshape(1, -1),
+                    )
+                cache = np.zeros((1, 4, past_length + length, 64), dtype=self.dtype)
+                return [
+                    np.zeros((1, length, 32000), dtype=self.logits_dtype),
+                    cache,
+                    cache.copy(),
+                ]
+
+        config = Qwen2.make_config()
+        for dtype in ("fp32", "bf16"):
+            for has_position_ids in (False, True):
+                with self.subTest(dtype=dtype, position_ids=has_position_ids):
+                    benchmark = Qwen2()
+                    benchmark.session = Session(
+                        _cache_dtype(dtype),
+                        np.float32 if dtype == "bf16" else _cache_dtype(dtype),
+                    )
+                    inputs = base_inputs + (["position_ids"] if has_position_ids else [])
+                    benchmark._setup_inference(inputs, outputs, dtype, config)
+                    self.assertEqual(
+                        "position_ids" in benchmark.prefill_feeds, has_position_ids
+                    )
+                    self.assertEqual(
+                        "position_ids" in benchmark.decode_feeds, has_position_ids
+                    )
+                    self.assertEqual(
+                        benchmark.decode_feeds["past_key_values.0.key"].shape,
+                        (1, 4, CACHE_LENGTH, 64),
+                    )
+                    benchmark.time_prefill(
+                        Qwen2.params[0][0], Qwen2.params[1][0], dtype, "onnx-light"
+                    )
+                    benchmark.time_decode(
+                        Qwen2.params[0][0], Qwen2.params[1][0], dtype, "onnx-light"
+                    )
+        benchmark = Qwen2()
+        benchmark.session = Session(np.float32, np.float32)
+        with self.assertRaisesRegex(ValueError, "unexpected_input"):
+            benchmark._setup_inference(
+                base_inputs + ["unexpected_input"], outputs, "fp32", config
+            )
+        with self.assertRaisesRegex(ValueError, "present.0.value"):
+            benchmark._setup_inference(base_inputs, outputs[:-1], "fp32", config)
+
+        class BadSession(Session):
+            def run(self, output_names, feeds):
+                values = super().run(output_names, feeds)
+                values[1] = values[1].astype(np.float16)
+                return values
+
+        benchmark.session = BadSession(np.float32, np.float32)
+        with self.assertRaisesRegex(AssertionError, "present.0.key"):
+            benchmark._setup_inference(base_inputs, outputs, "fp32", config)
 
 
 if __name__ == "__main__":

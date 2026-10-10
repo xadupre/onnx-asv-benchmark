@@ -32,6 +32,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn('href="system-theme.css"', page)
             self.assertIn("#even-spacing, #date-scale", page)
             self.assertIn('class="runtime-grid"', page)
+            self.assertIn("Qwen2 BF16 ONNX Runtime CPU is intentionally unavailable", page)
             self.assertEqual(page.count('class="runtime-card"'), 5)
             self.assertIn('class="workflow-status"', page)
             self.assertIn("genai-compatibility.yml/badge.svg?branch=main", page)

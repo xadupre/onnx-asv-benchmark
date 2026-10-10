@@ -137,6 +137,8 @@ Each generated benchmark uses the corresponding native `onnx-light` backend
 benchmark case and declares ONNX Runtime, ONNX Reference, onnx-light, and
 onnx-light-cpu unconditionally. Unsupported or numerically inconsistent
 backends remain visible as failed measurements instead of being excluded.
+Qwen2 BF16 ONNX Runtime CPU is intentionally unavailable; a missing BF16
+onnx-light prefill or decode measurement fails the Qwen2 shard before publishing.
 onnx-light-cpu kernels are registered only on that benchmark session, while
 operators without one fall back to onnx-light. This keeps the regular
 onnx-light measurements unchanged.

@@ -156,7 +156,8 @@ class _CausalLLMBase:
                 providers=["CPUExecutionProvider"],
             )
             output_names = [output.name for output in self.session.get_outputs()]
-            self._setup_inference(output_names, precision, config)
+            input_names = [input.name for input in self.session.get_inputs()]
+            self._setup_inference(input_names, output_names, precision, config)
         elif backend == "onnx-reference":
             model = onnx.load(model_path, load_external_data=True)
             opsets = {opset.domain: opset.version for opset in model.opset_import}
@@ -165,7 +166,12 @@ class _CausalLLMBase:
             self.session = OnnxReferenceEvaluator(model.graph, opsets=opsets)
             self.output_names = [output.name for output in model.graph.output]
             if self.measure_inference:
-                self._setup_inference(self.output_names, precision, config)
+                self._setup_inference(
+                    [input.name for input in model.graph.input],
+                    self.output_names,
+                    precision,
+                    config,
+                )
             else:
                 self._setup_generation_feeds(precision)
                 self._generate_reference()
@@ -179,15 +185,24 @@ class _CausalLLMBase:
                 register_kernels_for_session(self.session)
             if self.measure_inference:
                 output_names = [output.name for output in model.graph.output]
-                self._setup_inference(output_names, precision, config)
+                self._setup_inference(
+                    [input.name for input in model.graph.input],
+                    output_names,
+                    precision,
+                    config,
+                )
             else:
                 self._setup_generation_feeds(precision)
                 self._generate_onnx_light()
         else:
             raise ValueError(f"Unexpected backend {backend!r}.")
 
-    def _setup_inference(self, output_names, precision, config):
-        self.prefill_feeds = {
+    def _setup_inference(self, input_names, output_names, precision, config):
+        required_outputs = {"logits", "present.0.key", "present.0.value"}
+        missing_outputs = required_outputs - set(output_names)
+        if missing_outputs:
+            raise ValueError(f"Missing model outputs: {sorted(missing_outputs)!r}.")
+        prefill = {
             "input_ids": np.arange(CACHE_LENGTH, dtype=np.int64).reshape(
                 1,
                 CACHE_LENGTH,
@@ -205,6 +220,7 @@ class _CausalLLMBase:
                 dtype=_cache_dtype(precision),
             ),
         }
+        self.prefill_feeds = self._inference_feeds(prefill, input_names, 0)
         self.prefill_outputs = dict(
             zip(
                 output_names,
@@ -213,15 +229,10 @@ class _CausalLLMBase:
             )
         )
         prefill_logits = self.prefill_outputs["logits"]
-        if prefill_logits.shape != (
-            1,
-            CACHE_LENGTH,
-            config.vocab_size,
-        ):
-            raise AssertionError(
-                f"Unexpected prefill logits shape {prefill_logits.shape!r}."
-            )
-        self.decode_feeds = {
+        self._validate_inference_outputs(
+            self.prefill_outputs, CACHE_LENGTH, precision, config
+        )
+        decode = {
             "input_ids": np.argmax(
                 prefill_logits[:, -1:, :],
                 axis=-1,
@@ -230,11 +241,54 @@ class _CausalLLMBase:
             "past_key_values.0.key": self.prefill_outputs["present.0.key"],
             "past_key_values.0.value": self.prefill_outputs["present.0.value"],
         }
-        decode_logits = self.session.run(["logits"], self.decode_feeds)[0]
-        if decode_logits.shape != (1, 1, config.vocab_size):
-            raise AssertionError(
-                f"Unexpected decode logits shape {decode_logits.shape!r}."
+        self.decode_feeds = self._inference_feeds(decode, input_names, CACHE_LENGTH)
+        decode_outputs = dict(
+            zip(
+                output_names,
+                self.session.run(output_names, self.decode_feeds),
+                strict=True,
             )
+        )
+        self._validate_inference_outputs(
+            decode_outputs, CACHE_LENGTH + 1, precision, config
+        )
+
+    @staticmethod
+    def _inference_feeds(feeds, input_names, past_length):
+        available = dict(feeds)
+        available["position_ids"] = np.arange(
+            past_length, past_length + feeds["input_ids"].shape[1], dtype=np.int64
+        ).reshape(1, -1)
+        missing = set(input_names) - set(available)
+        if missing:
+            raise ValueError(f"Unexpected required model inputs: {sorted(missing)!r}.")
+        return {name: available[name] for name in input_names}
+
+    @staticmethod
+    def _validate_inference_outputs(outputs, total_length, precision, config):
+        token_length = total_length if total_length == CACHE_LENGTH else 1
+        expected_dtype = np.dtype(_cache_dtype(precision))
+        logits_dtype = np.dtype(np.float32 if precision == "bf16" else expected_dtype)
+        cache_shape = (
+            1,
+            config.num_key_value_heads,
+            total_length,
+            config.hidden_size // config.num_attention_heads,
+        )
+        expected = {
+            "logits": (1, token_length, config.vocab_size),
+            "present.0.key": cache_shape,
+            "present.0.value": cache_shape,
+        }
+        for name, shape in expected.items():
+            value = outputs[name]
+            dtype = logits_dtype if name == "logits" else expected_dtype
+            if value.shape != shape or value.dtype != dtype:
+                raise AssertionError(
+                    f"Unexpected {name} shape or dtype: "
+                    f"{value.shape!r}, {value.dtype!r}; expected {shape!r}, "
+                    f"{dtype!r}."
+                )
 
     def _setup_generation_feeds(self, precision):
         self.generation_feeds = {

@@ -11,6 +11,11 @@ RUNTIME_OVERVIEW = """\
             Explore model and operator performance across optimized, reference,
             and lightweight ONNX runtimes. Lower execution times are better.
           </p>
+          <p>
+            Qwen2 BF16 ONNX Runtime CPU is intentionally unavailable.
+            Missing onnx-light BF16 results instead indicate a benchmark failure
+            and fail the Qwen2 shard before publication.
+          </p>
           <a
             class="workflow-status"
             href="https://github.com/xadupre/onnx-asv-benchmark/actions/workflows/genai-compatibility.yml"
