@@ -311,6 +311,16 @@ def customize_pages(html_dir):
     )
     graph = _replace_once(
         graph,
+        "series = $.asv.filter_graph_data(data,\n",
+        "series = data.length ? $.asv.filter_graph_data(data,\n",
+    )
+    graph = _replace_once(
+        graph,
+        "                                                     $.asv.main_json.benchmarks[current_benchmark].params);",
+        "                                                     $.asv.main_json.benchmarks[current_benchmark].params) : [];",
+    )
+    graph = _replace_once(
+        graph,
         "label: graph_content[1],\n" "                        bars: { order: count, },",
         "label: graph_content[1],\n"
         "                        parameters: graph_content[2],\n"

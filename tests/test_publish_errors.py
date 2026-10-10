@@ -30,7 +30,12 @@ class TestPublishErrors(unittest.TestCase):
                 json.dumps({
                     "revision_to_hash": {"102": "abc"},
                     "graph_param_list": [graph_params],
-                    "benchmarks": {benchmark: {"params": [["'onnx-light-cpu'", "'onnxruntime'"]]}},
+                    "benchmarks": {
+                        benchmark: {
+                            "params": [["'onnx-light-cpu'", "'onnxruntime'"]],
+                            "version": "current",
+                        }
+                    },
                 }),
                 encoding="utf-8",
             )
@@ -42,9 +47,9 @@ class TestPublishErrors(unittest.TestCase):
                         "onnxruntime": "1.30",
                     },
                     "env_vars": {},
-                    "result_columns": ["result", "params"],
+                    "result_columns": ["result", "params", "version"],
                     "results": {
-                        benchmark: [None, [["'onnxruntime'"]]]
+                        benchmark: [None, [["'onnxruntime'"]], "current"]
                     },
                     "benchmark_errors": {benchmark: {"0": "NotImplemented: Add bfloat16"}},
                 }),
@@ -59,6 +64,15 @@ class TestPublishErrors(unittest.TestCase):
                 json.loads((html / "index.json").read_text())["error_benchmarks"],
                 [benchmark],
             )
+            old = json.loads((results / "machine" / "run.json").read_text())
+            old["results"][benchmark][2] = "obsolete"
+            (results / "machine" / "run.json").write_text(json.dumps(old))
+            publish_errors(results, html)
+            self.assertEqual(
+                json.loads((html / "index.json").read_text())["error_benchmarks"],
+                [],
+            )
+            self.assertFalse((html / "errors" / (benchmark + ".json")).exists())
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import argparse
 from itertools import product
 import json
 from pathlib import Path
+import shutil
 
 from asv.graph import Graph
 from asv.util import sanitize_filename
@@ -32,7 +33,11 @@ def publish_errors(results_dir, html_dir):
             if name not in index["benchmarks"]:
                 continue
             columns = result["result_columns"]
-            old_params = result["results"][name][columns.index("params")]
+            row = result["results"][name]
+            version = row[columns.index("version")] if "version" in columns else None
+            if version is not None and version != index["benchmarks"][name].get("version"):
+                continue
+            old_params = row[columns.index("params")]
             new_params = index["benchmarks"][name]["params"]
             old_combinations = list(product(*old_params))
             new_indices = {
@@ -62,7 +67,9 @@ def publish_errors(results_dir, html_dir):
                 ).update(aligned)
 
     error_dir = html_dir / "errors"
-    error_dir.mkdir(exist_ok=True)
+    if error_dir.is_dir():
+        shutil.rmtree(error_dir)
+    error_dir.mkdir()
     for name, failures in errors.items():
         (error_dir / f"{sanitize_filename(name)}.json").write_text(
             json.dumps(failures, sort_keys=True), encoding="utf-8"

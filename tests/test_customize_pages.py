@@ -87,6 +87,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("messages[backend] = [Number(revision), message]", graph)
             self.assertIn("errors[decodeURIComponent(graph[0])]", graph)
             self.assertIn("$.each(revisions, function(revision, entries)", graph)
+            self.assertIn("series = data.length ? $.asv.filter_graph_data(data,", graph)
             self.assertIn("if (--pending == 0 && failures == 0", graph)
             self.assertIn("$('#missing-backend-results').hide().empty()", graph)
             self.assertIn("function configuration_color(parameters)", graph)
