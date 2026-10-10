@@ -79,6 +79,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("function show_missing_backends()", graph)
             self.assertIn("benchmark.param_names.indexOf('backend')", graph)
             self.assertIn("graph.data.some(function(point)", graph)
+            self.assertIn("point[0] == backend", graph)
             self.assertIn("No measurements for ", graph)
             self.assertIn("if (--pending == 0 && failures == 0", graph)
             self.assertIn("$('#missing-backend-results').hide().empty()", graph)

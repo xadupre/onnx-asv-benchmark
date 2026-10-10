@@ -187,18 +187,25 @@ def customize_pages(html_dir):
         """    function show_missing_backends() {
         var benchmark = $.asv.main_json.benchmarks[current_benchmark];
         var backend_axis = benchmark.param_names.indexOf('backend');
-        if (backend_axis < 0 || x_coordinate_axis == backend_axis + 1) {
+        if (backend_axis < 0) {
             return;
         }
         var missing = [];
-        $.each(benchmark_param_selection[backend_axis + 1], function(i, index) {
+        var selected = x_coordinate_axis == backend_axis + 1
+            ? benchmark.params[backend_axis].map(function(value, index) {
+                return index;
+            })
+            : benchmark_param_selection[backend_axis + 1];
+        $.each(selected, function(i, index) {
             var backend = $.asv.convert_benchmark_param_value(
                 benchmark.params[backend_axis][index]);
             var measured = orig_graphs.some(function(graph) {
-                return graph.parameters.backend == backend &&
-                    graph.data.some(function(point) {
-                        return typeof point[1] == 'number' && isFinite(point[1]);
-                    });
+                return graph.data.some(function(point) {
+                    return (x_coordinate_axis == backend_axis + 1
+                        ? point[0] == backend
+                        : graph.parameters.backend == backend) &&
+                        typeof point[1] == 'number' && isFinite(point[1]);
+                });
             });
             if (!measured) {
                 missing.push(backend);
