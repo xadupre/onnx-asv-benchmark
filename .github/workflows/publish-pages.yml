@@ -9,7 +9,6 @@ on:
       - .github/workflows/publish-pages.yml
       - asv.conf.json
       - tools/customize_pages.py
-      - tools/publish_errors.py
       - tools/system_theme.css
       - tools/site_data.py
 
@@ -52,7 +51,6 @@ jobs:
           python tools/remove_track_benchmarks.py .asv/results/benchmarks.json
           python -m pip install asv==0.6.6
           asv publish --no-pull
-          python tools/publish_errors.py .asv/results .asv/html
           python -m tools.customize_pages .asv/html
           python tools/site_data.py configure \
             .asv/html \

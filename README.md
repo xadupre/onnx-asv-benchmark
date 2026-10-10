@@ -147,9 +147,6 @@ with both onnx-light-cpu and ONNX Runtime; unsupported ONNX Runtime cases remain
 visible as failed measurements. Cases use the same category and module
 hierarchy as `benchmarks/ops`; the generated manifest creates up to four
 balanced shards for two-input operator/dtype groups, and one for other groups.
-Scheduled runs retain the last error line for failed CPU backend case parameters,
-which the published graph shows alongside the missing-measurement notice.
-Historical results recorded before this capture was added have no error message.
 Each shard discovers matching cases at runtime and assigns them by sorted case
 name, so additional shapes and variants are included automatically. The
 benchmark classes are created dynamically

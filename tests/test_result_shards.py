@@ -83,9 +83,6 @@ class TestResultShards(unittest.TestCase):
                     "models.llm.tiny_llm.TinyLLM.time_prefill": 4,
                     "machine.track_processor": 5,
                 },
-                "benchmark_errors": {
-                    "ops.math.add.Add.time_run": {"1": "Unsupported input type"}
-                },
                 "version": 2,
             },
         )
@@ -179,10 +176,6 @@ class TestResultShards(unittest.TestCase):
             shards / "ops" / "math" / "add" / "Example CPU (8 vCPU)" / "result.json"
         )
         math_result = json.loads(math_result_path.read_text(encoding="utf-8"))
-        self.assertEqual(
-            math_result["benchmark_errors"]["ops.math.add.Add.time_run"],
-            {"1": "Unsupported input type"},
-        )
         math_result["params"]["num_cpu"] = "4"
         self.write_json(math_result_path, math_result)
         model_result_path = (
@@ -222,10 +215,6 @@ class TestResultShards(unittest.TestCase):
             },
         )
         self.assertEqual(results["params"]["machine"], "Example CPU (8 vCPU)")
-        self.assertEqual(
-            results["benchmark_errors"]["ops.math.add.Add.time_run"],
-            {"1": "Unsupported input type"},
-        )
         self.assertEqual(results["params"]["cpu"], "Example CPU")
         self.assertEqual(results["params"]["num_cpu"], "4; 8")
         self.assertEqual(
