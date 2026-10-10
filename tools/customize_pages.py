@@ -250,6 +250,10 @@ def customize_pages(html_dir):
                                             ? x_index : content[0][axis + 1]);
                                 });
                                 $.each(revisions, function(revision, entries) {
+                                    if (content[0][0] !== null &&
+                                            Number(revision) != content[0][0]) {
+                                        return;
+                                    }
                                     var message = entries[flat];
                                     if (message && (!messages[backend] ||
                                             Number(revision) > messages[backend][0])) {
