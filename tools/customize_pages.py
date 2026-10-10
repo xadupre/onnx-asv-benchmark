@@ -106,6 +106,13 @@ def customize_pages(html_dir):
         f"{RUNTIME_OVERVIEW}"
         "    </div>",
     )
+    index = _replace_once(
+        index,
+        '        <div id="graph">\n',
+        '        <div id="graph">\n'
+        '          <div id="missing-backend-results" role="status" '
+        'class="alert alert-warning" style="display: none"></div>\n',
+    )
 
     graph_path = html_dir / "graphdisplay.js"
     graph = graph_path.read_text(encoding="utf-8")
@@ -176,6 +183,49 @@ def customize_pages(html_dir):
     )
     graph = _replace_once(
         graph,
+        "    function replace_graphs() {\n",
+        """    function show_missing_backends() {
+        var benchmark = $.asv.main_json.benchmarks[current_benchmark];
+        var backend_axis = benchmark.param_names.indexOf('backend');
+        if (backend_axis < 0 || x_coordinate_axis == backend_axis + 1) {
+            return;
+        }
+        var missing = [];
+        $.each(benchmark_param_selection[backend_axis + 1], function(i, index) {
+            var backend = $.asv.convert_benchmark_param_value(
+                benchmark.params[backend_axis][index]);
+            var measured = orig_graphs.some(function(graph) {
+                return graph.parameters.backend == backend &&
+                    graph.data.some(function(point) {
+                        return typeof point[1] == 'number' && isFinite(point[1]);
+                    });
+            });
+            if (!measured) {
+                missing.push(backend);
+            }
+        });
+        if (missing.length) {
+            $('#missing-backend-results').text(
+                'No measurements for ' + missing.join(', ') +
+                ' (benchmark failed or is unsupported).').show();
+        }
+    }
+
+    function replace_graphs() {
+""",
+    )
+    graph = _replace_once(
+        graph,
+        "        var to_load = collect_graphs(current_benchmark, state, benchmark_param_selection);\n"
+        "        var failures = 0;",
+        "        var to_load = collect_graphs(current_benchmark, state, benchmark_param_selection);\n"
+        "        var requested_benchmark = current_benchmark;\n"
+        "        var pending = to_load.length;\n"
+        "        $('#missing-backend-results').hide().empty();\n"
+        "        var failures = 0;",
+    )
+    graph = _replace_once(
+        graph,
         "axisLabel = 'commit date';",
         "axisLabel = 'date';",
     )
@@ -203,6 +253,22 @@ def customize_pages(html_dir):
         "                        parameters: graph_content[2],\n"
         "                        color: configuration_color(graph_content[2]),\n"
         "                        bars: { order: count, },",
+    )
+    graph = _replace_once(
+        graph,
+        "            });\n"
+        "        });\n"
+        "    }\n\n"
+        "    /* Handle log scaling the plot */",
+        "            }).always(function () {\n"
+        "                if (--pending == 0 && failures == 0 &&\n"
+        "                        current_benchmark == requested_benchmark) {\n"
+        "                    show_missing_backends();\n"
+        "                }\n"
+        "            });\n"
+        "        });\n"
+        "    }\n\n"
+        "    /* Handle log scaling the plot */",
     )
     graph = _replace_once(
         graph,
