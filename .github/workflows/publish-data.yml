@@ -9,6 +9,7 @@ on:
       - tools/merge_results.py
       - tools/remove_track_benchmarks.py
       - tools/result_shards.py
+      - tools/publish_errors.py
       - tools/site_data.py
   workflow_call:
     secrets:
@@ -48,6 +49,7 @@ jobs:
           python tools/remove_track_benchmarks.py .asv/results/benchmarks.json
           python -m pip install asv==0.6.6
           asv publish --no-pull
+          python tools/publish_errors.py .asv/results .asv/html
           python tools/site_data.py extract \
             .asv/html \
             cache-data/onnx-asv-benchmark/site-data

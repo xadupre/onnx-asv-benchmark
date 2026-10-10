@@ -105,6 +105,10 @@ def canonicalize_benchmark_hierarchy(results_root):
                 result.get("results", {}),
                 f"results in {result_path}",
             )
+            result["benchmark_errors"] = _canonicalize_mapping(
+                result.get("benchmark_errors", {}),
+                f"errors in {result_path}",
+            )
             result["durations"] = _canonicalize_mapping(
                 result.get("durations", {}),
                 f"durations in {result_path}",
@@ -241,6 +245,10 @@ def _merge_result_file(path, incoming):
     current["date"] = max(current.get("date", 0), incoming.get("date", 0))
     current.setdefault("results", {}).update(incoming.get("results", {}))
     current.setdefault("durations", {}).update(incoming.get("durations", {}))
+    errors = current.setdefault("benchmark_errors", {})
+    for name in incoming.get("results", {}):
+        errors.pop(name, None)
+    errors.update(incoming.get("benchmark_errors", {}))
     _save(path, current)
 
 
@@ -317,6 +325,11 @@ def write_shards(source, shard_root, selected_shards=None):
                 "durations": {
                     name: duration
                     for name, duration in result.get("durations", {}).items()
+                    if name in shard_results
+                },
+                "benchmark_errors": {
+                    name: errors
+                    for name, errors in result.get("benchmark_errors", {}).items()
                     if name in shard_results
                 },
             }

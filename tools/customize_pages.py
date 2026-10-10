@@ -184,7 +184,9 @@ def customize_pages(html_dir):
     graph = _replace_once(
         graph,
         "    function replace_graphs() {\n",
-        """    function show_missing_backends() {
+        """    var missing_backend_request = 0;
+
+    function show_missing_backends(to_load, request_id) {
         var benchmark = $.asv.main_json.benchmarks[current_benchmark];
         var backend_axis = benchmark.param_names.indexOf('backend');
         if (backend_axis < 0) {
@@ -215,6 +217,59 @@ def customize_pages(html_dir):
             $('#missing-backend-results').text(
                 'No measurements for ' + missing.join(', ') +
                 ' (benchmark failed or is unsupported).').show();
+            if ($.inArray(current_benchmark,
+                    $.asv.main_json.error_benchmarks || []) < 0) {
+                return;
+            }
+            var benchmark_name = current_benchmark;
+            var path = 'errors/' + encodeURIComponent(benchmark_name) + '.json';
+            $.getJSON(typeof asv_data_path == 'function'
+                ? asv_data_path(path) : path).done(function(errors) {
+                if (request_id != missing_backend_request ||
+                        current_benchmark != benchmark_name) {
+                    return;
+                }
+                var messages = {};
+                $.each(to_load, function(i, graph) {
+                    var revisions = errors[decodeURIComponent(graph[0])] || {};
+                    $.each(graph[1], function(j, content) {
+                        $.each(missing, function(k, backend) {
+                            var index = benchmark.params[backend_axis].indexOf(
+                                "'" + backend + "'");
+                            var x_indices = x_coordinate_axis &&
+                                x_coordinate_axis != backend_axis + 1
+                                ? benchmark.params[x_coordinate_axis - 1].map(
+                                    function(value, index) { return index; })
+                                : [null];
+                            $.each(x_indices, function(n, x_index) {
+                                var flat = 0;
+                                $.each(benchmark.params, function(axis, values) {
+                                    flat = flat * values.length +
+                                        (axis == backend_axis ? index
+                                        : axis + 1 == x_coordinate_axis
+                                            ? x_index : content[0][axis + 1]);
+                                });
+                                $.each(revisions, function(revision, entries) {
+                                    var message = entries[flat];
+                                    if (message && (!messages[backend] ||
+                                            Number(revision) > messages[backend][0])) {
+                                        messages[backend] = [Number(revision), message];
+                                    }
+                                });
+                            });
+                        });
+                    });
+                });
+                var details = missing.filter(function(backend) {
+                    return messages[backend];
+                }).map(function(backend) {
+                    return backend + ': ' + messages[backend][1];
+                });
+                if (details.length) {
+                    $('#missing-backend-results').append(
+                        $('<pre/>').text(details.join('\\n')));
+                }
+            });
         }
     }
 
@@ -227,6 +282,7 @@ def customize_pages(html_dir):
         "        var failures = 0;",
         "        var to_load = collect_graphs(current_benchmark, state, benchmark_param_selection);\n"
         "        var requested_benchmark = current_benchmark;\n"
+        "        var request_id = ++missing_backend_request;\n"
         "        var pending = to_load.length;\n"
         "        $('#missing-backend-results').hide().empty();\n"
         "        var failures = 0;",
@@ -270,7 +326,7 @@ def customize_pages(html_dir):
         "            }).always(function () {\n"
         "                if (--pending == 0 && failures == 0 &&\n"
         "                        current_benchmark == requested_benchmark) {\n"
-        "                    show_missing_backends();\n"
+        "                    show_missing_backends(to_load, request_id);\n"
         "                }\n"
         "            });\n"
         "        });\n"
