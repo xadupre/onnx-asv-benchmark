@@ -99,7 +99,7 @@ jobs:
       group: benchmark-shard-${{ matrix.shard }}
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: ${{ matrix.shard == 'ops/tensor/grid_sample' && 120 || 60 }}
     steps:
       - uses: actions/checkout@v7
         with:

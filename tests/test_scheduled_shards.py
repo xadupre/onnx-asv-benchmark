@@ -95,7 +95,8 @@ class TestScheduledShards(unittest.TestCase):
         self.assertEqual(set(scheduled), set(mappings))
         self.assertRegex(
             workflow,
-            r"(?s)  benchmark:.*?    timeout-minutes: 60",
+            r"(?s)  benchmark:.*?    timeout-minutes: "
+            r"\$\{\{ matrix\.shard == 'ops/tensor/grid_sample' && 120 \|\| 60 \}\}",
         )
         for bucket in map(str, range(7)):
             self.assertEqual(list(mappings.values()).count(bucket), 2)
