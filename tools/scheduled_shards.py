@@ -29,16 +29,20 @@ def discover_shards(root):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="List the benchmark shards assigned to a weekly schedule bucket."
+        description="List all benchmark shards or those assigned to a schedule bucket."
     )
-    parser.add_argument("bucket", type=int, choices=range(7))
+    parser.add_argument("bucket", nargs="?", type=int, choices=range(7))
     parser.add_argument(
         "--root", type=Path, default=Path(__file__).resolve().parents[1]
     )
     args = parser.parse_args()
+    discovered = discover_shards(args.root)
+    if args.bucket is None:
+        print("\n".join(discovered))
+        return
     shards = [
         shard
-        for index, shard in enumerate(discover_shards(args.root))
+        for index, shard in enumerate(discovered)
         if index % 7 == args.bucket
     ]
     print(json.dumps({"shard": shards}, separators=(",", ":")))

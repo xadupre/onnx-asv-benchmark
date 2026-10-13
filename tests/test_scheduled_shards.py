@@ -10,6 +10,21 @@ from tools.scheduled_shards import discover_shards
 
 
 class TestScheduledShards(unittest.TestCase):
+    def test_cli_lists_all_shards_without_bucket(self):
+        root = Path(__file__).resolve().parents[1]
+        completed = subprocess.run(
+            [sys.executable, str(root / "tools" / "scheduled_shards.py")],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        shards = completed.stdout.splitlines()
+        self.assertIn("ops/math/add", shards)
+        self.assertIn("models/llm/tiny_llm", shards)
+        self.assertEqual(len(shards), len(discover_shards(root)))
+
     def test_cli_runs_without_repository_on_pythonpath(self):
         root = Path(__file__).resolve().parents[1]
         environment = os.environ.copy()
@@ -82,6 +97,16 @@ class TestScheduledShards(unittest.TestCase):
         for left, left_bucket in enumerate(buckets):
             for right_bucket in buckets[left + 1 :]:
                 self.assertFalse(left_bucket & right_bucket)
+
+    def test_readme_shard_list_is_current(self):
+        root = Path(__file__).resolve().parents[1]
+        readme = (root / "README.md").read_text(encoding="utf-8")
+        section = readme.split("<!-- BEGIN CURRENT SHARDS -->", 1)[1].split(
+            "<!-- END CURRENT SHARDS -->", 1
+        )[0]
+        documented = section.split("```text\n", 1)[1].split("\n```", 1)[0].splitlines()
+
+        self.assertEqual(documented, discover_shards(root))
 
     def test_each_bucket_is_scheduled_twice(self):
         root = Path(__file__).resolve().parents[1]
