@@ -98,10 +98,10 @@ class TestScheduledShards(unittest.TestCase):
             for right_bucket in buckets[left + 1 :]:
                 self.assertFalse(left_bucket & right_bucket)
 
-    def test_readme_shard_list_is_current(self):
+    def test_documented_shard_list_is_current(self):
         root = Path(__file__).resolve().parents[1]
-        readme = (root / "README.md").read_text(encoding="utf-8")
-        section = readme.split("<!-- BEGIN CURRENT SHARDS -->", 1)[1].split(
+        documentation = (root / "SHARDS.md").read_text(encoding="utf-8")
+        section = documentation.split("<!-- BEGIN CURRENT SHARDS -->", 1)[1].split(
             "<!-- END CURRENT SHARDS -->", 1
         )[0]
         documented = section.split("```text\n", 1)[1].split("\n```", 1)[0].splitlines()
