@@ -10,20 +10,35 @@ def shard_benchmark_regex(shard):
     return "^" + re.escape(shard.replace("/", ".")) + r"\."
 
 
+def resolve_commit(root, commit):
+    return subprocess.check_output(
+        ["git", "rev-parse", "--verify", f"{commit}^{{commit}}"],
+        cwd=root,
+        text=True,
+    ).strip()
+
+
+def final_status(asv_status, published):
+    if published and asv_status == 2:
+        return 0
+    return asv_status
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Run ASV benchmarks in the current Python environment.",
         epilog="""examples:
   python tools/run_asv.py
   python tools/run_asv.py --quick
-  python tools/run_asv.py --bench MatMul main^!
-  python tools/run_asv.py --publish --shard models/llm/tiny_llm HEAD^!""",
+  python tools/run_asv.py --bench MatMul
+  python tools/run_asv.py --publish --shard models/llm/tiny_llm""",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "range",
+        "commit",
         nargs="?",
-        help="Git commit range to benchmark (default: configured branches).",
+        default="HEAD",
+        help="Git commit to associate with the results (default: HEAD).",
     )
     parser.add_argument(
         "-b",
@@ -72,6 +87,7 @@ def parse_args():
 def main():
     args = parse_args()
     root = Path(__file__).resolve().parents[1]
+    commit_hash = resolve_commit(root, args.commit)
     processor = subprocess.check_output(
         [sys.executable, str(root / "tools" / "setup_machine.py")],
         text=True,
@@ -86,6 +102,8 @@ def main():
         f"existing:{sys.executable}",
         "--machine",
         processor,
+        "--set-commit-hash",
+        commit_hash,
     ]
     for benchmark in args.bench:
         command.extend(["--bench", benchmark])
@@ -93,8 +111,6 @@ def main():
         command.extend(["--bench", shard_benchmark_regex(shard)])
     if args.quick:
         command.append("--quick")
-    if args.range:
-        command.append(args.range)
     status = subprocess.call(command, cwd=root, env=env)
     if status not in (0, 2):
         raise SystemExit(status)
@@ -102,10 +118,15 @@ def main():
         publish_command = [
             sys.executable,
             str(root / "tools" / "publish_results.py"),
+            "--machine",
+            processor,
         ]
         for shard in args.shard:
             publish_command.extend(["--shard", shard])
         subprocess.run(publish_command, cwd=root, env=env, check=True)
+        if status == 2:
+            print("Published results including failed or unsupported benchmark cases.")
+    status = final_status(status, args.publish)
     if status:
         raise SystemExit(status)
 

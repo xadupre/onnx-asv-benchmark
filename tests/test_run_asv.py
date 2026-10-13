@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.run_asv import shard_benchmark_regex
+from tools.run_asv import final_status, resolve_commit, shard_benchmark_regex
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "run_asv.py"
@@ -29,11 +29,11 @@ class TestRunAsv(unittest.TestCase):
         self.assertIn("--shard NAME", result.stdout)
         self.assertIn("python tools/run_asv.py --quick", result.stdout)
         self.assertIn(
-            "python tools/run_asv.py --bench MatMul main^!",
+            "python tools/run_asv.py --bench MatMul",
             result.stdout,
         )
         self.assertIn(
-            "--publish --shard models/llm/tiny_llm HEAD^!",
+            "--publish --shard models/llm/tiny_llm",
             result.stdout,
         )
         self.assertNotIn("--environment", result.stdout)
@@ -87,6 +87,23 @@ class TestRunAsv(unittest.TestCase):
             shard_benchmark_regex("models/llm/tiny_llm"),
             r"^models\.llm\.tiny_llm\.",
         )
+
+    def test_resolve_single_commit(self):
+        root = SCRIPT.parents[1]
+        expected = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            text=True,
+        ).strip()
+
+        self.assertEqual(resolve_commit(root, "HEAD"), expected)
+        with self.assertRaises(subprocess.CalledProcessError):
+            resolve_commit(root, "HEAD^!")
+
+    def test_published_benchmark_failures_are_successful(self):
+        self.assertEqual(final_status(2, published=True), 0)
+        self.assertEqual(final_status(2, published=False), 2)
+        self.assertEqual(final_status(1, published=True), 1)
 
 
 if __name__ == "__main__":
