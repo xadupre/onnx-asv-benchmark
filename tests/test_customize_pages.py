@@ -113,6 +113,9 @@ class TestCustomizePages(unittest.TestCase):
                 grid,
             )
             self.assertIn("make_machine_summary()", grid)
+            self.assertIn("title: 'View results for ' + bm.name", grid)
+            self.assertNotIn("title: bm.code", grid)
+            self.assertIn("html: false,", grid)
             self.assertIn("params.instruction_sets", grid)
             self.assertIn("variant.split(',').join(', ')", grid)
             self.assertIn("params.num_cpu", grid)
@@ -130,6 +133,9 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("background-color: var(--asv-hover)", stylesheet)
             self.assertIn("background-color: var(--asv-selection)", stylesheet)
             self.assertIn(".btn-default.active:hover", stylesheet)
+            self.assertIn(".benchmark-container {\n    width: 220px;\n    height: 80px;", stylesheet)
+            self.assertIn(".benchmark-plot {\n    width: 212px;\n    height: 52px;", stylesheet)
+            self.assertIn(".benchmark-text {\n    width: 212px;", stylesheet)
 
     def test_unexpected_asv_output_is_not_modified(self):
         with tempfile.TemporaryDirectory() as directory:

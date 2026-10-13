@@ -366,6 +366,15 @@ def customize_pages(html_dir):
     )
     grid = _replace_once(
         grid,
+        "        plot_div.tooltip({\n"
+        "            title: bm.code,\n"
+        "            html: true,",
+        "        plot_div.tooltip({\n"
+        "            title: 'View results for ' + bm.name,\n"
+        "            html: false,",
+    )
+    grid = _replace_once(
+        grid,
         "    function benchmark_container(bm) {",
         """\
     function make_machine_summary() {
