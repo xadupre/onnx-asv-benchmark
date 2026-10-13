@@ -144,6 +144,20 @@
     margin-left: auto;
 }
 
+.benchmark-container {
+    width: 220px;
+    height: 80px;
+}
+
+.benchmark-plot {
+    width: 212px;
+    height: 52px;
+}
+
+.benchmark-text {
+    width: 212px;
+}
+
 @media (max-width: 700px) {
     .benchmark-home {
         padding: 24px 15px 8px;
