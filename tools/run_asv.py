@@ -112,6 +112,8 @@ def main():
         publish_command = [
             sys.executable,
             str(root / "tools" / "publish_results.py"),
+            "--machine",
+            processor,
         ]
         for shard in args.shard:
             publish_command.extend(["--shard", shard])

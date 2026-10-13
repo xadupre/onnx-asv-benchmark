@@ -103,6 +103,9 @@ Add `--publish` to publish the saved results to `cache_data` after the run:
 python tools/run_asv.py --publish --shard ops/math/add
 ```
 
+Only results from the current processor-named ASV machine profile are
+published, even when `.asv/results` also contains results from other machines.
+
 Run every shard locally, without or with publication:
 
 ```bash

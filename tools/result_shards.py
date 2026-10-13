@@ -244,7 +244,7 @@ def _merge_result_file(path, incoming):
     _save(path, current)
 
 
-def write_shards(source, shard_root, selected_shards=None):
+def write_shards(source, shard_root, selected_shards=None, machine=None):
     source = Path(source)
     shard_root = Path(shard_root)
     benchmarks = _load(source / "benchmarks.json")
@@ -253,7 +253,13 @@ def write_shards(source, shard_root, selected_shards=None):
         for path in source.iterdir()
         if path.is_dir() and (path / "machine.json").is_file()
     ]
-    if len(machine_directories) == 1:
+    if machine is not None:
+        machine_directory = source / machine
+        if machine_directory not in machine_directories:
+            raise ValueError(
+                f"ASV machine {machine!r} does not exist in {source}."
+            )
+    elif len(machine_directories) == 1:
         machine_directory = machine_directories[0]
     else:
         raise ValueError(

@@ -40,6 +40,10 @@ def main():
         ),
     )
     parser.add_argument(
+        "--machine",
+        help="Publish results only for this ASV machine profile.",
+    )
+    parser.add_argument(
         "--pages-repository",
         default="xadupre/onnx-asv-benchmark",
         help="GitHub repository hosting the ASV website.",
@@ -81,6 +85,7 @@ def main():
             source,
             destination / "shards",
             selected_shards=args.shard or None,
+            machine=args.machine,
         )
 
         run(["git", "add", "--all", "--", args.subdirectory], cwd=checkout)

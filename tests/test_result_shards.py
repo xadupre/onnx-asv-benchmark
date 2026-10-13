@@ -246,6 +246,27 @@ class TestResultShards(unittest.TestCase):
         self.assertTrue((merged / "Example CPU (4 vCPU)" / "result.json").is_file())
         self.assertTrue((merged / "Example CPU (8 vCPU)" / "result.json").is_file())
 
+    def test_write_shards_selects_machine(self):
+        source = self.root / "source"
+        shards = self.root / "shards"
+        self.make_results(source)
+        self.write_json(
+            source / "another-machine" / "machine.json",
+            {
+                "version": 1,
+                "machine": "another-machine",
+                "cpu": "Another CPU",
+                "num_cpu": "4",
+            },
+        )
+
+        self.assertEqual(
+            write_shards(source, shards, machine="xadupre2025"),
+            {"ops/math/add", "models/llm/tiny_llm"},
+        )
+        with self.assertRaisesRegex(ValueError, "does not exist"):
+            write_shards(source, shards, machine="missing")
+
     def test_migrate_legacy_results(self):
         destination = self.root / "cache-data"
         self.make_results(destination)
