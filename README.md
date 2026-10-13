@@ -81,38 +81,40 @@ python tools/run_asv.py --quick
 Use `--bench` to select benchmarks, optionally at a specific revision:
 
 ```bash
-python tools/run_asv.py --bench MatMul main^!
+python tools/run_asv.py --bench MatMul
 ```
 
 Use `--shard` to run one or more complete shards without publishing:
 
 ```bash
-python tools/run_asv.py --shard models/llm/tiny_llm HEAD^!
+python tools/run_asv.py --shard models/llm/tiny_llm
 ```
 
 For example, copy and paste this command to run the Add operator shard with
 the active Python interpreter and the current `PYTHONPATH`:
 
 ```bash
-python tools/run_asv.py --shard ops/math/add HEAD^!
+python tools/run_asv.py --shard ops/math/add
 ```
 
 Add `--publish` to publish the saved results to `cache_data` after the run:
 
 ```bash
-python tools/run_asv.py --publish --shard ops/math/add HEAD^!
+python tools/run_asv.py --publish --shard ops/math/add
 ```
 
 Run every shard locally, without or with publication:
 
 ```bash
-python tools/run_asv.py HEAD^!
-python tools/run_asv.py --publish HEAD^!
+python tools/run_asv.py
+python tools/run_asv.py --publish
 ```
 
-`HEAD^!` selects only the current Git commit. The command uses the current
-Python interpreter through ASV's `existing` environment, so it does not rebuild
-an ASV environment or reinstall all dependencies.
+The command associates results with `HEAD` by default. Pass another single
+commit as the final argument when needed, for example `HEAD~1`. Git revision
+ranges such as `HEAD^!` are not accepted because ASV's `existing` environment
+can record only one commit. The command uses the current Python interpreter, so
+it does not rebuild an ASV environment or reinstall all dependencies.
 
 `--shard` derives the ASV benchmark filter and may be repeated. It cannot be
 combined with `--bench`. `--bench` also cannot be combined with `--publish`;
