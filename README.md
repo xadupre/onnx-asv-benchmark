@@ -90,13 +90,17 @@ Use `--shard` to run one or more complete shards without publishing:
 python tools/run_asv.py --shard models/llm/tiny_llm HEAD^!
 ```
 
+For example, copy and paste this command to run the Add operator shard with
+the active Python interpreter and the current `PYTHONPATH`:
+
+```bash
+python tools/run_asv.py --shard ops/math/add HEAD^!
+```
+
 Add `--publish` to publish the saved results to `cache_data` after the run:
 
 ```bash
-python tools/run_asv.py \
-  --publish \
-  --shard models/llm/tiny_llm \
-  HEAD^!
+python tools/run_asv.py --publish --shard ops/math/add HEAD^!
 ```
 
 Run every shard locally, without or with publication:
