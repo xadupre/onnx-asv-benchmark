@@ -135,7 +135,9 @@ python tools/scheduled_shards.py
 `--publish` is incompatible with `--quick`, because quick runs do not save
 results. Without `--shard`, every shard present in `.asv/results` is published.
 Results are still published when ASV exits with status 2 because individual
-benchmarks failed, so those failures remain visible.
+benchmarks failed, so those failures remain visible. After a successful
+publication, these expected benchmark failures do not make the command itself
+exit with an error.
 
 For a quick smoke test in the versioned environment:
 

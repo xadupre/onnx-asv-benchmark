@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.run_asv import resolve_commit, shard_benchmark_regex
+from tools.run_asv import final_status, resolve_commit, shard_benchmark_regex
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "run_asv.py"
@@ -99,6 +99,11 @@ class TestRunAsv(unittest.TestCase):
         self.assertEqual(resolve_commit(root, "HEAD"), expected)
         with self.assertRaises(subprocess.CalledProcessError):
             resolve_commit(root, "HEAD^!")
+
+    def test_published_benchmark_failures_are_successful(self):
+        self.assertEqual(final_status(2, published=True), 0)
+        self.assertEqual(final_status(2, published=False), 2)
+        self.assertEqual(final_status(1, published=True), 1)
 
 
 if __name__ == "__main__":

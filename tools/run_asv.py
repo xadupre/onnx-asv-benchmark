@@ -18,6 +18,12 @@ def resolve_commit(root, commit):
     ).strip()
 
 
+def final_status(asv_status, published):
+    if published and asv_status == 2:
+        return 0
+    return asv_status
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Run ASV benchmarks in the current Python environment.",
@@ -118,6 +124,9 @@ def main():
         for shard in args.shard:
             publish_command.extend(["--shard", shard])
         subprocess.run(publish_command, cwd=root, env=env, check=True)
+        if status == 2:
+            print("Published results including failed or unsupported benchmark cases.")
+    status = final_status(status, args.publish)
     if status:
         raise SystemExit(status)
 
