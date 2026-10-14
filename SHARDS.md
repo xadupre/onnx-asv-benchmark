@@ -289,8 +289,10 @@ cpu_backend_cases/nn/cases/layernormalization
 cpu_backend_cases/nn/cases/linear
 cpu_backend_cases/nn/cases/lpnormalization
 cpu_backend_cases/nn/cases/meanvariancenormalization
-cpu_backend_cases/nn/cases/microsoft
+cpu_backend_cases/nn/cases/microsoft_linear_attention
+cpu_backend_cases/nn/cases/microsoft_rotary_embedding
 cpu_backend_cases/nn/cases/rms
+cpu_backend_cases/nn/cases/rotary
 cpu_backend_cases/nn/cases/simplified
 cpu_backend_cases/nn/cases/skip
 cpu_backend_cases/quantization/cases/qlinearmatmul

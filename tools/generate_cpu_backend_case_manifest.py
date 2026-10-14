@@ -61,15 +61,26 @@ def operator_locations(ops_root):
 def build_shards(cases, locations, records=None):
     grouped = defaultdict(list)
     operators = {}
+    prefix_operators = defaultdict(set)
+    case_groups = []
     for case in cases:
         prefix = case_prefix(case.name)
         simplified, dtypes, shapes = case_metadata(case)
         if records is not None:
             records[case.name] = (case.name, simplified, dtypes, shapes)
-        grouped[prefix, dtypes].append(case.name)
-        if prefix not in operators:
-            operators[prefix] = case.model.graph.node[0].op_type
+        operator = case.model.graph.node[0].op_type
+        prefix_operators[prefix].add(operator)
+        case_groups.append((prefix, dtypes, operator, case.name))
         case.unload()
+
+    for prefix, dtypes, operator, name in case_groups:
+        if len(prefix_operators[prefix]) > 1:
+            operator_suffix = re.sub(r"(?<!^)(?=[A-Z])", "_", operator).lower()
+            prefix = f"{prefix}_{operator_suffix}"
+            if not name.startswith(f"test_cpu_{prefix}_"):
+                raise ValueError(f"Cannot distinguish operator {operator!r} in {name!r}.")
+        grouped[prefix, dtypes].append(name)
+        operators[prefix] = operator
 
     shards = []
     used_names = set()
@@ -80,7 +91,7 @@ def build_shards(cases, locations, records=None):
         category, module = locations[operator]
         name = class_name(operator, dtypes)
         if name in used_names:
-            name = f"{name}{prefix.title()}"
+            name = f"{name}{prefix.split('_', 1)[0].title()}"
         used_names.add(name)
         shard_count = min(4, len(names)) if len(dtypes) == 2 else 1
         for shard_index in range(shard_count):
