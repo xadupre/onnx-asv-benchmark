@@ -85,7 +85,15 @@ jobs:
           git -C cache-data add --all -- onnx-asv-benchmark
           if ! git -C cache-data diff --cached --quiet; then
             git -C cache-data commit -m "Migrate onnx-asv-benchmark result shards"
-            git -C cache-data push origin main
+            for attempt in 1 2 3; do
+              git -C cache-data pull --rebase origin main
+              if git -C cache-data push origin main; then
+                break
+              fi
+              if [[ "$attempt" == 3 ]]; then
+                exit 1
+              fi
+            done
           fi
 
   benchmark:
@@ -138,14 +146,18 @@ jobs:
     secrets: inherit
 
   report-failures:
-    needs: benchmark
+    needs:
+      - prepare
+      - migrate-cache
+      - benchmark
+      - publish-data
     if: ${{ always() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
     steps:
-      - name: Create benchmark failure issue
+      - name: Create workflow failure issue
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -165,10 +177,13 @@ jobs:
           issue_state="${existing_issue#*$'\t'}"
           failures="$(
             gh api \
+              --paginate --slurp \
               "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100" |
               jq '[
-                .jobs[]
-                | select(.name | startswith("benchmark ("))
+                .[].jobs[]
+                | select(.name == "prepare" or .name == "migrate-cache"
+                         or .name == "publish-data / publish"
+                         or (.name | startswith("benchmark (")))
                 | select(.conclusion == "failure" or .conclusion == "cancelled")
               ]'
           )"
@@ -178,14 +193,14 @@ jobs:
             if [[ -n "$issue_number" ]]; then
               gh issue close "$issue_number" \
                 --repo "$GITHUB_REPOSITORY" \
-                --comment "All benchmark shards succeeded on run attempt $GITHUB_RUN_ATTEMPT."
+                --comment "All workflow jobs succeeded on run attempt $GITHUB_RUN_ATTEMPT."
             fi
             exit 0
           fi
 
           body="$RUNNER_TEMP/benchmark-failures.md"
           {
-            echo "$count benchmark shard(s) failed or were cancelled."
+            echo "$count workflow job(s) failed or were cancelled."
             echo
             echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo "Attempt: $GITHUB_RUN_ATTEMPT"
