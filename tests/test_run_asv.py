@@ -5,11 +5,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tools.scheduled_shards import shard_benchmark_regex
 from tools.run_asv import (
     final_status,
     require_main_commit,
     resolve_commit,
-    shard_benchmark_regex,
 )
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "run_asv.py"
@@ -90,6 +90,18 @@ class TestRunAsv(unittest.TestCase):
         self.assertEqual(
             shard_benchmark_regex("models/llm/tiny_llm"),
             r"^models\.llm\.tiny_llm\.",
+        )
+        import re
+
+        regex = shard_benchmark_regex("cpu_backend_cases/math/cases/mul")
+        self.assertIsNotNone(
+            re.match(regex, "cpu_backend_cases.math.cases.MulUint32Inputs2Shard4.time_run")
+        )
+        self.assertIsNone(
+            re.match(regex, "cpu_backend_cases.math.cases.MulIntegerFloat32.time_run")
+        )
+        self.assertIsNone(
+            re.match(regex, "cpu_backend_cases.math.cases.AddFloat32.time_run")
         )
 
     def test_resolve_single_commit(self):

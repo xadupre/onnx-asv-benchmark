@@ -204,9 +204,10 @@ onnx-light measurements unchanged.
 The separate `cpu_backend_cases` benchmark family runs every
 `test_cpu_*_benchmark` case registered by onnx-light-cpu. Each case is measured
 with both onnx-light-cpu and ONNX Runtime; unsupported ONNX Runtime cases remain
-visible as failed measurements. Cases use the same category and module
-hierarchy as `benchmarks/ops`; the generated manifest creates up to four
-balanced shards for two-input operator/dtype groups, and one for other groups.
+visible as failed measurements. Cases are scheduled and published together by operator within each category,
+like `benchmarks/ops`. The generated manifest still creates up to four
+balanced benchmark classes for two-input operator/dtype groups, and one for
+other groups; grouping their classes does not discard any cases or backends.
 Each shard discovers matching cases at runtime and assigns them by sorted case
 name, so additional shapes and variants are included automatically. The
 benchmark classes are created dynamically

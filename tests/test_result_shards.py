@@ -128,7 +128,13 @@ class TestResultShards(unittest.TestCase):
             benchmark_shard(
                 "cpu_backend_cases.math.cases.AbsFloat32.time_abs_v13"
             ),
-            "cpu_backend_cases/math/cases/AbsFloat32",
+            "cpu_backend_cases/math/cases/abs",
+        )
+        self.assertEqual(
+            benchmark_shard(
+                "cpu_backend_cases.math.cases.MulUint32Inputs2Shard4.time_mul"
+            ),
+            "cpu_backend_cases/math/cases/mul",
         )
 
     def test_canonical_benchmark_name(self):
