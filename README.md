@@ -113,11 +113,14 @@ python tools/run_asv.py
 python tools/run_asv.py --publish
 ```
 
-The command associates results with `HEAD` by default. Pass another single
-commit as the final argument when needed, for example `HEAD~1`. Git revision
-ranges such as `HEAD^!` are not accepted because ASV's `existing` environment
-can record only one commit. The command uses the current Python interpreter, so
-it does not rebuild an ASV environment or reinstall all dependencies.
+The command associates results with `HEAD` by default. The selected commit must
+belong to the local `main` branch; commits from unmerged or squash-merged
+branches are rejected because ASV cannot place them on the published `main`
+graphs. Pass another single `main` commit as the final argument when needed, for
+example `HEAD~1`. Git revision ranges such as `HEAD^!` are not accepted because
+ASV's `existing` environment can record only one commit. The command uses the
+current Python interpreter, so it does not rebuild an ASV environment or
+reinstall all dependencies.
 
 `--shard` derives the ASV benchmark filter and may be repeated. It cannot be
 combined with `--bench`. `--bench` also cannot be combined with `--publish`;

@@ -18,6 +18,21 @@ def resolve_commit(root, commit):
     ).strip()
 
 
+def require_main_commit(root, commit_hash):
+    main_hash = resolve_commit(root, "main")
+    status = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", commit_hash, main_hash],
+        cwd=root,
+    ).returncode
+    if status == 1:
+        raise ValueError(f"Commit {commit_hash} is not part of the local main branch.")
+    if status != 0:
+        raise subprocess.CalledProcessError(
+            status,
+            ["git", "merge-base", "--is-ancestor", commit_hash, main_hash],
+        )
+
+
 def final_status(asv_status, published):
     if published and asv_status == 2:
         return 0
@@ -88,6 +103,7 @@ def main():
     args = parse_args()
     root = Path(__file__).resolve().parents[1]
     commit_hash = resolve_commit(root, args.commit)
+    require_main_commit(root, commit_hash)
     processor = subprocess.check_output(
         [sys.executable, str(root / "tools" / "setup_machine.py")],
         text=True,

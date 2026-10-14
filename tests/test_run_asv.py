@@ -5,8 +5,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.run_asv import final_status, resolve_commit, shard_benchmark_regex
-
+from tools.run_asv import (
+    final_status,
+    require_main_commit,
+    resolve_commit,
+    shard_benchmark_regex,
+)
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "run_asv.py"
 
@@ -99,6 +103,33 @@ class TestRunAsv(unittest.TestCase):
         self.assertEqual(resolve_commit(root, "HEAD"), expected)
         with self.assertRaises(subprocess.CalledProcessError):
             resolve_commit(root, "HEAD^!")
+
+    def test_commit_must_be_on_main(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True)
+            subprocess.run(
+                ["git", "config", "user.name", "Test User"], cwd=root, check=True
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.com"],
+                cwd=root,
+                check=True,
+            )
+            (root / "file.txt").write_text("main\n", encoding="utf-8")
+            subprocess.run(["git", "add", "file.txt"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-m", "main"], cwd=root, check=True)
+            main_hash = resolve_commit(root, "HEAD")
+            subprocess.run(["git", "switch", "-c", "feature"], cwd=root, check=True)
+            (root / "file.txt").write_text("feature\n", encoding="utf-8")
+            subprocess.run(["git", "commit", "-am", "feature"], cwd=root, check=True)
+            feature_hash = resolve_commit(root, "HEAD")
+
+            require_main_commit(root, main_hash)
+            with self.assertRaisesRegex(
+                ValueError, "not part of the local main branch"
+            ):
+                require_main_commit(root, feature_hash)
 
     def test_published_benchmark_failures_are_successful(self):
         self.assertEqual(final_status(2, published=True), 0)
