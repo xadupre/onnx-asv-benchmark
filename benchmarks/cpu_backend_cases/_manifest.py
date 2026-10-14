@@ -6381,8 +6381,29 @@ CASE_SHARDS = (
     (
         "nn",
         "LinearAttentionFloat32Inputs6Microsoft",
-        "microsoft",
+        "microsoft_linear_attention",
         ('float32', 'float32', 'float32', 'float32', 'float32', 'float32'),
+        0,
+    ),
+    (
+        "nn",
+        "RotaryEmbeddingBfloat16Int64Inputs4",
+        "microsoft_rotary_embedding",
+        ('bfloat16', 'int64', 'bfloat16', 'bfloat16'),
+        0,
+    ),
+    (
+        "nn",
+        "RotaryEmbeddingFloat16Int64Inputs4",
+        "microsoft_rotary_embedding",
+        ('float16', 'int64', 'float16', 'float16'),
+        0,
+    ),
+    (
+        "nn",
+        "RotaryEmbeddingFloat32Int64Inputs4",
+        "microsoft_rotary_embedding",
+        ('float32', 'int64', 'float32', 'float32'),
         0,
     ),
     (
@@ -6468,6 +6489,27 @@ CASE_SHARDS = (
         "rms",
         ('float32', 'float32'),
         3,
+    ),
+    (
+        "nn",
+        "RotaryEmbeddingBfloat16Int64Inputs4Rotary",
+        "rotary",
+        ('bfloat16', 'bfloat16', 'bfloat16', 'int64'),
+        0,
+    ),
+    (
+        "nn",
+        "RotaryEmbeddingFloat16Int64Inputs4Rotary",
+        "rotary",
+        ('float16', 'float16', 'float16', 'int64'),
+        0,
+    ),
+    (
+        "nn",
+        "RotaryEmbeddingFloat32Int64Inputs4Rotary",
+        "rotary",
+        ('float32', 'float32', 'float32', 'int64'),
+        0,
     ),
     (
         "nn",

@@ -10576,6 +10576,15 @@ CASE_RECORDS = {
     ('nn', 'LinearAttentionFloat32Inputs6Microsoft'): (
         ('test_cpu_microsoft_linear_attention_decode_h16_d128_float32_benchmark', 'microsoft_linear_attention_decode_h16_d128', ('float32', 'float32', 'float32', 'float32', 'float32', 'float32'), '(1, 1, 2048) x (1, 1, 2048) x (1, 1, 2048) x (1, 16, 128, 128) x (1, 1, 16) x (1, 1, 16)'),
     ),
+    ('nn', 'RotaryEmbeddingBfloat16Int64Inputs4'): (
+        ('test_cpu_microsoft_rotary_embedding_b1_s128_h8_d64_bfloat16_benchmark', 'microsoft_rotary_embedding_b1_s128_h8_d64', ('bfloat16', 'int64', 'bfloat16', 'bfloat16'), '(1, 128, 512) x (1, 128) x (128, 32) x (128, 32)'),
+    ),
+    ('nn', 'RotaryEmbeddingFloat16Int64Inputs4'): (
+        ('test_cpu_microsoft_rotary_embedding_b1_s128_h8_d64_float16_benchmark', 'microsoft_rotary_embedding_b1_s128_h8_d64', ('float16', 'int64', 'float16', 'float16'), '(1, 128, 512) x (1, 128) x (128, 32) x (128, 32)'),
+    ),
+    ('nn', 'RotaryEmbeddingFloat32Int64Inputs4'): (
+        ('test_cpu_microsoft_rotary_embedding_b1_s128_h8_d64_float32_benchmark', 'microsoft_rotary_embedding_b1_s128_h8_d64', ('float32', 'int64', 'float32', 'float32'), '(1, 128, 512) x (1, 128) x (128, 32) x (128, 32)'),
+    ),
     ('nn', 'RMSNormalizationBfloat16Inputs2Shard1'): (
         ('test_cpu_rms_normalization_llm_qwen3_6_27b_hidden5120_s128_bfloat16_benchmark', 'rms_normalization_llm_qwen3_6_27b_hidden5120_s128', ('bfloat16', 'bfloat16'), '(1, 128, 5120) x (5120,)'),
         ('test_cpu_rms_normalization_llm_qwen3_6_27b_k_norm_hd256_s1_kvh4_bfloat16_benchmark', 'rms_normalization_llm_qwen3_6_27b_k_norm_hd256_s1_kvh4', ('bfloat16', 'bfloat16'), '(1, 4, 256) x (256,)'),
@@ -10628,6 +10637,15 @@ CASE_RECORDS = {
     ('nn', 'RMSNormalizationFloat32Inputs2Shard4'): (
         ('test_cpu_rms_normalization_rank3_n4_r16_w512_axis2_float32_benchmark', 'rms_normalization_rank3_r16_w512_axis2', ('float32', 'float32'), '(4, 16, 512) x (512,)'),
         ('test_cpu_rms_normalization_wide_r1_w4096_axis1_float32_benchmark', 'rms_normalization_wide_r1_w4096_axis1', ('float32', 'float32'), '(1, 4096) x (4096,)'),
+    ),
+    ('nn', 'RotaryEmbeddingBfloat16Int64Inputs4Rotary'): (
+        ('test_cpu_rotary_embedding_b1_s128_h8_d64_bfloat16_benchmark', 'rotary_embedding_b1_s128_h8_d64', ('bfloat16', 'bfloat16', 'bfloat16', 'int64'), '(1, 128, 512) x (128, 32) x (128, 32) x (1, 128)'),
+    ),
+    ('nn', 'RotaryEmbeddingFloat16Int64Inputs4Rotary'): (
+        ('test_cpu_rotary_embedding_b1_s128_h8_d64_float16_benchmark', 'rotary_embedding_b1_s128_h8_d64', ('float16', 'float16', 'float16', 'int64'), '(1, 128, 512) x (128, 32) x (128, 32) x (1, 128)'),
+    ),
+    ('nn', 'RotaryEmbeddingFloat32Int64Inputs4Rotary'): (
+        ('test_cpu_rotary_embedding_b1_s128_h8_d64_float32_benchmark', 'rotary_embedding_b1_s128_h8_d64', ('float32', 'float32', 'float32', 'int64'), '(1, 128, 512) x (128, 32) x (128, 32) x (1, 128)'),
     ),
     ('nn', 'SimplifiedLayerNormalizationBfloat16Inputs2Shard1'): (
         ('test_cpu_simplified_layer_normalization_decode_w128_x_bfloat16_stash1_with_inv_bfloat16_benchmark', 'simplified_layer_normalization_decode_w128_stash1_with_inv', ('bfloat16', 'bfloat16'), '(1, 128) x (128,)'),

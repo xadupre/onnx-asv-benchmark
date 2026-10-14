@@ -185,6 +185,30 @@ class TestCpuBackendCases(unittest.TestCase):
         )
         self.assertTrue(all(case.unloaded for case in source))
 
+    def test_shared_prefix_separates_operators(self):
+        source = [
+            _Case("test_cpu_linear_float32_benchmark", "LinearAttention"),
+            _Case("test_cpu_microsoft_linear_attention_float32_benchmark", "LinearAttention"),
+            _Case("test_cpu_microsoft_rotary_embedding_float32_benchmark", "RotaryEmbedding"),
+        ]
+        self.assertEqual(
+            build_shards(
+                source,
+                locations={
+                    "LinearAttention": ("nn", "linear_attention"),
+                    "RotaryEmbedding": ("nn", "rotary_embedding"),
+                },
+            ),
+            [
+                ("nn", "linear_attention", "LinearAttentionFloat32",
+                 "linear", ("float32",), 0),
+                ("nn", "linear_attention", "LinearAttentionFloat32Microsoft",
+                 "microsoft_linear_attention", ("float32",), 0),
+                ("nn", "rotary_embedding", "RotaryEmbeddingFloat32",
+                 "microsoft_rotary_embedding", ("float32",), 0),
+            ],
+        )
+
     def test_operator_locations_match_ops_hierarchy(self):
         locations = operator_locations("benchmarks/ops")
         self.assertEqual(locations["Abs"], ("math", "abs"))

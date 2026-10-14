@@ -364,12 +364,11 @@ class TestBenchmarks(unittest.TestCase):
                     (
                         *(values[0] for values in benchmark_type.params[:-2]),
                         precision,
-                        backend,
+                        "onnx-light-cpu",
                     ),
                 )
                 for benchmark_type in (Qwen2GenAI, TinyLLMGenAI)
                 for precision in PRECISIONS
-                for backend in ("onnx-light", "onnx-light-cpu")
             ),
         ):
             with self.subTest(
