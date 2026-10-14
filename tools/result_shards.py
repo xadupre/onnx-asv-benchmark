@@ -3,6 +3,11 @@ import shutil
 import tempfile
 from pathlib import Path
 
+if __package__:
+    from tools.scheduled_shards import case_class_shards
+else:
+    from scheduled_shards import case_class_shards
+
 ANONYMOUS_MACHINE_FIELDS = {
     "os": "anonymous",
     "ram": "anonymous",
@@ -117,7 +122,10 @@ def benchmark_shard(name):
     if parts[0] == "ops" and len(parts) > 2:
         return f"ops/{parts[1]}/{parts[2]}"
     if parts[0] == "cpu_backend_cases" and len(parts) > 3:
-        return f"cpu_backend_cases/{parts[1]}/{parts[2]}/{parts[3]}"
+        return case_class_shards().get(
+            (parts[1], parts[3]),
+            f"cpu_backend_cases/{parts[1]}/{parts[2]}/{parts[3]}",
+        )
     if parts[0] in {"builder", "models"} and len(parts) > 4:
         return f"{parts[0]}/{parts[1]}/{parts[2]}"
     if parts[0] == "builder" and len(parts) > 1:

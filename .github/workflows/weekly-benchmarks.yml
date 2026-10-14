@@ -121,7 +121,7 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
         run: |
-          regex="$(python -c 'import re, sys; print("^" + re.escape(sys.argv[1].replace("/", ".")) + r"\.")' "$SHARD")"
+          regex="$(python tools/scheduled_shards.py --regex "$SHARD")"
           machine="$(python tools/setup_machine.py)"
           status=0
           python -m asv run --machine "$machine" --bench "$regex" HEAD^! || status=$?

@@ -1,13 +1,13 @@
 import argparse
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
 
+if __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-def shard_benchmark_regex(shard):
-    return "^" + re.escape(shard.replace("/", ".")) + r"\."
+from tools.scheduled_shards import shard_benchmark_regex
 
 
 def resolve_commit(root, commit):

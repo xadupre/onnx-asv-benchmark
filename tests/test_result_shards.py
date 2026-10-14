@@ -128,7 +128,13 @@ class TestResultShards(unittest.TestCase):
             benchmark_shard(
                 "cpu_backend_cases.math.cases.AbsFloat32.time_abs_v13"
             ),
-            "cpu_backend_cases/math/cases/AbsFloat32",
+            "cpu_backend_cases/math/cases/abs",
+        )
+        self.assertEqual(
+            benchmark_shard(
+                "cpu_backend_cases.math.cases.MulUint32Inputs2Shard4.time_mul"
+            ),
+            "cpu_backend_cases/math/cases/mul",
         )
 
     def test_canonical_benchmark_name(self):
@@ -266,6 +272,34 @@ class TestResultShards(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "does not exist"):
             write_shards(source, shards, machine="missing")
+
+    def test_cpu_cases_publish_together_by_operator(self):
+        source = self.root / "source"
+        shards = self.root / "shards"
+        self.make_results(source)
+        names = (
+            "cpu_backend_cases.math.cases.AbsFloat32.time_abs",
+            "cpu_backend_cases.math.cases.AbsFloat64.time_abs",
+        )
+        definitions = json.loads((source / "benchmarks.json").read_text(encoding="utf-8"))
+        definitions.update({name: {"type": "time"} for name in names})
+        self.write_json(source / "benchmarks.json", definitions)
+        result_path = source / "xadupre2025" / "result.json"
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+        result["results"].update({name: [1.0] for name in names})
+        self.write_json(result_path, result)
+
+        written = write_shards(
+            source, shards, selected_shards={"cpu_backend_cases/math/cases/abs"}
+        )
+
+        self.assertEqual(written, {"cpu_backend_cases/math/cases/abs"})
+        metadata = json.loads(
+            (shards / "cpu_backend_cases/math/cases/abs/benchmarks.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertTrue(all(name in metadata for name in names))
 
     def test_migrate_legacy_results(self):
         destination = self.root / "cache-data"
