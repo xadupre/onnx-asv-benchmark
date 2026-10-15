@@ -8,6 +8,7 @@ from pathlib import Path
 
 from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
 from tools.scheduled_shards import (
+    BATCH_SIZES,
     batch_count,
     case_shard_classes,
     discover_shards,
@@ -48,8 +49,12 @@ class TestScheduledShards(unittest.TestCase):
 
     def test_oversized_case_shards_are_batched(self):
         root = Path(__file__).resolve().parents[1]
+        self.assertEqual(batch_count("cpu_backend_cases/math/cases/mod"), 5)
+        self.assertEqual(batch_count("cpu_backend_cases/logical/cases/greater"), 6)
         for shard in (
+            "cpu_backend_cases/math/cases/mod",
             "cpu_backend_cases/math/cases/pow",
+            "cpu_backend_cases/logical/cases/greater",
             "cpu_backend_cases/logical/cases/less",
             "cpu_backend_cases/math/cases/prelu",
             "cpu_backend_cases/logical/cases/bitwiseand",
@@ -83,7 +88,7 @@ class TestScheduledShards(unittest.TestCase):
                         f"cpu_backend_cases.{shard.split('/')[1]}.cases.{name}.time_case",
                     )
                 ]
-                self.assertEqual(matching, [batches[index // 10]])
+                self.assertEqual(matching, [batches[index // BATCH_SIZES[shard]]])
         self.assertEqual(batch_count("cpu_backend_cases/math/cases/mul"), 1)
         self.assertEqual(
             shard_benchmark_regex("cpu_backend_cases/math/cases/mul", 0),
