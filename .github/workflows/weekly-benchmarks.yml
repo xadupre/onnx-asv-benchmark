@@ -41,7 +41,7 @@ jobs:
           SCHEDULE: ${{ github.event.schedule }}
         run: |
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            matrix="$(python -c 'import json, sys; shards = [s.strip() for s in sys.argv[1].split(",") if s.strip()]; assert shards, "No shards requested"; print(json.dumps({"shard": shards}))' "$REQUESTED_SHARD")"
+            matrix="$(python tools/scheduled_shards.py --matrix --requested "$REQUESTED_SHARD")"
           else
             case "$SCHEDULE" in
               "17 1 * * 1") bucket=0 ;;
@@ -60,7 +60,7 @@ jobs:
               "47 11 * * 4") bucket=6 ;;
               *) echo "Unknown schedule: $SCHEDULE" >&2; exit 1 ;;
             esac
-            matrix="$(python tools/scheduled_shards.py "$bucket")"
+            matrix="$(python tools/scheduled_shards.py "$bucket" --matrix)"
           fi
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
@@ -120,8 +120,9 @@ jobs:
       - name: Run shard
         env:
           SHARD: ${{ matrix.shard }}
+          BATCH: ${{ matrix.batch }}
         run: |
-          regex="$(python tools/scheduled_shards.py --regex "$SHARD")"
+          regex="$(python tools/scheduled_shards.py --regex "$SHARD" --batch "$BATCH")"
           machine="$(python tools/setup_machine.py)"
           status=0
           python -m asv run --machine "$machine" --bench "$regex" HEAD^! || status=$?

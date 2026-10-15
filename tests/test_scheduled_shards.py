@@ -7,7 +7,12 @@ import unittest
 from pathlib import Path
 
 from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
-from tools.scheduled_shards import case_shard_classes, discover_shards
+from tools.scheduled_shards import (
+    batch_count,
+    case_shard_classes,
+    discover_shards,
+    shard_benchmark_regex,
+)
 
 
 class TestScheduledShards(unittest.TestCase):
@@ -40,6 +45,52 @@ class TestScheduledShards(unittest.TestCase):
         )
         matrix = json.loads(completed.stdout)
         self.assertTrue(matrix["shard"])
+
+    def test_oversized_case_shards_are_batched(self):
+        root = Path(__file__).resolve().parents[1]
+        for shard in (
+            "cpu_backend_cases/math/cases/pow",
+            "cpu_backend_cases/logical/cases/less",
+        ):
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(root / "tools" / "scheduled_shards.py"),
+                    "--matrix",
+                    "--requested",
+                    shard,
+                ],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            batches = json.loads(completed.stdout)["include"]
+            self.assertEqual(
+                batches,
+                [{"shard": shard, "batch": index} for index in range(batch_count(shard))],
+            )
+            classes = case_shard_classes()[shard]
+            for index, name in enumerate(classes):
+                matching = [
+                    batch
+                    for batch in batches
+                    if re.match(
+                        shard_benchmark_regex(shard, batch["batch"]),
+                        f"cpu_backend_cases.{shard.split('/')[1]}.cases.{name}.time_case",
+                    )
+                ]
+                self.assertEqual(matching, [batches[index // 10]])
+        self.assertEqual(batch_count("cpu_backend_cases/math/cases/mul"), 1)
+        self.assertEqual(
+            shard_benchmark_regex("cpu_backend_cases/math/cases/mul", 0),
+            shard_benchmark_regex("cpu_backend_cases/math/cases/mul"),
+        )
+        with self.assertRaises(ValueError):
+            shard_benchmark_regex(
+                "cpu_backend_cases/math/cases/pow",
+                batch_count("cpu_backend_cases/math/cases/pow"),
+            )
 
     def test_discover_shards(self):
         root = Path(__file__).resolve().parents[1]
@@ -130,6 +181,10 @@ class TestScheduledShards(unittest.TestCase):
             r"(?s)  benchmark:.*?    timeout-minutes: "
             r"\$\{\{ matrix\.shard == 'ops/tensor/grid_sample' && 120 \|\| 60 \}\}",
         )
+        self.assertIn('scheduled_shards.py "$bucket" --matrix', workflow)
+        self.assertIn('scheduled_shards.py --matrix --requested "$REQUESTED_SHARD"', workflow)
+        self.assertIn('scheduled_shards.py --regex "$SHARD" --batch "$BATCH"', workflow)
+        self.assertIn("group: benchmark-shard-${{ matrix.shard }}", workflow)
         for bucket in map(str, range(7)):
             self.assertEqual(list(mappings.values()).count(bucket), 2)
 
