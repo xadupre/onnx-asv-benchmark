@@ -55,7 +55,7 @@ class TestCheckResults(unittest.TestCase):
             0,
         )
 
-    def test_qwen_bf16_failure_is_not_hidden_by_other_results(self):
+    def test_qwen_bf16_cpu_failure_is_not_hidden_by_other_results(self):
         params = [
             ["'Qwen/Qwen2-0.5B'"],
             ["'prefill'"],
@@ -69,17 +69,46 @@ class TestCheckResults(unittest.TestCase):
                 params,
             ]
         self.write_results(results)
+        self.assertEqual(failed_qwen_bf16_cases(self.root), [])
+        for values in results.values():
+            values[0][5] = None
+        (self.root / "machine" / "result.json").write_text(
+            json.dumps({"result_columns": ["result", "params"], "results": results}),
+            encoding="utf-8",
+        )
         self.assertEqual(
             len(failed_qwen_bf16_cases(self.root)),
             2,
         )
         for values in results.values():
-            values[0][4] = 1.0
+            values[0][5] = 1.0
         (self.root / "machine" / "result.json").write_text(
             json.dumps({"result_columns": ["result", "params"], "results": results}),
             encoding="utf-8",
         )
         self.assertEqual(failed_qwen_bf16_cases(self.root), [])
+
+    def test_qwen_bf16_cpu_missing_result_is_reported(self):
+        self.write_results(
+            {
+                "models.llm.qwen2.Qwen2.time_prefill": [
+                    [1.0],
+                    [
+                        ["'Qwen/Qwen2-0.5B'"],
+                        ["'prefill'"],
+                        ["'bf16'"],
+                        ["'onnx-light'"],
+                    ],
+                ]
+            }
+        )
+        self.assertEqual(
+            failed_qwen_bf16_cases(self.root),
+            [
+                "Qwen2.time_prefill: missing bf16 / onnx-light-cpu result",
+                "Qwen2.time_decode: missing bf16 / onnx-light-cpu result",
+            ],
+        )
 
 
 if __name__ == "__main__":
