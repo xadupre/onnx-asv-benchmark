@@ -56,6 +56,8 @@ class TestScheduledShards(unittest.TestCase):
             "cpu_backend_cases/math/cases/pow",
             "cpu_backend_cases/logical/cases/greater",
             "cpu_backend_cases/logical/cases/less",
+            "cpu_backend_cases/math/cases/div",
+            "cpu_backend_cases/logical/cases/bitwiseor",
             "cpu_backend_cases/math/cases/prelu",
             "cpu_backend_cases/logical/cases/bitwiseand",
             "cpu_backend_cases/logical/cases/lessorequal",
@@ -74,6 +76,10 @@ class TestScheduledShards(unittest.TestCase):
                 text=True,
             )
             batches = json.loads(completed.stdout)["include"]
+            if shard.endswith("/div"):
+                self.assertEqual(len(batches), 8)
+            if shard.endswith("/bitwiseor"):
+                self.assertEqual(len(batches), 4)
             self.assertEqual(
                 batches,
                 [{"shard": shard, "batch": index} for index in range(batch_count(shard))],
