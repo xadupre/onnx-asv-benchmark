@@ -54,6 +54,9 @@ class TestScheduledShards(unittest.TestCase):
             "cpu_backend_cases/logical/cases/less",
             "cpu_backend_cases/math/cases/div",
             "cpu_backend_cases/logical/cases/bitwiseor",
+            "cpu_backend_cases/math/cases/prelu",
+            "cpu_backend_cases/logical/cases/bitwiseand",
+            "cpu_backend_cases/logical/cases/lessorequal",
         ):
             completed = subprocess.run(
                 [
