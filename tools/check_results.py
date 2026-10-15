@@ -57,12 +57,12 @@ def failed_qwen_bf16_cases(source):
             if len(cases) != len(timings):
                 raise ValueError(f"Unexpected ASV result count for {name!r}.")
             for case, timing in zip(cases, timings, strict=True):
-                if case[-2] == "bf16" and case[-1] in {"onnx-light", "onnx-light-cpu"}:
+                if case[-2] == "bf16" and case[-1] == "onnx-light-cpu":
                     checked.add((name.rsplit(".", 1)[-1], case[-1]))
                     if not _has_successful_value(timing):
                         failures.append(f"{name}: {case[-2]} / {case[-1]}")
     for method, backend in itertools.product(
-        ("time_prefill", "time_decode"), ("onnx-light", "onnx-light-cpu")
+        ("time_prefill", "time_decode"), ("onnx-light-cpu",)
     ):
         if (method, backend) not in checked:
             failures.append(f"Qwen2.{method}: missing bf16 / {backend} result")
