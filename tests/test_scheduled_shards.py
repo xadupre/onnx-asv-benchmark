@@ -8,6 +8,7 @@ from pathlib import Path
 
 from benchmarks.cpu_backend_cases._manifest import CASE_SHARDS
 from tools.scheduled_shards import (
+    BATCH_SIZES,
     batch_count,
     case_shard_classes,
     discover_shards,
@@ -51,6 +52,8 @@ class TestScheduledShards(unittest.TestCase):
         for shard in (
             "cpu_backend_cases/math/cases/pow",
             "cpu_backend_cases/logical/cases/less",
+            "cpu_backend_cases/math/cases/div",
+            "cpu_backend_cases/logical/cases/bitwiseor",
         ):
             completed = subprocess.run(
                 [
@@ -66,6 +69,10 @@ class TestScheduledShards(unittest.TestCase):
                 text=True,
             )
             batches = json.loads(completed.stdout)["include"]
+            if shard.endswith("/div"):
+                self.assertEqual(len(batches), 8)
+            if shard.endswith("/bitwiseor"):
+                self.assertEqual(len(batches), 4)
             self.assertEqual(
                 batches,
                 [{"shard": shard, "batch": index} for index in range(batch_count(shard))],
@@ -80,7 +87,7 @@ class TestScheduledShards(unittest.TestCase):
                         f"cpu_backend_cases.{shard.split('/')[1]}.cases.{name}.time_case",
                     )
                 ]
-                self.assertEqual(matching, [batches[index // 10]])
+                self.assertEqual(matching, [batches[index // BATCH_SIZES[shard]]])
         self.assertEqual(batch_count("cpu_backend_cases/math/cases/mul"), 1)
         self.assertEqual(
             shard_benchmark_regex("cpu_backend_cases/math/cases/mul", 0),
