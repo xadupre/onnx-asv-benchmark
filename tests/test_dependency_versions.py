@@ -12,7 +12,7 @@ class TestDependencyVersions(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "tests.yml").read_text(
             encoding="utf-8"
         )
-        for name, version in (("onnx_light", "0.1.31"), ("onnx_light_cpu", "0.1.21")):
+        for name, version in (("onnx_light", "0.1.32"), ("onnx_light_cpu", "0.1.22")):
             env_name = f"{name.upper()}_VERSION"
             self.assertEqual(config["matrix"]["env"][env_name], [version])
             wheel = (
