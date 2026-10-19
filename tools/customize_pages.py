@@ -123,6 +123,14 @@ def customize_pages(html_dir):
     graph = graph_path.read_text(encoding="utf-8")
     graph = _replace_once(
         graph,
+        "        /* Generic parameter selectors */\n"
+        "        $.each(index.params, function(param, values) {\n",
+        "        /* Generic parameter selectors */\n"
+        "        $.each(index.params, function(param, values) {\n"
+        "            values = values.filter(function(value) { return value !== null; });\n",
+    )
+    graph = _replace_once(
+        graph,
         "'use strict';",
         "'use strict';\n\n"
         "var system_dark_theme = window.matchMedia("
@@ -333,6 +341,14 @@ def customize_pages(html_dir):
     )
     summary_path = html_dir / "summarylist.js"
     summary = summary_path.read_text(encoding="utf-8")
+    summary = _replace_once(
+        summary,
+        "        /* Generic parameter selectors */\n"
+        "        $.each(index.params, function(param, values) {\n",
+        "        /* Generic parameter selectors */\n"
+        "        $.each(index.params, function(param, values) {\n"
+        "            values = values.filter(function(value) { return value !== null; });\n",
+    )
     summary = _replace_once(
         summary,
         "param != 'machine'",
