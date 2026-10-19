@@ -123,6 +123,11 @@ def customize_pages(html_dir):
     graph = graph_path.read_text(encoding="utf-8")
     graph = _replace_once(
         graph,
+        "value_display = '[none]';",
+        "value_display = 'Not recorded';",
+    )
+    graph = _replace_once(
+        graph,
         "'use strict';",
         "'use strict';\n\n"
         "var system_dark_theme = window.matchMedia("
@@ -333,6 +338,11 @@ def customize_pages(html_dir):
     )
     summary_path = html_dir / "summarylist.js"
     summary = summary_path.read_text(encoding="utf-8")
+    summary = _replace_once(
+        summary,
+        "value_display = '[none]';",
+        "value_display = 'Not recorded';",
+    )
     summary = _replace_once(
         summary,
         "param != 'machine'",

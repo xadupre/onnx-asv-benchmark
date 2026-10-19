@@ -75,6 +75,16 @@ class TestCustomizePages(unittest.TestCase):
             )
             self.assertIn("param != 'instruction_sets'", graph)
             self.assertIn("param != 'instruction_sets'", summary)
+            for script in (graph, summary):
+                self.assertNotIn("value_display = '[none]';", script)
+                self.assertIn(
+                    "if (value === null)\n"
+                    "                        value_display = 'Not recorded';",
+                    script,
+                )
+                self.assertIn("value_display = '[default]';", script)
+                self.assertIn("value_display = value;", script)
+                self.assertIn("button.text(value_display);", script)
             self.assertIn("param_names[axis-1] == 'backend'", graph)
             self.assertIn("parameters: graph_content[2]", graph)
             self.assertIn("function show_missing_backends()", graph)
