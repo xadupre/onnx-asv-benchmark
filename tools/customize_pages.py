@@ -123,8 +123,11 @@ def customize_pages(html_dir):
     graph = graph_path.read_text(encoding="utf-8")
     graph = _replace_once(
         graph,
-        "value_display = '[none]';",
-        "value_display = 'Not recorded';",
+        "        /* Generic parameter selectors */\n"
+        "        $.each(index.params, function(param, values) {\n",
+        "        /* Generic parameter selectors */\n"
+        "        $.each(index.params, function(param, values) {\n"
+        "            values = values.filter(function(value) { return value !== null; });\n",
     )
     graph = _replace_once(
         graph,
@@ -340,8 +343,11 @@ def customize_pages(html_dir):
     summary = summary_path.read_text(encoding="utf-8")
     summary = _replace_once(
         summary,
-        "value_display = '[none]';",
-        "value_display = 'Not recorded';",
+        "        /* Generic parameter selectors */\n"
+        "        $.each(index.params, function(param, values) {\n",
+        "        /* Generic parameter selectors */\n"
+        "        $.each(index.params, function(param, values) {\n"
+        "            values = values.filter(function(value) { return value !== null; });\n",
     )
     summary = _replace_once(
         summary,

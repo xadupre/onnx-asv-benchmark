@@ -286,15 +286,17 @@ through `raw.githubusercontent.com`. New benchmark data therefore appears
 without rebuilding or redeploying the HTML. Published graphs use dates,
 rather than commit positions, on the time axis.
 
-Package-version filters show **Not recorded** instead of ASV's `[none]` when
-a result has no version metadata for that package. ASV's `existing` environment
+Package-version filters omit missing entries rather than showing ASV's `[none]`
+or a replacement label. A package without a recorded version is not offered as
+a version choice; panels with fewer than two recorded choices are hidden.
+ASV's `existing` environment
 (used by `tools/run_asv.py`) does not infer installed package versions from the
 current interpreter; older results can also lack package or environment-variable
 metadata added later. When ASV combines these results with versioned runs, it
 fills missing parameters with JSON `null`, normally displayed as `[none]`.
-This does not mean the package was absent or the benchmark failed. These results
-remain selectable as **Not recorded**; their versions are not guessed from the
-current dependency pins.
+The missing entries are omitted only from the filter controls: historical
+measurements are preserved, and their versions are not guessed from the current
+dependency pins.
 
 Git credentials with write access to `xadupre/cache_data` and an authenticated
 [GitHub CLI](https://cli.github.com/) with Actions access to this repository

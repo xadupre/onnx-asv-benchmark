@@ -76,10 +76,12 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("param != 'instruction_sets'", graph)
             self.assertIn("param != 'instruction_sets'", summary)
             for script in (graph, summary):
-                self.assertNotIn("value_display = '[none]';", script)
+                self.assertNotIn("Not recorded", script)
                 self.assertIn(
-                    "if (value === null)\n"
-                    "                        value_display = 'Not recorded';",
+                    "/* Generic parameter selectors */\n"
+                    "        $.each(index.params, function(param, values) {\n"
+                    "            values = values.filter(function(value) { return value !== null; });\n"
+                    "            if (values.length > 1 && param != 'machine'",
                     script,
                 )
                 self.assertIn("value_display = '[default]';", script)
