@@ -104,7 +104,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     concurrency:
-      group: benchmark-shard-${{ matrix.shard }}
+      group: benchmark-shard-${{ matrix.shard }}-${{ matrix.batch }}
       cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: ${{ matrix.shard == 'ops/tensor/grid_sample' && 120 || 60 }}

@@ -198,7 +198,12 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn('scheduled_shards.py "$bucket" --matrix', workflow)
         self.assertIn('scheduled_shards.py --matrix --requested "$REQUESTED_SHARD"', workflow)
         self.assertIn('scheduled_shards.py --regex "$SHARD" --batch "$BATCH"', workflow)
-        self.assertIn("group: benchmark-shard-${{ matrix.shard }}", workflow)
+        self.assertIn(
+            "    concurrency:\n"
+            "      group: benchmark-shard-${{ matrix.shard }}-${{ matrix.batch }}\n"
+            "      cancel-in-progress: false",
+            workflow,
+        )
         for bucket in map(str, range(7)):
             self.assertEqual(list(mappings.values()).count(bucket), 2)
 
