@@ -198,9 +198,23 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn('scheduled_shards.py "$bucket" --matrix', workflow)
         self.assertIn('scheduled_shards.py --matrix --requested "$REQUESTED_SHARD"', workflow)
         self.assertIn('scheduled_shards.py --regex "$SHARD" --batch "$BATCH"', workflow)
-        self.assertIn("group: benchmark-shard-${{ matrix.shard }}", workflow)
         for bucket in map(str, range(7)):
             self.assertEqual(list(mappings.values()).count(bucket), 2)
+
+    def test_benchmark_concurrency_isolates_batches(self):
+        root = Path(__file__).resolve().parents[1]
+        workflow = (root / ".github" / "workflows" / "weekly-benchmarks.yml").read_text(
+            encoding="utf-8"
+        )
+        benchmark = workflow.split("\n  benchmark:\n", 1)[1].split(
+            "\n  publish-data:\n", 1
+        )[0]
+        self.assertIn(
+            "    concurrency:\n"
+            "      group: benchmark-shard-${{ matrix.shard }}-${{ matrix.batch }}\n"
+            "      cancel-in-progress: false\n",
+            benchmark,
+        )
 
 
 if __name__ == "__main__":
