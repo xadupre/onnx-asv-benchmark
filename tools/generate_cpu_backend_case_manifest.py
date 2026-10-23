@@ -14,6 +14,8 @@ CUSTOM_OPERATOR_LOCATIONS = {
     "CDist": ("math", "c_dist"),
     "GroupQueryAttention": ("nn", "group_query_attention"),
     "MatMulNBits": ("math", "mat_mul_n_bits"),
+    "MoE": ("nn", "moe"),
+    "QMoE": ("nn", "q_moe"),
     "SimplifiedLayerNormalization": ("nn", "simplified_layer_normalization"),
     "SkipSimplifiedLayerNormalization": (
         "nn",
