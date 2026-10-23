@@ -58,6 +58,7 @@ class TestScheduledShards(unittest.TestCase):
             "cpu_backend_cases/logical/cases/less",
             "cpu_backend_cases/math/cases/div",
             "cpu_backend_cases/logical/cases/bitwiseor",
+            "cpu_backend_cases/logical/cases/bitwisexor",
             "cpu_backend_cases/math/cases/prelu",
             "cpu_backend_cases/logical/cases/bitwiseand",
             "cpu_backend_cases/logical/cases/lessorequal",
@@ -78,7 +79,7 @@ class TestScheduledShards(unittest.TestCase):
             batches = json.loads(completed.stdout)["include"]
             if shard.endswith("/div"):
                 self.assertEqual(len(batches), 8)
-            if shard.endswith("/bitwiseor"):
+            if shard.endswith(("/bitwiseor", "/bitwisexor")):
                 self.assertEqual(len(batches), 4)
             self.assertEqual(
                 batches,
@@ -199,6 +200,11 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn('scheduled_shards.py --matrix --requested "$REQUESTED_SHARD"', workflow)
         self.assertIn('scheduled_shards.py --regex "$SHARD" --batch "$BATCH"', workflow)
         self.assertIn("group: benchmark-shard-${{ matrix.shard }}", workflow)
+        benchmark_concurrency = workflow.split("  benchmark:", 1)[1].split(
+            "    runs-on:", 1
+        )[0]
+        self.assertIn("      queue: max", benchmark_concurrency)
+        self.assertIn("      cancel-in-progress: false", benchmark_concurrency)
         for bucket in map(str, range(7)):
             self.assertEqual(list(mappings.values()).count(bucket), 2)
 
