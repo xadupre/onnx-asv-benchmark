@@ -210,7 +210,12 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn('scheduled_shards.py "$bucket" --matrix', workflow)
         self.assertIn('scheduled_shards.py --matrix --requested "$REQUESTED_SHARD"', workflow)
         self.assertIn('scheduled_shards.py --regex "$SHARD" --batch "$BATCH"', workflow)
-        self.assertIn("group: benchmark-shard-${{ matrix.shard }}", workflow)
+        self.assertIn(
+            "    concurrency:\n"
+            "      group: benchmark-shard-${{ matrix.shard }}-${{ matrix.batch }}\n"
+            "      cancel-in-progress: false",
+            workflow,
+        )
         benchmark_concurrency = workflow.split("  benchmark:", 1)[1].split(
             "    runs-on:", 1
         )[0]
