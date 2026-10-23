@@ -107,10 +107,10 @@ class TestScheduledShards(unittest.TestCase):
                     )
                 ]
                 self.assertEqual(matching, [batches[index // BATCH_SIZES[shard]]])
-        self.assertEqual(batch_count("cpu_backend_cases/math/cases/sub"), 1)
+        self.assertEqual(batch_count("cpu_backend_cases/math/cases/abs"), 1)
         self.assertEqual(
-            shard_benchmark_regex("cpu_backend_cases/math/cases/sub", 0),
-            shard_benchmark_regex("cpu_backend_cases/math/cases/sub"),
+            shard_benchmark_regex("cpu_backend_cases/math/cases/abs", 0),
+            shard_benchmark_regex("cpu_backend_cases/math/cases/abs"),
         )
         with self.assertRaises(ValueError):
             shard_benchmark_regex(
