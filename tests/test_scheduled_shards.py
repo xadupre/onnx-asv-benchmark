@@ -107,10 +107,10 @@ class TestScheduledShards(unittest.TestCase):
                     )
                 ]
                 self.assertEqual(matching, [batches[index // BATCH_SIZES[shard]]])
-        self.assertEqual(batch_count("cpu_backend_cases/math/cases/sub"), 1)
+        self.assertEqual(batch_count("cpu_backend_cases/math/cases/abs"), 1)
         self.assertEqual(
-            shard_benchmark_regex("cpu_backend_cases/math/cases/sub", 0),
-            shard_benchmark_regex("cpu_backend_cases/math/cases/sub"),
+            shard_benchmark_regex("cpu_backend_cases/math/cases/abs", 0),
+            shard_benchmark_regex("cpu_backend_cases/math/cases/abs"),
         )
         with self.assertRaises(ValueError):
             shard_benchmark_regex(
@@ -210,12 +210,6 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn('scheduled_shards.py "$bucket" --matrix', workflow)
         self.assertIn('scheduled_shards.py --matrix --requested "$REQUESTED_SHARD"', workflow)
         self.assertIn('scheduled_shards.py --regex "$SHARD" --batch "$BATCH"', workflow)
-        self.assertIn(
-            "    concurrency:\n"
-            "      group: benchmark-shard-${{ matrix.shard }}-${{ matrix.batch }}\n"
-            "      cancel-in-progress: false",
-            workflow,
-        )
         benchmark_concurrency = workflow.split("  benchmark:", 1)[1].split(
             "    runs-on:", 1
         )[0]
@@ -223,6 +217,21 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn("      cancel-in-progress: false", benchmark_concurrency)
         for bucket in map(str, range(7)):
             self.assertEqual(list(mappings.values()).count(bucket), 2)
+
+    def test_benchmark_concurrency_isolates_batches(self):
+        root = Path(__file__).resolve().parents[1]
+        workflow = (root / ".github" / "workflows" / "weekly-benchmarks.yml").read_text(
+            encoding="utf-8"
+        )
+        benchmark = workflow.split("\n  benchmark:\n", 1)[1].split(
+            "\n  publish-data:\n", 1
+        )[0]
+        self.assertIn(
+            "    concurrency:\n"
+            "      group: benchmark-shard-${{ matrix.shard }}-${{ matrix.batch }}\n"
+            "      cancel-in-progress: false\n",
+            benchmark,
+        )
 
 
 if __name__ == "__main__":
