@@ -61,6 +61,8 @@ class TestScheduledShards(unittest.TestCase):
             "cpu_backend_cases/math/cases/prelu",
             "cpu_backend_cases/logical/cases/bitwiseand",
             "cpu_backend_cases/logical/cases/lessorequal",
+            "cpu_backend_cases/math/cases/sub",
+            "cpu_backend_cases/logical/cases/equal",
         ):
             completed = subprocess.run(
                 [
@@ -80,6 +82,10 @@ class TestScheduledShards(unittest.TestCase):
                 self.assertEqual(len(batches), 8)
             if shard.endswith("/bitwiseor"):
                 self.assertEqual(len(batches), 4)
+            if shard.endswith("/sub"):
+                self.assertEqual(len(batches), 8)
+            if shard.endswith("/equal"):
+                self.assertEqual(len(batches), 6)
             self.assertEqual(
                 batches,
                 [{"shard": shard, "batch": index} for index in range(batch_count(shard))],

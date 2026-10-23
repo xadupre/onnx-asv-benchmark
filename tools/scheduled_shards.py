@@ -16,6 +16,8 @@ BATCH_SIZES = {
     "cpu_backend_cases/math/cases/prelu": 10,
     "cpu_backend_cases/logical/cases/bitwiseand": 10,
     "cpu_backend_cases/logical/cases/lessorequal": 10,
+    "cpu_backend_cases/math/cases/sub": 6,
+    "cpu_backend_cases/logical/cases/equal": 10,
 }
 
 
