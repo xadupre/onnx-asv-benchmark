@@ -39,7 +39,7 @@ def build_light(block_count):
     weight = builder.init(np.eye(16, dtype=np.float32), name="weight")
     value = fusion_blocks(builder.op, value, bias, scale, weight, block_count)
     builder.out(value, TensorProto.FLOAT, ["N", 16])
-    return builder.to_onnx("model")
+    return builder.to_onnx()
 
 
 def build_onnxscript(block_count):
@@ -254,7 +254,7 @@ class PatternFusion:
 
     def time_fusion(self, blocks, dtype, implementation):
         if implementation == "onnx-light":
-            count = len(self.optimizer.optimize())
+            count = len(self.optimizer.optimize().rewrites)
         else:
             count = self.optimizer.apply_to_model(self.fusion_graph)
         if count != self.expected:

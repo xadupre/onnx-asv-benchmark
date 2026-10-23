@@ -2,7 +2,6 @@ import json
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -12,7 +11,7 @@ class TestDependencyVersions(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "tests.yml").read_text(
             encoding="utf-8"
         )
-        for name, version in (("onnx_light", "0.1.31"), ("onnx_light_cpu", "0.1.21")):
+        for name, version in (("onnx_light", "0.2.0"), ("onnx_light_cpu", "0.2.0")):
             env_name = f"{name.upper()}_VERSION"
             self.assertEqual(config["matrix"]["env"][env_name], [version])
             wheel = (

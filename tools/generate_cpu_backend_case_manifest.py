@@ -14,6 +14,8 @@ CUSTOM_OPERATOR_LOCATIONS = {
     "CDist": ("math", "c_dist"),
     "GroupQueryAttention": ("nn", "group_query_attention"),
     "MatMulNBits": ("math", "mat_mul_n_bits"),
+    "MoE": ("nn", "moe"),
+    "QMoE": ("nn", "q_moe"),
     "SimplifiedLayerNormalization": ("nn", "simplified_layer_normalization"),
     "SkipSimplifiedLayerNormalization": (
         "nn",
@@ -78,7 +80,9 @@ def build_shards(cases, locations, records=None):
             operator_suffix = re.sub(r"(?<!^)(?=[A-Z])", "_", operator).lower()
             prefix = f"{prefix}_{operator_suffix}"
             if not name.startswith(f"test_cpu_{prefix}_"):
-                raise ValueError(f"Cannot distinguish operator {operator!r} in {name!r}.")
+                raise ValueError(
+                    f"Cannot distinguish operator {operator!r} in {name!r}."
+                )
         grouped[prefix, dtypes].append(name)
         operators[prefix] = operator
 
@@ -122,8 +126,7 @@ def case_metadata(case):
         str(tensor_dtype_to_np_dtype(int(tensor.data_type))) for tensor in inputs
     )
     shapes = " x ".join(
-        str(tuple(int(dimension) for dimension in tensor.shape))
-        for tensor in inputs
+        str(tuple(int(dimension) for dimension in tensor.shape)) for tensor in inputs
     )
     return simplified_case_name(case.name, dtypes), dtypes, shapes
 

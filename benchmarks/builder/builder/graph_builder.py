@@ -72,7 +72,7 @@ def build_light(node_count, payload=None):
         for index in range(LARGE_INITIALIZER_COUNT):
             name = builder.init(payload, name=f"large{index}", copy=False)
             builder.out(name, TensorProto.UINT8, [len(payload)])
-    return builder.to_onnx("model")
+    return builder.to_onnx()
 
 
 def build_onnxscript(node_count, payload=None):
@@ -91,7 +91,9 @@ def build_onnxscript(node_count, payload=None):
     builder.add_output(value, None)
     if payload is not None:
         for index in range(LARGE_INITIALIZER_COUNT):
-            initializer = builder.initializer(onnx_ir.tensor(payload), name=f"large{index}")
+            initializer = builder.initializer(
+                onnx_ir.tensor(payload), name=f"large{index}"
+            )
             initializer.type = onnx_ir.TensorType(onnx_ir.DataType.UINT8)
             initializer.shape = onnx_ir.Shape([len(payload)])
             builder.add_output(initializer, None)
