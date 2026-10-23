@@ -134,6 +134,20 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("Not recorded", grid)
             self.assertIn("data-family", grid)
             self.assertIn("data-group", grid)
+            self.assertIn('for="benchmark-search"', page)
+            self.assertIn('id="benchmark-search" class="form-control" type="search"', page)
+            self.assertIn('id="benchmark-search-status" role="status"', page)
+            self.assertIn("new RegExp(search.val(), 'i')", grid)
+            self.assertIn("$('#benchmark-search').on('input', apply_filters)", grid)
+            self.assertIn("container.attr('data-benchmark-name', bm.name)", grid)
+            self.assertIn("pattern.test(card.attr('data-benchmark-name'))", grid)
+            self.assertIn("pattern.test(card.find('.benchmark-text').text())", grid)
+            self.assertIn("Invalid regular expression: ", grid)
+            self.assertIn("search.attr('aria-invalid', 'true')", grid)
+            self.assertIn("search.attr('aria-invalid', 'false')", grid)
+            self.assertIn("No benchmarks match these filters.", grid)
+            self.assertIn("section.toggle(matches > 0)", grid)
+            self.assertEqual(grid.count("            apply_filters();"), 2)
             self.assertNotIn(
                 '$.asv.pretty_unit(y, unit) + " @ " + commit_hash',
                 graph,

@@ -138,6 +138,14 @@
     margin-left: 12px;
 }
 
+.benchmark-search {
+    margin-bottom: 16px;
+}
+
+#benchmark-search-help {
+    color: var(--asv-muted);
+}
+
 .benchmark-group {
     max-width: 1440px;
     margin-right: auto;
