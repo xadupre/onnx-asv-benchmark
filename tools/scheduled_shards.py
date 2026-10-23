@@ -7,6 +7,9 @@ import runpy
 
 
 BATCH_SIZES = {
+    "cpu_backend_cases/math/cases/add": 6,
+    "cpu_backend_cases/math/cases/mul": 6,
+    "cpu_backend_cases/logical/cases/greaterorequal": 6,
     "cpu_backend_cases/math/cases/mod": 10,
     "cpu_backend_cases/math/cases/pow": 10,
     "cpu_backend_cases/logical/cases/greater": 8,

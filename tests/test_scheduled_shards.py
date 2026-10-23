@@ -52,6 +52,9 @@ class TestScheduledShards(unittest.TestCase):
         self.assertEqual(batch_count("cpu_backend_cases/math/cases/mod"), 5)
         self.assertEqual(batch_count("cpu_backend_cases/logical/cases/greater"), 6)
         for shard in (
+            "cpu_backend_cases/math/cases/add",
+            "cpu_backend_cases/math/cases/mul",
+            "cpu_backend_cases/logical/cases/greaterorequal",
             "cpu_backend_cases/math/cases/mod",
             "cpu_backend_cases/math/cases/pow",
             "cpu_backend_cases/logical/cases/greater",
@@ -76,6 +79,8 @@ class TestScheduledShards(unittest.TestCase):
                 text=True,
             )
             batches = json.loads(completed.stdout)["include"]
+            if shard.endswith(("/add", "/mul", "/greaterorequal")):
+                self.assertEqual(len(batches), 8)
             if shard.endswith("/div"):
                 self.assertEqual(len(batches), 8)
             if shard.endswith("/bitwiseor"):
@@ -95,10 +100,10 @@ class TestScheduledShards(unittest.TestCase):
                     )
                 ]
                 self.assertEqual(matching, [batches[index // BATCH_SIZES[shard]]])
-        self.assertEqual(batch_count("cpu_backend_cases/math/cases/mul"), 1)
+        self.assertEqual(batch_count("cpu_backend_cases/math/cases/sub"), 1)
         self.assertEqual(
-            shard_benchmark_regex("cpu_backend_cases/math/cases/mul", 0),
-            shard_benchmark_regex("cpu_backend_cases/math/cases/mul"),
+            shard_benchmark_regex("cpu_backend_cases/math/cases/sub", 0),
+            shard_benchmark_regex("cpu_backend_cases/math/cases/sub"),
         )
         with self.assertRaises(ValueError):
             shard_benchmark_regex(
@@ -199,6 +204,11 @@ class TestScheduledShards(unittest.TestCase):
         self.assertIn('scheduled_shards.py --matrix --requested "$REQUESTED_SHARD"', workflow)
         self.assertIn('scheduled_shards.py --regex "$SHARD" --batch "$BATCH"', workflow)
         self.assertIn("group: benchmark-shard-${{ matrix.shard }}", workflow)
+        benchmark_concurrency = workflow.split("  benchmark:", 1)[1].split(
+            "    runs-on:", 1
+        )[0]
+        self.assertIn("      queue: max", benchmark_concurrency)
+        self.assertIn("      cancel-in-progress: false", benchmark_concurrency)
         for bucket in map(str, range(7)):
             self.assertEqual(list(mappings.values()).count(bucket), 2)
 

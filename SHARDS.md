@@ -309,3 +309,14 @@ cpu_backend_cases/tensor/cases/split
 cpu_backend_cases/traditionalml/cases/treeensemble
 ```
 <!-- END CURRENT SHARDS -->
+
+## Batched CPU backend cases
+
+The Add, Mul and GreaterOrEqual CPU backend shards are each split into batches
+of at most six benchmark classes so that a job does not need to run the entire
+operator within the 60-minute limit. Both scheduled and manually requested
+matrices use these batches; their filters cover every class exactly once.
+
+Batches of the same shard remain serialized, including result publication.
+The workflow uses `queue: max` so waiting batches are retained rather than
+replaced by the next pending job.
