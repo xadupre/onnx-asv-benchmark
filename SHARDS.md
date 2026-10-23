@@ -282,6 +282,7 @@ cpu_backend_cases/math/cases/swiglu
 cpu_backend_cases/math/cases/tanh
 cpu_backend_cases/nn/cases/attention
 cpu_backend_cases/nn/cases/batchnormalization
+cpu_backend_cases/nn/cases/causal
 cpu_backend_cases/nn/cases/group
 cpu_backend_cases/nn/cases/groupnormalization
 cpu_backend_cases/nn/cases/instancenormalization
@@ -291,6 +292,8 @@ cpu_backend_cases/nn/cases/lpnormalization
 cpu_backend_cases/nn/cases/meanvariancenormalization
 cpu_backend_cases/nn/cases/microsoft_linear_attention
 cpu_backend_cases/nn/cases/microsoft_rotary_embedding
+cpu_backend_cases/nn/cases/moe
+cpu_backend_cases/nn/cases/qmoe
 cpu_backend_cases/nn/cases/rms
 cpu_backend_cases/nn/cases/rotary
 cpu_backend_cases/nn/cases/simplified
