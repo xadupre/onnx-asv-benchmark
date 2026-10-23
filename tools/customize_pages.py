@@ -67,6 +67,13 @@ RUNTIME_OVERVIEW = """\
           </div>
         </section>
         <nav id="benchmark-navigation" aria-label="Benchmark groups">
+          <div class="benchmark-search">
+            <label for="benchmark-search">Search benchmarks (regular expression)</label>
+            <input id="benchmark-search" class="form-control" type="search"
+                   placeholder="e.g. matmul|relu" aria-describedby="benchmark-search-help benchmark-search-status">
+            <p id="benchmark-search-help">Matches benchmark names, ignoring case. Clear to show all tests.</p>
+            <p id="benchmark-search-status" role="status"></p>
+          </div>
           <div class="benchmark-family-filter btn-group" role="group">
             <button class="btn btn-default active" type="button" data-family="all">All</button>
             <button class="btn btn-default" type="button" data-family="builder">Builder</button>
@@ -432,6 +439,44 @@ def customize_pages(html_dir):
 
     function make_summary_navigation(groups) {
         var filters = $('#benchmark-category-filters');
+        var family = 'all';
+        var group = 'all';
+
+        function apply_filters() {
+            var search = $('#benchmark-search');
+            var pattern;
+            try {
+                pattern = new RegExp(search.val(), 'i');
+            } catch (error) {
+                search.attr('aria-invalid', 'true');
+                $('#benchmark-search-status').text('Invalid regular expression: ' + error.message);
+                return;
+            }
+            search.attr('aria-invalid', 'false');
+            var count = 0;
+            $('.benchmark-group').each(function() {
+                var section = $(this);
+                var selected = (family == 'all' || section.attr('data-family') == family) &&
+                    (group == 'all' || section.attr('data-group') == group);
+                var matches = 0;
+                section.find('.benchmark-container').each(function() {
+                    var card = $(this);
+                    var match = selected && (
+                        pattern.test(card.attr('data-benchmark-name')) ||
+                        pattern.test(card.find('.benchmark-text').text()));
+                    card.toggle(match);
+                    if (match) {
+                        ++matches;
+                    }
+                });
+                section.toggle(matches > 0);
+                count += matches;
+            });
+            $('#benchmark-search-status').text(count ? '' : 'No benchmarks match these filters.');
+            $(window).trigger('scroll');
+        }
+
+        $('#benchmark-search').on('input', apply_filters);
 
         $.each(['builder', 'models', 'ops', 'cpu_backend_cases'], function(i, family) {
             var family_filters = $('<div class="benchmark-category-filter btn-group"/>');
@@ -452,7 +497,8 @@ def customize_pages(html_dir):
         });
 
         $('.benchmark-family-filter button').on('click', function() {
-            var family = $(this).attr('data-family');
+            family = $(this).attr('data-family');
+            group = 'all';
             $('.benchmark-family-filter button').removeClass('active');
             $(this).addClass('active');
             $('.benchmark-category-filter').hide();
@@ -461,27 +507,24 @@ def customize_pages(html_dir):
             if (family != 'all') {
                 $('.benchmark-category-filter[data-family="' + family + '"]').show();
             }
-            $('.benchmark-group').each(function() {
-                $(this).toggle(family == 'all' || $(this).attr('data-family') == family);
-            });
-            $(window).trigger('scroll');
+            apply_filters();
         });
 
         $('.benchmark-category-filter button').on('click', function() {
-            var group = $(this).attr('data-group');
-            var family = $(this).parent().attr('data-family');
+            group = $(this).attr('data-group');
             $(this).siblings().removeClass('active');
             $(this).addClass('active');
-            $('.benchmark-group').each(function() {
-                $(this).toggle(
-                    $(this).attr('data-family') == family &&
-                    (group == 'all' || $(this).attr('data-group') == group));
-            });
-            $(window).trigger('scroll');
+            apply_filters();
         });
     }
 
     function benchmark_container(bm) {""",
+    )
+    grid = _replace_once(
+        grid,
+        "        container.append(name);",
+        "        container.attr('data-benchmark-name', bm.name);\n"
+        "        container.append(name);",
     )
     grid = _replace_once(
         grid,
