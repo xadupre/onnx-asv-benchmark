@@ -312,3 +312,9 @@ secret with write access to `xadupre/cache_data`. Shard completion does not
 trigger a Pages deployment; it refreshes only the remote JSON data. The static
 Pages workflow runs when its presentation files change or when started
 manually.
+
+Large CPU backend case shards use batches of benchmark classes. In particular,
+`cpu_backend_cases/logical/cases/bitwisexor` runs in batches of at most ten
+classes to stay within the 60-minute job limit. Batches of the same shard,
+including result publication, remain serialized; `queue: max` retains all
+waiting batches instead of replacing the previous pending job.
