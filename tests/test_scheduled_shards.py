@@ -61,6 +61,7 @@ class TestScheduledShards(unittest.TestCase):
             "cpu_backend_cases/logical/cases/less",
             "cpu_backend_cases/math/cases/div",
             "cpu_backend_cases/logical/cases/bitwiseor",
+            "cpu_backend_cases/logical/cases/bitwisexor",
             "cpu_backend_cases/math/cases/prelu",
             "cpu_backend_cases/logical/cases/bitwiseand",
             "cpu_backend_cases/logical/cases/lessorequal",
@@ -83,7 +84,7 @@ class TestScheduledShards(unittest.TestCase):
                 self.assertEqual(len(batches), 8)
             if shard.endswith("/div"):
                 self.assertEqual(len(batches), 8)
-            if shard.endswith("/bitwiseor"):
+            if shard.endswith(("/bitwiseor", "/bitwisexor")):
                 self.assertEqual(len(batches), 4)
             self.assertEqual(
                 batches,
