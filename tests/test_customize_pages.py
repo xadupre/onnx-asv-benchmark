@@ -1,4 +1,6 @@
+import json
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -162,6 +164,63 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn(".benchmark-container {\n    width: 220px;\n    height: 80px;", stylesheet)
             self.assertIn(".benchmark-plot {\n    width: 212px;\n    height: 52px;", stylesheet)
             self.assertIn(".benchmark-text {\n    width: 212px;", stylesheet)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
+    def test_configuration_color_ignores_versions(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+
+        start = graph.index("function configuration_color(parameters)")
+        end = graph.index("\n}", start) + 2
+        function = graph[start:end]
+        config = json.loads(
+            (Path(__file__).parents[1] / "asv.conf.json").read_text(encoding="utf-8")
+        )
+        versions = {
+            **{key: "1.0" for key in config["matrix"]["req"]},
+            **{f"env-{key}": "1.0" for key in config["matrix"]["env"]},
+            "python": "3.12",
+            "commit": "abc123",
+        }
+        parameters = {"backend": "onnxruntime", "dtype": "float32", "cpu": "processor"}
+        configurations = [
+            parameters,
+            {**parameters, **versions},
+            {**parameters, **dict.fromkeys(versions, "2.0")},
+            *[{**parameters, key: "2.0"} for key in versions],
+            {**parameters, **dict(reversed(list(versions.items())))},
+            {**parameters, "onnx": None},
+        ]
+        alternatives = [
+            {**parameters, key: value}
+            for key, value in (
+                ("backend", "onnx-light"),
+                ("backend", "onnx-light-cpu"),
+                ("dtype", "float64"),
+                ("cpu", "another processor"),
+            )
+        ]
+        result = subprocess.run(
+            [
+                "node", "-e",
+                function + "\nconsole.log(JSON.stringify("
+                + json.dumps(configurations + alternatives) + ".map(configuration_color)));",
+            ],
+            check=True, capture_output=True, text=True,
+        )
+        colors = json.loads(result.stdout)
+        self.assertRegex(colors[0], r"^hsl\(\d+, 65%, 48%\)$")
+        for configuration, color in zip(configurations, colors):
+            with self.subTest(configuration=configuration):
+                self.assertEqual(color, colors[0])
+        for configuration, color in zip(alternatives, colors[len(configurations):]):
+            with self.subTest(configuration=configuration):
+                self.assertNotEqual(color, colors[0])
 
     def test_unexpected_asv_output_is_not_modified(self):
         with tempfile.TemporaryDirectory() as directory:
