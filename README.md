@@ -315,6 +315,7 @@ manually.
 
 Large CPU backend case shards use batches of benchmark classes. In particular,
 `cpu_backend_cases/logical/cases/bitwisexor` runs in batches of at most ten
-classes to stay within the 60-minute job limit. Batches of the same shard,
+classes and `cpu_backend_cases/logical/cases/bitshift` in batches of at most
+six classes to stay within the 60-minute job limit. Batches of the same shard,
 including result publication, remain serialized; `queue: max` retains all
 waiting batches instead of replacing the previous pending job.
