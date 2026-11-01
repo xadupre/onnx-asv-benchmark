@@ -247,7 +247,7 @@ function configuration_segments(graphs, valid_point) {
                 var candidate_first = candidate.batches[0][0].point[0];
                 var candidate_last_batch = candidate.batches[candidate.batches.length - 1];
                 var candidate_last = candidate_last_batch[0].point[0];
-                return candidate_first < current_time && candidate_last > previous_time;
+                return candidate_first <= current_time && candidate_last >= previous_time;
             });
             if (previous_batch.length == 1 && current_batch.length == 1 &&
                     previous_time < current_time && !has_intermediate) {
