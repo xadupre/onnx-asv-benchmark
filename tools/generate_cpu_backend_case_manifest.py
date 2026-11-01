@@ -12,6 +12,7 @@ from onnx_light_cpu import register_backend_test_cases
 CUSTOM_OPERATOR_LOCATIONS = {
     "BiasGelu": ("math", "bias_gelu"),
     "CDist": ("math", "c_dist"),
+    "GatherBlockQuantized": ("tensor", "gather_block_quantized"),
     "GroupQueryAttention": ("nn", "group_query_attention"),
     "MatMulNBits": ("math", "mat_mul_n_bits"),
     "MoE": ("nn", "moe"),
@@ -78,7 +79,11 @@ def build_shards(cases, locations, records=None):
     for prefix, dtypes, operator, name in case_groups:
         if len(prefix_operators[prefix]) > 1:
             operator_suffix = re.sub(r"(?<!^)(?=[A-Z])", "_", operator).lower()
-            prefix = f"{prefix}_{operator_suffix}"
+            prefix = (
+                operator_suffix
+                if operator_suffix == prefix or operator_suffix.startswith(f"{prefix}_")
+                else f"{prefix}_{operator_suffix}"
+            )
             if not name.startswith(f"test_cpu_{prefix}_"):
                 raise ValueError(
                     f"Cannot distinguish operator {operator!r} in {name!r}."

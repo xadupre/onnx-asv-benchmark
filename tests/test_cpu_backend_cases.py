@@ -209,6 +209,32 @@ class TestCpuBackendCases(unittest.TestCase):
             ],
         )
 
+    def test_shared_prefix_preserves_operator_prefix(self):
+        source = [
+            _Case("test_cpu_gather_float32_benchmark", "Gather"),
+            _Case(
+                "test_cpu_gather_block_quantized_uint8_benchmark",
+                "GatherBlockQuantized",
+            ),
+        ]
+        source[1].data_sets[0].inputs[0].data_type = 2
+        self.assertEqual(
+            build_shards(
+                source,
+                locations={
+                    "Gather": ("tensor", "gather"),
+                    "GatherBlockQuantized": ("tensor", "gather_block_quantized"),
+                },
+            ),
+            [
+                ("tensor", "gather", "GatherFloat32", "gather", ("float32",), 0),
+                (
+                    "tensor", "gather_block_quantized", "GatherBlockQuantizedUint8",
+                    "gather_block_quantized", ("uint8",), 0,
+                ),
+            ],
+        )
+
     def test_operator_locations_match_ops_hierarchy(self):
         locations = operator_locations("benchmarks/ops")
         self.assertEqual(locations["Abs"], ("math", "abs"))
@@ -219,6 +245,10 @@ class TestCpuBackendCases(unittest.TestCase):
         self.assertEqual(
             locations["GroupQueryAttention"],
             ("nn", "group_query_attention"),
+        )
+        self.assertEqual(
+            locations["GatherBlockQuantized"],
+            ("tensor", "gather_block_quantized"),
         )
 
     def test_case_prefix_rejects_unexpected_names(self):

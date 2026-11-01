@@ -7591,6 +7591,20 @@ CASE_SHARDS = (
     ),
     (
         "tensor",
+        "GatherBlockQuantizedUint8Int64Float16",
+        "gather_block_quantized",
+        ('uint8', 'int64', 'float16'),
+        0,
+    ),
+    (
+        "tensor",
+        "GatherBlockQuantizedUint8Int64Float32",
+        "gather_block_quantized",
+        ('uint8', 'int64', 'float32'),
+        0,
+    ),
+    (
+        "tensor",
         "NonZeroBool",
         "nonzero",
         ('bool',),

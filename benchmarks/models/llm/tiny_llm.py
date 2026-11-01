@@ -340,7 +340,7 @@ class _CausalLLMBase:
             self.generation_feeds,
             max_new_tokens=MAX_NEW_TOKENS,
             temperature=0.0,
-            eos_token_id=2,
+            eos_token_ids=[2],
             pad_token_id=2,
         )
         generated_tokens = tokens[0, len(self.prompt_tokens) :].tolist()
