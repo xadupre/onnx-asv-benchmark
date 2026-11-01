@@ -594,6 +594,29 @@ function draw_configuration_lines(plot, context) {
     )
     grid = _replace_once(
         grid,
+        "        return groups;",
+        """\
+        var families = ['builder', 'models', 'ops', 'cpu_backend_cases'];
+        var ordered_groups = {};
+        Object.keys(groups).sort(function(left, right) {
+            var left_family = groups[left][0].split('.')[0];
+            var right_family = groups[right][0].split('.')[0];
+            var left_order = families.indexOf(left_family);
+            var right_order = families.indexOf(right_family);
+            if (left_order < 0) {
+                left_order = families.length;
+            }
+            if (right_order < 0) {
+                right_order = families.length;
+            }
+            return left_order - right_order || left.localeCompare(right);
+        }).forEach(function(group) {
+            ordered_groups[group] = groups[group];
+        });
+        return ordered_groups;""",
+    )
+    grid = _replace_once(
+        grid,
         "var display_name = bm.pretty_name || "
         "bm.name.slice(bm.name.indexOf('.') + 1);",
         "var parts = bm.name.split('.');\n"
