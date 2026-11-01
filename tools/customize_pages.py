@@ -149,6 +149,7 @@ def customize_pages(html_dir):
     graph = _replace_once(
         graph,
         "        var plot = $.plot(graph_div, graphs, options);",
+        "        $('#graph-legend').empty();\n"
         "        var plot = $.plot(graph_div, graphs, options);\n"
         "        plot.resize();\n"
         "        plot.setupGrid();\n"
