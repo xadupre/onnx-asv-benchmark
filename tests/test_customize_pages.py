@@ -11,6 +11,79 @@ from tools.customize_pages import customize_pages
 
 
 class TestCustomizePages(unittest.TestCase):
+    @unittest.skipUnless(
+        shutil.which("node"), "Node.js is required to execute summary JavaScript"
+    )
+    def test_preview_series_preserve_configuration_and_missing_versions(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in (
+                "index.html",
+                "graphdisplay.js",
+                "summarygrid.js",
+                "summarylist.js",
+            ):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            grid = (html / "summarygrid.js").read_text(encoding="utf-8")
+        start = grid.index("                var series = data.series.map(")
+        end = grid.index("                var options = ", start)
+        script = (source / "asv.js").read_text(encoding="utf-8")
+        decode_start = script.index("    function convert_benchmark_param_value(")
+        decode_end = script.index("    /* Convert loaded graph data", decode_start)
+        data = {
+            "graph_parameters": [
+                {"machine": "slow", "onnx": None, "python": "3.12"},
+                {"machine": "fast", "onnx": "1.23", "python": "3.12"},
+            ],
+            "series": [
+                {
+                    "graph": 0,
+                    "parameters": {"dtype": "'float32'", "size": "32"},
+                    "data": [[1000, 10], [2000, None]],
+                },
+                {
+                    "graph": 1,
+                    "parameters": {"dtype": "'float32'", "size": "32"},
+                    "data": [[1000, 1], [2000, 2]],
+                },
+            ],
+        }
+        output = subprocess.run(
+            [
+                "node",
+                "-e",
+                script[decode_start:decode_end]
+                + "\nvar $ = {extend: Object.assign, asv: {convert_benchmark_param_value: convert_benchmark_param_value}};\n"
+                + "function configuration_color(parameters) {return JSON.stringify(parameters);}\n"
+                + "var bm = {param_names: ['dtype', 'size']};\nvar data = "
+                + json.dumps(data)
+                + ";\n"
+                + grid[start:end]
+                + "\nconsole.log(JSON.stringify(series));",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        series = json.loads(output.stdout)
+        self.assertEqual(len(series), 2)
+        self.assertEqual(
+            series[0]["parameters"],
+            {
+                "machine": "slow",
+                "onnx": None,
+                "python": "3.12",
+                "dtype": "float32",
+                "size": 32,
+            },
+        )
+        self.assertEqual(series[1]["parameters"]["onnx"], "1.23")
+        self.assertEqual(series[0]["data"], data["series"][0]["data"])
+        self.assertEqual(series[1]["data"], data["series"][1]["data"])
+        self.assertNotEqual(series[0]["color"], series[1]["color"])
+
     def test_legend_above_plot(self):
         source = Path(asv.__file__).parent / "www"
         with tempfile.TemporaryDirectory() as directory:

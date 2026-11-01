@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import json
 import shutil
 from pathlib import Path
@@ -8,6 +9,63 @@ def replace_once(text, old, new):
     if text.count(old) != 1:
         raise ValueError(f"Expected exactly one occurrence of {old!r} in ASV output.")
     return text.replace(old, new)
+
+
+def write_configuration_previews(html_dir):
+    from asv.graph import Graph
+
+    html_dir = Path(html_dir)
+    index = json.loads((html_dir / "index.json").read_text(encoding="utf-8"))
+    graph_parameters = {
+        Path(Graph.get_file_path(params, "_")).parent: params
+        for params in index["graph_param_list"]
+    }
+    benchmark_graphs = {}
+    for path in (html_dir / "graphs").rglob("*.json"):
+        parameters = graph_parameters.get(path.relative_to(html_dir).parent)
+        if parameters is not None:
+            benchmark_graphs.setdefault(path.stem, []).append((path, parameters))
+
+    for name, benchmark in index["benchmarks"].items():
+        combinations = list(itertools.product(*benchmark["params"]))
+        series = []
+        configurations = []
+        for path, parameters in sorted(benchmark_graphs.get(name, [])):
+            graph_index = len(configurations)
+            configurations.append(parameters)
+            points = json.loads(path.read_text(encoding="utf-8"))
+            curves = [[] for _ in combinations]
+            for revision, values in points:
+                if not isinstance(values, list):
+                    values = (
+                        [values] * len(combinations) if values is None else [values]
+                    )
+                if len(values) != len(combinations):
+                    raise ValueError(
+                        f"Incompatible benchmark parameter count in {path}."
+                    )
+                date = index["revision_to_date"][str(revision)]
+                for curve, value in zip(curves, values):
+                    curve.append([date, value])
+            for combination, curve in zip(combinations, curves):
+                series.append(
+                    {
+                        "graph": graph_index,
+                        "parameters": dict(zip(benchmark["param_names"], combination)),
+                        "data": sorted(curve),
+                    }
+                )
+        summary = html_dir / "graphs" / "configurations" / f"{name}.json"
+        summary.parent.mkdir(parents=True, exist_ok=True)
+        summary.write_text(
+            json.dumps(
+                {"graph_parameters": configurations, "series": series},
+                separators=(",", ":"),
+                allow_nan=False,
+            ),
+            encoding="utf-8",
+        )
+    return len(index["benchmarks"])
 
 
 def extract_site_data(html_dir, destination):
@@ -22,7 +80,7 @@ def extract_site_data(html_dir, destination):
         target = destination / source.relative_to(html_dir)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-    return len(json_files)
+    return len(json_files) + write_configuration_previews(destination)
 
 
 def configure_remote_data(html_dir, base_url):

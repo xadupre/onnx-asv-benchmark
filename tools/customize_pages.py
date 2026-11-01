@@ -615,6 +615,81 @@ function draw_configuration_lines(plot, context) {
     )
     grid = _replace_once(
         grid,
+        "'graphs/summary/' + bm.name + '.json'",
+        "'graphs/configurations/' + bm.name + '.json'",
+    )
+    grid = _replace_once(
+        grid,
+        "            ).done(function(data) {\n",
+        """\
+            ).done(function(data) {
+                var series = data.series.map(function(curve) {
+                    var parameters = $.extend(
+                        {}, data.graph_parameters[curve.graph], curve.parameters);
+                    bm.param_names.forEach(function(key) {
+                        parameters[key] = $.asv.convert_benchmark_param_value(
+                            parameters[key]);
+                    });
+                    return {
+                        data: curve.data,
+                        parameters: parameters,
+                        color: configuration_color(parameters)
+                    };
+                });
+""",
+    )
+    grid = _replace_once(
+        grid,
+        "                            lineWidth: 2",
+        "                            lineWidth: 1",
+    )
+    grid = _replace_once(
+        grid,
+        "                        shadowSize: 0",
+        "                        points: {show: true, radius: 1},\n"
+        "                        shadowSize: 0",
+    )
+    grid = _replace_once(
+        grid,
+        "                        borderWidth: 1,",
+        "                        hoverable: true,\n"
+        "                        borderWidth: 1,",
+    )
+    grid = _replace_once(
+        grid,
+        "                    xaxis: {\n",
+        "                    xaxis: {\n"
+        "                        mode: 'time',\n",
+    )
+    grid = _replace_once(
+        grid,
+        "                    plot_div, [{data: data}], options);",
+        """\
+                    plot_div, series, options);
+                plot_div.on('plothover', function(event, pos, item) {
+                    if (!item || !item.series.parameters) {
+                        return;
+                    }
+                    var parameters = item.series.parameters;
+                    var details = Object.keys(parameters).sort().filter(function(key) {
+                        return parameters[key] !== null && parameters[key] != 'anonymous';
+                    }).map(function(key) {
+                        return key + ': ' + parameters[key];
+                    });
+                    details.unshift($.asv.pretty_unit(item.datapoint[1], bm.unit));
+                    plot_div.attr('data-original-title', details.join('; '));
+                });""",
+    )
+    grid = _replace_once(
+        grid,
+        "                // TODO: Handle failure",
+        "                plot_div.text('Preview unavailable');\n"
+        "                plot_div.attr('data-original-title',\n"
+        "                    'Could not load configuration previews for ' + bm.name);\n"
+        "                console.error('Could not load benchmark preview: ' + bm.name);",
+    )
+    grid = _replace_once(
+        grid,
         "    function benchmark_container(bm) {",
         """\
     function make_machine_summary() {
