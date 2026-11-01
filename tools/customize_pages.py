@@ -166,6 +166,32 @@ def customize_pages(html_dir):
     graph = _replace_once(graph, "var date_scale = false;", "var date_scale = true;")
     graph = _replace_once(
         graph,
+        "            var max_curves = 8;\n\n"
+        "            for (var k = 0; k < params.length; ++k) {\n",
+        "            var max_curves = 8;\n"
+        "            var parameter_order = params.map(function(value, index) { return index; });\n"
+        "            var backend_axis = param_names.indexOf('backend');\n"
+        "            if (backend_axis >= 0) {\n"
+        "                parameter_order.splice(backend_axis, 1);\n"
+        "                parameter_order.unshift(backend_axis);\n"
+        "            }\n\n"
+        "            for (var i = 0; i < parameter_order.length; ++i) {\n"
+        "                var k = parameter_order[i];\n",
+    )
+    graph = _replace_once(
+        graph,
+        "j < param_values.length && (j+1)*count <= max_curves",
+        "j < param_values.length && (j == 0 || (j+1)*count <= max_curves)",
+    )
+    graph = _replace_once(
+        graph,
+        "                count = count * item.length;\n"
+        "                benchmark_param_selection.push(item);",
+        "                count = count * Math.max(1, item.length);\n"
+        "                benchmark_param_selection[k + 1] = item;",
+    )
+    graph = _replace_once(
+        graph,
         '$("#title").text(bm_name);',
         "var title = bm_name;\n"
         "        if (bm_name.indexOf('cpu_backend_cases.') == 0) {\n"

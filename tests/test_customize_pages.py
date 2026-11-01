@@ -166,6 +166,60 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn(".benchmark-text {\n    width: 212px;", stylesheet)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
+    def test_default_graph_selection_prioritizes_backends(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+
+        start = graph.index("        /* Default plot: up to 8 lines */")
+        end = graph.index("        check_x_coordinate_axis();", start)
+        selection = (
+            "function select(params, param_names, state_selection) {\n"
+            "var benchmark_param_selection;\n"
+            + graph[start:end]
+            + "\nreturn benchmark_param_selection;\n}\n"
+        )
+        backends = ["'onnx-light-cpu'", "'onnxruntime'"]
+        shapes = [str((size,)) for size in range(16)]
+        cases = [
+            ([["'float32'"], shapes, backends], ["dtype1", "input_shapes", "backend"], {},
+             [[None], [0], [0, 1, 2, 3], [0, 1]]),
+            ([backends, shapes], ["backend", "shape"], {},
+             [[None], [0, 1], [0, 1, 2, 3]]),
+            ([["'float16'", "'float32'", "'float64'"], shapes,
+              backends + ["'onnx-reference'", "'onnx-light'"]],
+             ["dtype", "shape", "backend"], {},
+             [[None], [0, 1], [0], [0, 1, 2, 3]]),
+            ([shapes, backends], ["shape", "backend"], {"p-backend": [backends[1]]},
+             [[None], list(range(8)), [1]]),
+            ([shapes, backends], ["shape", "backend"], {"p-shape": shapes},
+             [[None], list(range(16)), [0, 1]]),
+            ([shapes, backends], ["shape", "backend"], {"p-backend": []},
+             [[None], list(range(8)), []]),
+            ([shapes, shapes, backends], ["shape1", "shape2", "backend"],
+             {"p-shape1": shapes},
+             [[None], list(range(16)), [0], [0, 1]]),
+            ([shapes], ["shape"], {}, [[None], list(range(8))]),
+            ([], [], {}, [[None]]),
+        ]
+        result = subprocess.run(
+            [
+                "node", "-e", selection
+                + "console.log(JSON.stringify("
+                + json.dumps([case[:3] for case in cases])
+                + ".map(args => select(...args))));",
+            ],
+            check=True, capture_output=True, text=True,
+        )
+        for case, actual in zip(cases, json.loads(result.stdout), strict=True):
+            with self.subTest(params=case[:3]):
+                self.assertEqual(actual, case[3])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
     def test_configuration_color_ignores_versions(self):
         source = Path(asv.__file__).parent / "www"
         with tempfile.TemporaryDirectory() as directory:
