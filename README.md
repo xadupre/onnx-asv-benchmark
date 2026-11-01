@@ -289,6 +289,13 @@ configuration keep the same color across versions. Time-series points are linked
 with solid lines, or dotted lines when recorded versions change; missing
 measurements leave gaps.
 
+Homepage previews show one curve per complete recorded configuration, including
+machine, package versions, backend, dtype, and input dimensions. They do not
+average results from different machines or interpolate missing measurements.
+Hover over a point to inspect its configuration. The data publication step
+precomputes these curves under `graphs/configurations`, so each visible preview
+loads one JSON file rather than fetching every detailed graph.
+
 Package-version filters omit missing entries rather than showing ASV's `[none]`
 or a replacement label. A package without a recorded version is not offered as
 a version choice; panels with fewer than two recorded choices are hidden.
