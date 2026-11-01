@@ -289,6 +289,12 @@ assert.deepEqual(configuration_segments([
 ]).map(segment => [segment.data, segment.dotted]), [
     [[[10, 1], [20, 2]], false], [[[10, 10], [20, 20]], false]
 ]);
+assert.deepEqual(configuration_segments([
+    series([[10, 1], [30, 3]]),
+    series([[20, 2], [40, 4]], {onnxruntime: '2.0'})
+]).map(segment => [segment.data, segment.dotted]), [
+    [[[10, 1], [30, 3]], false], [[[20, 2], [40, 4]], false]
+]);
 assert.equal(configuration_segments([
     series([[10, 1]], {onnxruntime: null}), series([[20, 2]])
 ])[0].dotted, true);

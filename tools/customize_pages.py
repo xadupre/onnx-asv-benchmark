@@ -173,60 +173,96 @@ function configuration_segments(graphs, valid_point) {
         var key = configuration_key(graph.parameters);
         var version = configuration_key(graph.parameters, true);
         if (!groups[key]) {
-            groups[key] = [];
+            groups[key] = Object.create(null);
+        }
+        if (!groups[key][version]) {
+            groups[key][version] = [];
         }
         graph.data.forEach(function(point) {
             if (typeof point[0] == 'number' && isFinite(point[0])) {
-                groups[key].push({point: point, version: version, color: graph.color});
+                groups[key][version].push({point: point, version: version, color: graph.color});
             }
         });
     });
     var segments = [];
     Object.keys(groups).sort().forEach(function(key) {
-        var points = groups[key];
-        points.sort(function(a, b) {
-            return a.point[0] - b.point[0] || a.version.localeCompare(b.version);
-        });
-        var batches = [];
-        points.forEach(function(current) {
-            var batch = batches[batches.length - 1];
-            if (!batch || batch[0].point[0] != current.point[0]) {
-                batch = [];
-                batches.push(batch);
-            }
-            batch.push(current);
+        var group_segments = [];
+        var histories = Object.keys(groups[key]).map(function(version) {
+            var points = groups[key][version];
+            points.sort(function(a, b) {
+                return a.point[0] - b.point[0] ||
+                    JSON.stringify(a.point).localeCompare(JSON.stringify(b.point));
+            });
+            var batches = [];
+            points.forEach(function(current) {
+                var batch = batches[batches.length - 1];
+                if (!batch || batch[0].point[0] != current.point[0]) {
+                    batch = [];
+                    batches.push(batch);
+                }
+                batch.push(current);
+            });
+            return {version: version, batches: batches};
+        }).filter(function(history) {
+            return history.batches.length > 0;
         });
         function connect(previous, current) {
             if ([previous, current].every(function(item) {
                 return typeof item.point[1] == 'number' && isFinite(item.point[1]) &&
                     (!valid_point || valid_point(item.point));
             })) {
-                segments.push({
+                group_segments.push({
                     data: [previous.point, current.point],
                     color: current.color,
                     dotted: previous.version != current.version
                 });
             }
         }
-        batches.forEach(function(batch, index) {
+        histories.forEach(function(history) {
+            history.batches.forEach(function(batch, index) {
+                if (index > 0) {
+                    batch.forEach(function(current) {
+                        connect(history.batches[index - 1][0], current);
+                    });
+                }
+            });
+        });
+        histories.sort(function(a, b) {
+            return a.batches[0][0].point[0] - b.batches[0][0].point[0] ||
+                a.version.localeCompare(b.version);
+        });
+        histories.forEach(function(history, index) {
             if (index == 0) {
                 return;
             }
-            var previous = batches[index - 1];
-            var matched = false;
-            batch.forEach(function(current) {
-                var same_version = previous.find(function(item) {
-                    return item.version == current.version;
-                });
-                if (same_version) {
-                    matched = true;
-                    connect(same_version, current);
+            var previous = histories[index - 1];
+            var previous_batch = previous.batches[previous.batches.length - 1];
+            var current_batch = history.batches[0];
+            var previous_time = previous_batch[0].point[0];
+            var current_time = current_batch[0].point[0];
+            var has_intermediate = histories.some(function(candidate) {
+                if (candidate == previous || candidate == history) {
+                    return false;
                 }
+                var candidate_first = candidate.batches[0][0].point[0];
+                var candidate_last_batch = candidate.batches[candidate.batches.length - 1];
+                var candidate_last = candidate_last_batch[0].point[0];
+                return candidate_first < current_time && candidate_last > previous_time;
             });
-            if (!matched && previous.length == 1 && batch.length == 1) {
-                connect(previous[0], batch[0]);
+            if (previous_batch.length == 1 && current_batch.length == 1 &&
+                    previous_time < current_time && !has_intermediate) {
+                connect(previous_batch[0], current_batch[0]);
             }
         });
+        group_segments.sort(function(a, b) {
+            return a.data[0][0] - b.data[0][0] ||
+                a.data[1][0] - b.data[1][0] ||
+                a.data[0][1] - b.data[0][1] ||
+                a.data[1][1] - b.data[1][1] ||
+                a.color.localeCompare(b.color) ||
+                Number(a.dotted) - Number(b.dotted);
+        });
+        segments = segments.concat(group_segments);
     });
     return segments;
 }
