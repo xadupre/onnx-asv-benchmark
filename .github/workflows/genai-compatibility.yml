@@ -59,7 +59,7 @@ jobs:
             "scipy>=1.18.0" \
             "ml_dtypes>=0.6.0"
           python -m pip install --no-deps \
-            "modelbuilder @ git+https://github.com/xadupre/mbext.git@4ebce2526488a44e93532e6871053f4c4bf79d40"
+            "modelbuilder @ git+https://github.com/xadupre/mbext.git@a1a23dc0166887f4bd2d48facf141110574fdb73"
       - name: Install latest releases
         if: matrix.source == 'release'
         env:
