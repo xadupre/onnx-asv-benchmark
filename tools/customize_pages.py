@@ -319,7 +319,7 @@ def customize_pages(html_dir):
         "    }\n\n"
         "    /* Handle log scaling the plot */",
         "            }).always(function () {\n"
-        "                if (--pending == 0 && failures == 0 &&\n"
+        "                if (--pending == 0 && orig_graphs.length > 0 &&\n"
         "                        current_benchmark == requested_benchmark) {\n"
         "                    show_missing_backends();\n"
         "                }\n"

@@ -96,7 +96,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("graph.data.some(function(point)", graph)
             self.assertIn("point[0] == backend", graph)
             self.assertIn("No measurements for ", graph)
-            self.assertIn("if (--pending == 0 && failures == 0", graph)
+            self.assertIn("if (--pending == 0 && orig_graphs.length > 0", graph)
             self.assertIn("$('#missing-backend-results').hide().empty()", graph)
             self.assertIn("function configuration_color(parameters)", graph)
             self.assertIn("Object.keys(parameters).sort()", graph)
@@ -164,6 +164,82 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn(".benchmark-container {\n    width: 220px;\n    height: 80px;", stylesheet)
             self.assertIn(".benchmark-plot {\n    width: 212px;\n    height: 52px;", stylesheet)
             self.assertIn(".benchmark-text {\n    width: 212px;", stylesheet)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
+    def test_missing_backend_warning_with_partial_graph_failures(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+
+        start = graph.index("    function show_missing_backends()")
+        end = graph.index("    function replace_graphs()", start)
+        warning = graph[start:end]
+        start = graph.index("}).always(function () {") + len("}).always(function () {")
+        end = graph.index("\n            });", start)
+        completion = graph[start:end]
+        script = """
+const assert = require('assert');
+var message = '', visible = false;
+function $(selector) {
+    return {
+        text: function(value) { message = value; return this; },
+        show: function() { visible = true; }
+    };
+}
+$.each = (values, callback) => values.forEach((value, index) => callback(index, value));
+$.asv = {
+    main_json: {benchmarks: {gemm: {
+        param_names: ['dtype1', 'dtype2', 'dtype3', 'input_shapes', 'backend'],
+        params: [["'bfloat16'"], ["'bfloat16'"], ["'bfloat16'"],
+                 ["'(256, 256) x (256, 256) x ()'"],
+                 ["'onnx-light-cpu'", "'onnxruntime'"]]
+    }}},
+    convert_benchmark_param_value: value => value.replace(/^'(.*)'$/, '$1')
+};
+var current_benchmark = 'gemm', requested_benchmark = 'gemm';
+var x_coordinate_axis = 0;
+var benchmark_param_selection = [[null], [0], [0], [0], [0], [0, 1]];
+var orig_graphs = [
+    {parameters: {backend: 'onnx-light-cpu'}, data: [[129, 0.0003641265]]},
+    {parameters: {backend: 'onnxruntime'}, data: [[129, null]]}
+];
+var pending = 2, failures = 1;
+"""
+        script += warning + "\nfunction complete() {\n" + completion + "\n}\n"
+        script += """
+complete();
+assert.strictEqual(visible, false);
+complete();
+assert.strictEqual(visible, true);
+assert.strictEqual(message,
+    'No measurements for onnxruntime (benchmark failed or is unsupported).');
+assert.strictEqual(orig_graphs[1].data[0][1], null);
+
+visible = false; message = ''; pending = 1;
+benchmark_param_selection[5] = [0];
+complete();
+assert.strictEqual(visible, false);
+
+benchmark_param_selection[5] = [0, 1];
+orig_graphs[1].data[0][1] = 0.0005;
+pending = 1;
+complete();
+assert.strictEqual(visible, false);
+
+orig_graphs = []; pending = 1;
+complete();
+assert.strictEqual(visible, false);
+
+orig_graphs = [{parameters: {backend: 'onnx-light-cpu'}, data: [[129, 0.0003]]}];
+requested_benchmark = 'another_benchmark'; pending = 1;
+complete();
+assert.strictEqual(visible, false);
+"""
+        subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
     def test_default_graph_selection_prioritizes_backends(self):
