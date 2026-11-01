@@ -235,7 +235,11 @@ function configuration_segments(graphs, valid_point) {
             if (index == 0) {
                 return;
             }
-            var previous = histories[index - 1];
+            var previous = histories.slice(0, index).reduce(function(latest, candidate) {
+                var last = candidate.batches[candidate.batches.length - 1][0].point[0];
+                var latest_last = latest.batches[latest.batches.length - 1][0].point[0];
+                return last > latest_last ? candidate : latest;
+            }, histories[index - 1]);
             var previous_batch = previous.batches[previous.batches.length - 1];
             var current_batch = history.batches[0];
             var previous_time = previous_batch[0].point[0];
