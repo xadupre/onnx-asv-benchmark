@@ -166,6 +166,26 @@
     width: 212px;
 }
 
+#graph-body {
+    display: flex;
+    flex-direction: column;
+}
+
+#graph-legend {
+    flex: 0 0 auto;
+    max-height: 30%;
+    overflow: auto;
+}
+
+#graph-legend td {
+    padding: 2px 4px;
+}
+
+#main-graph {
+    flex: 1 1 auto;
+    height: auto !important;
+}
+
 @media (max-width: 700px) {
     .benchmark-home {
         padding: 24px 15px 8px;

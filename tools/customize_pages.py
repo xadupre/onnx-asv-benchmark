@@ -125,9 +125,35 @@ def customize_pages(html_dir):
         '          <div id="missing-backend-results" role="status" '
         'class="alert alert-warning" style="display: none"></div>\n',
     )
+    index = _replace_once(
+        index,
+        '          <div style="position: absolute; top: 48px; left: 0; right: 0; bottom: 100px;">',
+        '          <div id="graph-body" style="position: absolute; top: 48px; '
+        'left: 0; right: 0; bottom: 100px;">\n'
+        '            <div id="graph-legend"></div>',
+    )
 
     graph_path = html_dir / "graphdisplay.js"
     graph = graph_path.read_text(encoding="utf-8")
+    graph = _replace_once(
+        graph,
+        '                position: "nw",',
+        "                container: $('#graph-legend'),",
+    )
+    graph = _replace_once(
+        graph,
+        "        graphs = [];\n        orig_graphs = [];",
+        "        graphs = [];\n        orig_graphs = [];\n"
+        "        $('#graph-legend').empty();",
+    )
+    graph = _replace_once(
+        graph,
+        "        var plot = $.plot(graph_div, graphs, options);",
+        "        var plot = $.plot(graph_div, graphs, options);\n"
+        "        plot.resize();\n"
+        "        plot.setupGrid();\n"
+        "        plot.draw();",
+    )
     graph = _replace_once(
         graph,
         "        /* Generic parameter selectors */\n"

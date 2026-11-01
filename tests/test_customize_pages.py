@@ -11,6 +11,40 @@ from tools.customize_pages import customize_pages
 
 
 class TestCustomizePages(unittest.TestCase):
+    def test_legend_above_plot(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            page = (html / "index.html").read_text(encoding="utf-8")
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+            stylesheet = (html / "system-theme.css").read_text(encoding="utf-8")
+
+        self.assertLess(page.index('id="graph-body"'), page.index('id="graph-legend"'))
+        self.assertLess(page.index('id="graph-legend"'), page.index('id="main-graph"'))
+        self.assertIn("container: $('#graph-legend'),", graph)
+        self.assertNotIn('position: "nw",', graph)
+        self.assertIn("show: show_legend,", graph)
+        self.assertIn('return $("<span>").text(label).html();', graph)
+        self.assertIn(
+            "        graphs = [];\n        orig_graphs = [];\n"
+            "        $('#graph-legend').empty();",
+            graph,
+        )
+        self.assertIn(
+            "        var plot = $.plot(graph_div, graphs, options);\n"
+            "        plot.resize();\n        plot.setupGrid();\n        plot.draw();",
+            graph,
+        )
+        self.assertIn("#graph-body {\n    display: flex;\n    flex-direction: column;", stylesheet)
+        self.assertIn(
+            "#graph-legend {\n    flex: 0 0 auto;\n    max-height: 30%;\n    overflow: auto;",
+            stylesheet,
+        )
+        self.assertIn("#main-graph {\n    flex: 1 1 auto;\n    height: auto !important;", stylesheet)
+
     def test_asv_assets(self):
         source = Path(asv.__file__).parent / "www"
         with tempfile.TemporaryDirectory() as directory:
