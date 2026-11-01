@@ -169,26 +169,162 @@ def customize_pages(html_dir):
         "'use strict';\n\n"
         "var system_dark_theme = window.matchMedia("
         "'(prefers-color-scheme: dark)').matches;\n\n"
-        "function configuration_color(parameters) {\n"
+        "function configuration_key(parameters, versions) {\n"
         "    var version_parameters = [\n"
         "        'python', 'numpy', 'onnx', 'onnx-ir', 'onnxscript', 'onnxruntime'\n"
         "    ];\n"
         "    var parts = [];\n"
         "    Object.keys(parameters).sort().forEach(function(key) {\n"
+        "        var is_version = version_parameters.indexOf(key) != -1 ||\n"
+        "            /^env-.*_VERSION$/.test(key);\n"
         "        if (key != 'commit' && parameters[key] !== null &&\n"
-        "                version_parameters.indexOf(key) == -1 &&\n"
-        "                !/^env-.*_VERSION$/.test(key)) {\n"
-        "            parts.push(key + '=' + parameters[key]);\n"
+        "                is_version == !!versions) {\n"
+        "            parts.push([key, parameters[key]]);\n"
         "        }\n"
         "    });\n"
-        "    var value = parts.join('|');\n"
+        "    return JSON.stringify(parts);\n"
+        "}\n\n"
+        "function configuration_color(parameters) {\n"
+        "    var value = configuration_key(parameters);\n"
         "    var hash = 2166136261;\n"
         "    for (var i = 0; i < value.length; ++i) {\n"
         "        hash ^= value.charCodeAt(i);\n"
         "        hash = Math.imul(hash, 16777619);\n"
         "    }\n"
         "    return 'hsl(' + ((hash >>> 0) % 360) + ', 65%, 48%)';\n"
-        "}",
+        """}
+
+function configuration_segments(graphs, valid_point) {
+    var groups = Object.create(null);
+    graphs.forEach(function(graph) {
+        var key = configuration_key(graph.parameters);
+        var version = configuration_key(graph.parameters, true);
+        if (!groups[key]) {
+            groups[key] = Object.create(null);
+        }
+        if (!groups[key][version]) {
+            groups[key][version] = [];
+        }
+        graph.data.forEach(function(point) {
+            if (typeof point[0] == 'number' && isFinite(point[0])) {
+                groups[key][version].push({point: point, version: version, color: graph.color});
+            }
+        });
+    });
+    var segments = [];
+    Object.keys(groups).sort().forEach(function(key) {
+        var group_segments = [];
+        var histories = Object.keys(groups[key]).map(function(version) {
+            var points = groups[key][version];
+            points.sort(function(a, b) {
+                return a.point[0] - b.point[0] ||
+                    JSON.stringify(a.point).localeCompare(JSON.stringify(b.point));
+            });
+            var batches = [];
+            points.forEach(function(current) {
+                var batch = batches[batches.length - 1];
+                if (!batch || batch[0].point[0] != current.point[0]) {
+                    batch = [];
+                    batches.push(batch);
+                }
+                batch.push(current);
+            });
+            return {version: version, batches: batches};
+        }).filter(function(history) {
+            return history.batches.length > 0;
+        });
+        function connect(previous, current) {
+            if ([previous, current].every(function(item) {
+                return typeof item.point[1] == 'number' && isFinite(item.point[1]) &&
+                    (!valid_point || valid_point(item.point));
+            })) {
+                group_segments.push({
+                    data: [previous.point, current.point],
+                    color: current.color,
+                    dotted: previous.version != current.version
+                });
+            }
+        }
+        histories.forEach(function(history) {
+            history.batches.forEach(function(batch, index) {
+                if (index > 0) {
+                    batch.forEach(function(current) {
+                        connect(history.batches[index - 1][0], current);
+                    });
+                }
+            });
+        });
+        histories.sort(function(a, b) {
+            return a.batches[0][0].point[0] - b.batches[0][0].point[0] ||
+                a.version.localeCompare(b.version);
+        });
+        histories.forEach(function(history, index) {
+            if (index == 0) {
+                return;
+            }
+            var previous = histories.slice(0, index).reduce(function(latest, candidate) {
+                var last = candidate.batches[candidate.batches.length - 1][0].point[0];
+                var latest_last = latest.batches[latest.batches.length - 1][0].point[0];
+                return last > latest_last ? candidate : latest;
+            }, histories[index - 1]);
+            var previous_batch = previous.batches[previous.batches.length - 1];
+            var current_batch = history.batches[0];
+            var previous_time = previous_batch[0].point[0];
+            var current_time = current_batch[0].point[0];
+            var has_intermediate = histories.some(function(candidate) {
+                if (candidate == previous || candidate == history) {
+                    return false;
+                }
+                var candidate_first = candidate.batches[0][0].point[0];
+                var candidate_last_batch = candidate.batches[candidate.batches.length - 1];
+                var candidate_last = candidate_last_batch[0].point[0];
+                return candidate_first <= current_time && candidate_last >= previous_time;
+            });
+            if (previous_batch.length == 1 && current_batch.length == 1 &&
+                    previous_time < current_time && !has_intermediate) {
+                connect(previous_batch[0], current_batch[0]);
+            }
+        });
+        group_segments.sort(function(a, b) {
+            return a.data[0][0] - b.data[0][0] ||
+                a.data[1][0] - b.data[1][0] ||
+                a.data[0][1] - b.data[0][1] ||
+                a.data[1][1] - b.data[1][1] ||
+                a.color.localeCompare(b.color) ||
+                Number(a.dotted) - Number(b.dotted);
+        });
+        segments = segments.concat(group_segments);
+    });
+    return segments;
+}
+
+function draw_configuration_lines(plot, context) {
+    var axes = plot.getAxes();
+    var offset = plot.getPlotOffset();
+    context.save();
+    context.translate(offset.left, offset.top);
+    context.beginPath();
+    context.rect(0, 0, plot.width(), plot.height());
+    context.clip();
+    context.lineWidth = 1;
+    configuration_segments(plot.getData(), function(point) {
+        return [axes.xaxis, axes.yaxis].every(function(axis, index) {
+            var transform = axis.options && axis.options.transform;
+            var value = transform ? transform(point[index]) : point[index];
+            return typeof value == 'number' && isFinite(value);
+        });
+    }).forEach(function(segment) {
+        context.strokeStyle = segment.color;
+        context.setLineDash(segment.dotted ? [2, 3] : []);
+        context.beginPath();
+        context.moveTo(axes.xaxis.p2c(segment.data[0][0]),
+                       axes.yaxis.p2c(segment.data[0][1]));
+        context.lineTo(axes.xaxis.p2c(segment.data[1][0]),
+                       axes.yaxis.p2c(segment.data[1][1]));
+        context.stroke();
+    });
+    context.restore();
+}""",
     )
     graph = _replace_once(graph, "var date_scale = false;", "var date_scale = true;")
     graph = _replace_once(
@@ -324,7 +460,15 @@ def customize_pages(html_dir):
     graph = _replace_once(
         graph,
         "else if (params[axis-1].length > 1) {",
-        "else if (params[axis-1].length > 1 || " "param_names[axis-1] == 'backend') {",
+        "else {",
+    )
+    graph = _replace_once(
+        graph,
+        "                                    different[param_names[axis-1]] = true;",
+        "                                    if (params[axis-1].length > 1 ||\n"
+        "                                            param_names[axis-1] == 'backend') {\n"
+        "                                        different[param_names[axis-1]] = true;\n"
+        "                                    }",
     )
     graph = _replace_once(
         graph,
@@ -354,6 +498,21 @@ def customize_pages(html_dir):
         "        });\n"
         "    }\n\n"
         "    /* Handle log scaling the plot */",
+    )
+    graph = _replace_once(
+        graph,
+        "        handle_y_scale(options);\n",
+        "        handle_y_scale(options);\n"
+        "        if (x_coordinate_axis == 0) {\n"
+        "            graphs.forEach(function(graph) { graph.lines = {show: false}; });\n"
+        "            options.hooks = {draw: [draw_configuration_lines]};\n"
+        "        }\n",
+    )
+    graph = _replace_once(
+        graph,
+        "            overview = $.plot(overview_div, graphs, overview_options);",
+        "            overview_options.hooks = {draw: [draw_configuration_lines]};\n"
+        "            overview = $.plot(overview_div, graphs, overview_options);",
     )
     graph = _replace_once(
         graph,

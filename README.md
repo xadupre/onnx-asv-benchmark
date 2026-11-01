@@ -284,7 +284,10 @@ each daily benchmark bucket and stores the generated ASV JSON under
 loads `info.json`, `index.json`, and graph data directly from that directory
 through `raw.githubusercontent.com`. New benchmark data therefore appears
 without rebuilding or redeploying the HTML. Published graphs use dates,
-rather than commit positions, on the time axis.
+rather than commit positions, on the time axis. The same machine and benchmark
+configuration keep the same color across versions. Time-series points are linked
+with solid lines, or dotted lines when recorded versions change; missing
+measurements leave gaps.
 
 Package-version filters omit missing entries rather than showing ASV's `[none]`
 or a replacement label. A package without a recorded version is not offered as
