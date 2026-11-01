@@ -96,7 +96,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("graph.data.some(function(point)", graph)
             self.assertIn("point[0] == backend", graph)
             self.assertIn("No measurements for ", graph)
-            self.assertIn("if (--pending == 0 && failures == 0", graph)
+            self.assertIn("if (--pending == 0 && orig_graphs.length > 0", graph)
             self.assertIn("$('#missing-backend-results').hide().empty()", graph)
             self.assertIn("function configuration_color(parameters)", graph)
             self.assertIn("Object.keys(parameters).sort()", graph)
@@ -164,6 +164,136 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn(".benchmark-container {\n    width: 220px;\n    height: 80px;", stylesheet)
             self.assertIn(".benchmark-plot {\n    width: 212px;\n    height: 52px;", stylesheet)
             self.assertIn(".benchmark-text {\n    width: 212px;", stylesheet)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
+    def test_missing_backend_warning_with_partial_graph_failures(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+
+        start = graph.index("    function show_missing_backends()")
+        end = graph.index("    function replace_graphs()", start)
+        warning = graph[start:end]
+        start = graph.index("}).always(function () {") + len("}).always(function () {")
+        end = graph.index("\n            });", start)
+        completion = graph[start:end]
+        script = """
+const assert = require('assert');
+var message = '', visible = false;
+function $(selector) {
+    return {
+        text: function(value) { message = value; return this; },
+        show: function() { visible = true; }
+    };
+}
+$.each = (values, callback) => values.forEach((value, index) => callback(index, value));
+$.asv = {
+    main_json: {benchmarks: {gemm: {
+        param_names: ['dtype1', 'dtype2', 'dtype3', 'input_shapes', 'backend'],
+        params: [["'bfloat16'"], ["'bfloat16'"], ["'bfloat16'"],
+                 ["'(256, 256) x (256, 256) x ()'"],
+                 ["'onnx-light-cpu'", "'onnxruntime'"]]
+    }}},
+    convert_benchmark_param_value: value => value.replace(/^'(.*)'$/, '$1')
+};
+var current_benchmark = 'gemm', requested_benchmark = 'gemm';
+var x_coordinate_axis = 0;
+var benchmark_param_selection = [[null], [0], [0], [0], [0], [0, 1]];
+var orig_graphs = [
+    {parameters: {backend: 'onnx-light-cpu'}, data: [[129, 0.0003641265]]},
+    {parameters: {backend: 'onnxruntime'}, data: [[129, null]]}
+];
+var pending = 2, failures = 1;
+"""
+        script += warning + "\nfunction complete() {\n" + completion + "\n}\n"
+        script += """
+complete();
+assert.strictEqual(visible, false);
+complete();
+assert.strictEqual(visible, true);
+assert.strictEqual(message,
+    'No measurements for onnxruntime (benchmark failed or is unsupported).');
+assert.strictEqual(orig_graphs[1].data[0][1], null);
+
+visible = false; message = ''; pending = 1;
+benchmark_param_selection[5] = [0];
+complete();
+assert.strictEqual(visible, false);
+
+benchmark_param_selection[5] = [0, 1];
+orig_graphs[1].data[0][1] = 0.0005;
+pending = 1;
+complete();
+assert.strictEqual(visible, false);
+
+orig_graphs = []; pending = 1;
+complete();
+assert.strictEqual(visible, false);
+
+orig_graphs = [{parameters: {backend: 'onnx-light-cpu'}, data: [[129, 0.0003]]}];
+requested_benchmark = 'another_benchmark'; pending = 1;
+complete();
+assert.strictEqual(visible, false);
+"""
+        subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
+    def test_default_graph_selection_prioritizes_backends(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+
+        start = graph.index("        /* Default plot: up to 8 lines */")
+        end = graph.index("        check_x_coordinate_axis();", start)
+        selection = (
+            "function select(params, param_names, state_selection) {\n"
+            "var benchmark_param_selection;\n"
+            + graph[start:end]
+            + "\nreturn benchmark_param_selection;\n}\n"
+        )
+        backends = ["'onnx-light-cpu'", "'onnxruntime'"]
+        shapes = [str((size,)) for size in range(16)]
+        cases = [
+            ([["'float32'"], shapes, backends], ["dtype1", "input_shapes", "backend"], {},
+             [[None], [0], [0, 1, 2, 3], [0, 1]]),
+            ([backends, shapes], ["backend", "shape"], {},
+             [[None], [0, 1], [0, 1, 2, 3]]),
+            ([["'float16'", "'float32'", "'float64'"], shapes,
+              backends + ["'onnx-reference'", "'onnx-light'"]],
+             ["dtype", "shape", "backend"], {},
+             [[None], [0, 1], [0], [0, 1, 2, 3]]),
+            ([shapes, backends], ["shape", "backend"], {"p-backend": [backends[1]]},
+             [[None], list(range(8)), [1]]),
+            ([shapes, backends], ["shape", "backend"], {"p-shape": shapes},
+             [[None], list(range(16)), [0, 1]]),
+            ([shapes, backends], ["shape", "backend"], {"p-backend": []},
+             [[None], list(range(8)), []]),
+            ([shapes, shapes, backends], ["shape1", "shape2", "backend"],
+             {"p-shape1": shapes},
+             [[None], list(range(16)), [0], [0, 1]]),
+            ([shapes], ["shape"], {}, [[None], list(range(8))]),
+            ([], [], {}, [[None]]),
+        ]
+        result = subprocess.run(
+            [
+                "node", "-e", selection
+                + "console.log(JSON.stringify("
+                + json.dumps([case[:3] for case in cases])
+                + ".map(args => select(...args))));",
+            ],
+            check=True, capture_output=True, text=True,
+        )
+        for case, actual in zip(cases, json.loads(result.stdout), strict=True):
+            with self.subTest(params=case[:3]):
+                self.assertEqual(actual, case[3])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
     def test_configuration_color_ignores_versions(self):
