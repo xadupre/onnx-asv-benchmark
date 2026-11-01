@@ -302,6 +302,7 @@ cpu_backend_cases/quantization/cases/qlinearmatmul
 cpu_backend_cases/tensor/cases/cast
 cpu_backend_cases/tensor/cases/concat
 cpu_backend_cases/tensor/cases/gather
+cpu_backend_cases/tensor/cases/gather_block_quantized
 cpu_backend_cases/tensor/cases/nonzero
 cpu_backend_cases/tensor/cases/scatternd
 cpu_backend_cases/tensor/cases/slice
