@@ -142,26 +142,122 @@ def customize_pages(html_dir):
         "'use strict';\n\n"
         "var system_dark_theme = window.matchMedia("
         "'(prefers-color-scheme: dark)').matches;\n\n"
-        "function configuration_color(parameters) {\n"
+        "function configuration_key(parameters, versions) {\n"
         "    var version_parameters = [\n"
         "        'python', 'numpy', 'onnx', 'onnx-ir', 'onnxscript', 'onnxruntime'\n"
         "    ];\n"
         "    var parts = [];\n"
         "    Object.keys(parameters).sort().forEach(function(key) {\n"
+        "        var is_version = version_parameters.indexOf(key) != -1 ||\n"
+        "            /^env-.*_VERSION$/.test(key);\n"
         "        if (key != 'commit' && parameters[key] !== null &&\n"
-        "                version_parameters.indexOf(key) == -1 &&\n"
-        "                !/^env-.*_VERSION$/.test(key)) {\n"
-        "            parts.push(key + '=' + parameters[key]);\n"
+        "                is_version == !!versions) {\n"
+        "            parts.push([key, parameters[key]]);\n"
         "        }\n"
         "    });\n"
-        "    var value = parts.join('|');\n"
+        "    return JSON.stringify(parts);\n"
+        "}\n\n"
+        "function configuration_color(parameters) {\n"
+        "    var value = configuration_key(parameters);\n"
         "    var hash = 2166136261;\n"
         "    for (var i = 0; i < value.length; ++i) {\n"
         "        hash ^= value.charCodeAt(i);\n"
         "        hash = Math.imul(hash, 16777619);\n"
         "    }\n"
         "    return 'hsl(' + ((hash >>> 0) % 360) + ', 65%, 48%)';\n"
-        "}",
+        """}
+
+function configuration_segments(graphs, valid_point) {
+    var groups = Object.create(null);
+    graphs.forEach(function(graph) {
+        var key = configuration_key(graph.parameters);
+        var version = configuration_key(graph.parameters, true);
+        if (!groups[key]) {
+            groups[key] = [];
+        }
+        graph.data.forEach(function(point) {
+            if (typeof point[0] == 'number' && isFinite(point[0])) {
+                groups[key].push({point: point, version: version, color: graph.color});
+            }
+        });
+    });
+    var segments = [];
+    Object.keys(groups).sort().forEach(function(key) {
+        var points = groups[key];
+        points.sort(function(a, b) {
+            return a.point[0] - b.point[0] || a.version.localeCompare(b.version);
+        });
+        var batches = [];
+        points.forEach(function(current) {
+            var batch = batches[batches.length - 1];
+            if (!batch || batch[0].point[0] != current.point[0]) {
+                batch = [];
+                batches.push(batch);
+            }
+            batch.push(current);
+        });
+        function connect(previous, current) {
+            if ([previous, current].every(function(item) {
+                return typeof item.point[1] == 'number' && isFinite(item.point[1]) &&
+                    (!valid_point || valid_point(item.point));
+            })) {
+                segments.push({
+                    data: [previous.point, current.point],
+                    color: current.color,
+                    dotted: previous.version != current.version
+                });
+            }
+        }
+        batches.forEach(function(batch, index) {
+            if (index == 0) {
+                return;
+            }
+            var previous = batches[index - 1];
+            var matched = false;
+            batch.forEach(function(current) {
+                var same_version = previous.find(function(item) {
+                    return item.version == current.version;
+                });
+                if (same_version) {
+                    matched = true;
+                    connect(same_version, current);
+                }
+            });
+            if (!matched && previous.length == 1 && batch.length == 1) {
+                connect(previous[0], batch[0]);
+            }
+        });
+    });
+    return segments;
+}
+
+function draw_configuration_lines(plot, context) {
+    var axes = plot.getAxes();
+    var offset = plot.getPlotOffset();
+    context.save();
+    context.translate(offset.left, offset.top);
+    context.beginPath();
+    context.rect(0, 0, plot.width(), plot.height());
+    context.clip();
+    context.lineWidth = 1;
+    configuration_segments(plot.getData(), function(point) {
+        return [axes.xaxis, axes.yaxis].every(function(axis, index) {
+            var transform = axis.options && axis.options.transform;
+            var value = transform ? transform(point[index]) : point[index];
+            return typeof value == 'number' && isFinite(value);
+        });
+    }).forEach(function(segment) {
+        context.strokeStyle = segment.color;
+        context.setLineDash(segment.dotted ? [2, 3] : []);
+        context.beginPath();
+        context.moveTo(axes.xaxis.p2c(segment.data[0][0]),
+                       axes.yaxis.p2c(segment.data[0][1]));
+        context.lineTo(axes.xaxis.p2c(segment.data[1][0]),
+                       axes.yaxis.p2c(segment.data[1][1]));
+        context.stroke();
+    });
+    context.restore();
+}""",
     )
     graph = _replace_once(graph, "var date_scale = false;", "var date_scale = true;")
     graph = _replace_once(
@@ -271,7 +367,15 @@ def customize_pages(html_dir):
     graph = _replace_once(
         graph,
         "else if (params[axis-1].length > 1) {",
-        "else if (params[axis-1].length > 1 || " "param_names[axis-1] == 'backend') {",
+        "else {",
+    )
+    graph = _replace_once(
+        graph,
+        "                                    different[param_names[axis-1]] = true;",
+        "                                    if (params[axis-1].length > 1 ||\n"
+        "                                            param_names[axis-1] == 'backend') {\n"
+        "                                        different[param_names[axis-1]] = true;\n"
+        "                                    }",
     )
     graph = _replace_once(
         graph,
@@ -301,6 +405,21 @@ def customize_pages(html_dir):
         "        });\n"
         "    }\n\n"
         "    /* Handle log scaling the plot */",
+    )
+    graph = _replace_once(
+        graph,
+        "        handle_y_scale(options);\n",
+        "        handle_y_scale(options);\n"
+        "        if (x_coordinate_axis == 0) {\n"
+        "            graphs.forEach(function(graph) { graph.lines = {show: false}; });\n"
+        "            options.hooks = {draw: [draw_configuration_lines]};\n"
+        "        }\n",
+    )
+    graph = _replace_once(
+        graph,
+        "            overview = $.plot(overview_div, graphs, overview_options);",
+        "            overview_options.hooks = {draw: [draw_configuration_lines]};\n"
+        "            overview = $.plot(overview_div, graphs, overview_options);",
     )
     graph = _replace_once(
         graph,

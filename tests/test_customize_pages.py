@@ -89,7 +89,9 @@ class TestCustomizePages(unittest.TestCase):
                 self.assertIn("value_display = '[default]';", script)
                 self.assertIn("value_display = value;", script)
                 self.assertIn("button.text(value_display);", script)
+            self.assertIn("labels[param_names[axis-1]]", graph)
             self.assertIn("param_names[axis-1] == 'backend'", graph)
+            self.assertNotIn("else if (params[axis-1].length > 1)", graph)
             self.assertIn("parameters: graph_content[2]", graph)
             self.assertIn("function show_missing_backends()", graph)
             self.assertIn("benchmark.param_names.indexOf('backend')", graph)
@@ -102,6 +104,9 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("Object.keys(parameters).sort()", graph)
             self.assertIn("key != 'commit'", graph)
             self.assertIn("Math.imul(hash, 16777619)", graph)
+            self.assertIn("options.hooks = {draw: [draw_configuration_lines]}", graph)
+            self.assertIn("overview_options.hooks = {draw: [draw_configuration_lines]}", graph)
+            self.assertIn("graph.lines = {show: false}", graph)
             self.assertIn(
                 "color: configuration_color(graph_content[2])",
                 graph,
@@ -175,8 +180,8 @@ class TestCustomizePages(unittest.TestCase):
             customize_pages(html)
             graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
 
-        start = graph.index("function configuration_color(parameters)")
-        end = graph.index("\n}", start) + 2
+        start = graph.index("function configuration_key(parameters, versions)")
+        end = graph.index("\nfunction configuration_segments", start)
         function = graph[start:end]
         config = json.loads(
             (Path(__file__).parents[1] / "asv.conf.json").read_text(encoding="utf-8")
@@ -187,7 +192,10 @@ class TestCustomizePages(unittest.TestCase):
             "python": "3.12",
             "commit": "abc123",
         }
-        parameters = {"backend": "onnxruntime", "dtype": "float32", "cpu": "processor"}
+        parameters = {
+            "machine": "machine-a", "backend": "onnxruntime",
+            "dtype": "float32", "cpu": "processor",
+        }
         configurations = [
             parameters,
             {**parameters, **versions},
@@ -203,6 +211,8 @@ class TestCustomizePages(unittest.TestCase):
                 ("backend", "onnx-light-cpu"),
                 ("dtype", "float64"),
                 ("cpu", "another processor"),
+                ("machine", "machine-b"),
+                ("num_cpu", "8"),
             )
         ]
         result = subprocess.run(
@@ -221,6 +231,113 @@ class TestCustomizePages(unittest.TestCase):
         for configuration, color in zip(alternatives, colors[len(configurations):]):
             with self.subTest(configuration=configuration):
                 self.assertNotEqual(color, colors[0])
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
+    def test_configuration_connections(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+
+        start = graph.index("function configuration_key(parameters, versions)")
+        end = graph.index("\n}", graph.index("function draw_configuration_lines", start)) + 2
+        result = subprocess.run(
+            ["node", "-e", graph[start:end] + """
+const assert = require('node:assert/strict');
+const parameters = {
+    machine: 'machine-a', cpu: 'processor', backend: 'onnxruntime', dtype: 'float32',
+    python: '3.12', onnxruntime: '1.0', 'env-ONNX_LIGHT_VERSION': '1.0'
+};
+function series(data, changes = {}) {
+    return {data, parameters: {...parameters, ...changes}, color: '#123456'};
+}
+const graphs = [
+    series([[30, 3], [40, 4]], {onnxruntime: '2.0'}),
+    series([[20, 2], [10, 1]], {commit: 'abc'}),
+    series([[50, 5]], {onnxruntime: '2.0', 'env-ONNX_LIGHT_VERSION': '2.0'}),
+    series([[60, 6]], {onnxruntime: '2.0', 'env-ONNX_LIGHT_VERSION': '2.0',
+                          python: '3.13'}),
+    series([[10, 10], [60, 60]], {machine: 'machine-b'}),
+    series([[10, 11]], {backend: 'onnx-light'}),
+    series([[60, 12]], {dtype: 'float64'})
+];
+const original = JSON.stringify(graphs);
+const segments = configuration_segments(graphs);
+const main = segments.filter(segment => segment.data[0][1] < 10);
+assert.deepEqual(main.map(segment => segment.data), [
+    [[10, 1], [20, 2]], [[20, 2], [30, 3]], [[30, 3], [40, 4]],
+    [[40, 4], [50, 5]], [[50, 5], [60, 6]]
+]);
+assert.deepEqual(main.map(segment => segment.dotted), [false, true, false, true, true]);
+assert.equal(segments.length, 6); // Different configurations never connect, even with equal colors.
+assert.deepEqual(configuration_segments([...graphs].reverse()), segments);
+assert.equal(JSON.stringify(graphs), original);
+assert.deepEqual(configuration_segments([
+    series([[10, 1], [20, null], [30, 3], [40, NaN], [50, 5], [60, Infinity]])
+]), []);
+assert.deepEqual(configuration_segments([series([[10, null], [20, null]])]), []);
+assert.deepEqual(configuration_segments([series([[null, 1], [NaN, 2]])]), []);
+assert.equal(configuration_segments([
+    series([[10, 1]]), series([[10, 2]]), series([[20, 3]])
+]).length, 1);
+assert.deepEqual(configuration_segments([
+    series([[10, 1], [20, 2]]),
+    series([[10, 10], [20, 20]], {onnxruntime: '2.0'})
+]).map(segment => [segment.data, segment.dotted]), [
+    [[[10, 1], [20, 2]], false], [[[10, 10], [20, 20]], false]
+]);
+assert.equal(configuration_segments([
+    series([[10, 1]], {onnxruntime: null}), series([[20, 2]])
+])[0].dotted, true);
+assert.notEqual(configuration_key({a: 'x|b=y'}), configuration_key({a: 'x', b: 'y'}));
+
+const strokes = [];
+const calls = [];
+const context = {
+    save() { calls.push('save'); }, restore() { calls.push('restore'); },
+    translate(x, y) { calls.push(['translate', x, y]); },
+    beginPath() {}, rect(...args) { calls.push(['rect', ...args]); },
+    clip() { calls.push('clip'); },
+    setLineDash(dash) { this.dash = dash; },
+    moveTo(x, y) { this.from = [x, y]; },
+    lineTo(x, y) { this.to = [x, y]; },
+    stroke() { strokes.push({from: this.from, to: this.to, dash: this.dash,
+                            color: this.strokeStyle}); }
+};
+draw_configuration_lines({
+    getData: () => graphs,
+    getAxes: () => ({xaxis: {p2c: x => x * 2}, yaxis: {p2c: y => y * 3}}),
+    getPlotOffset: () => ({left: 7, top: 9}),
+    width: () => 100, height: () => 80
+}, context);
+assert.deepEqual(calls, ['save', ['translate', 7, 9], ['rect', 0, 0, 100, 80],
+                         'clip', 'restore']);
+assert.deepEqual(strokes[0], {from: [20, 3], to: [40, 6], dash: [], color: '#123456'});
+assert.deepEqual(strokes[1].dash, [2, 3]);
+assert.equal(strokes.length, segments.length);
+assert.equal(JSON.stringify(graphs), original);
+const logGraphs = [series([[10, 1], [20, 0], [30, 3], [40, -1], [50, 5], [60, 6]])];
+strokes.length = 0;
+draw_configuration_lines({
+    getData: () => logGraphs,
+    getAxes: () => ({
+        xaxis: {p2c: x => x},
+        yaxis: {options: {transform: y => y > 0 ? Math.log(y) : null},
+                p2c: y => Math.log(y)}
+    }),
+    getPlotOffset: () => ({left: 0, top: 0}),
+    width: () => 100, height: () => 80
+}, context);
+assert.equal(strokes.length, 1);
+assert.deepEqual(strokes[0].from, [50, Math.log(5)]);
+console.log('Configuration connections and canvas rendering verified');
+"""],
+            check=True, capture_output=True, text=True,
+        )
+        self.assertIn("canvas rendering verified", result.stdout)
 
     def test_unexpected_asv_output_is_not_modified(self):
         with tempfile.TemporaryDirectory() as directory:
