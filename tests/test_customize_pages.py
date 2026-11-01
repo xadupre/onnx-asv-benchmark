@@ -84,6 +84,63 @@ class TestCustomizePages(unittest.TestCase):
         self.assertEqual(series[1]["data"], data["series"][1]["data"])
         self.assertNotEqual(series[0]["color"], series[1]["color"])
 
+    @unittest.skipUnless(
+        shutil.which("node"), "Node.js is required to execute summary JavaScript"
+    )
+    def test_summary_family_order_preserves_all_benchmarks(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in (
+                "index.html",
+                "graphdisplay.js",
+                "summarygrid.js",
+                "summarylist.js",
+            ):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            grid = (html / "summarygrid.js").read_text(encoding="utf-8")
+
+        start = grid.index("    function get_benchmarks_by_groups()")
+        end = grid.index("    function make_machine_summary()", start)
+        names = [
+            "cpu_backend_cases.math.cases.Add.time_add",
+            "ops.math.add.Add.time_run",
+            "models.llm.tiny_llm.TinyLLM.time_decode",
+            "builder.save.onnx_io.OnnxSave.time_run",
+            "models.dummies.mlp.MLP.time_run",
+            "builder.load.onnx_io.OnnxLoad.time_run",
+            "extra.benchmark.time_run",
+        ]
+        script = (
+            "var $ = {asv: {main_json: {benchmarks: "
+            + json.dumps({name: {} for name in names})
+            + "}}, each: function(values, callback) {\n"
+            "    Object.keys(values).forEach(function(key) { callback(key, values[key]); });\n"
+            "}};\n"
+            + grid[start:end]
+            + "\nconsole.log(JSON.stringify(get_benchmarks_by_groups()));"
+        )
+        output = subprocess.run(
+            ["node", "-e", script], check=True, capture_output=True, text=True
+        )
+        groups = json.loads(output.stdout)
+        self.assertEqual(
+            list(groups),
+            [
+                "builder / load",
+                "builder / save",
+                "models / dummies",
+                "models / llm",
+                "ops / math",
+                "Performance / math",
+                "extra / benchmark",
+            ],
+        )
+        self.assertCountEqual(
+            [name for benchmarks in groups.values() for name in benchmarks], names
+        )
+
     def test_legend_above_plot(self):
         source = Path(asv.__file__).parent / "www"
         with tempfile.TemporaryDirectory() as directory:
