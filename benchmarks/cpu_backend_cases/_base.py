@@ -237,10 +237,14 @@ class _CpuBackendCaseBenchmark:
 
         grouped = {}
         for record in CASE_RECORDS[cls.__module__.split(".")[-2], cls.__name__]:
-            grouped.setdefault(record[1], []).append(record)
-        for records in grouped.values():
-            simplified_name, benchmark = _make_benchmark(records)
-            benchmark.__name__ = f"time_{simplified_name}"
+            name = record[1]
+            records = grouped.setdefault(name, [])
+            if any(previous[2:] == record[2:] for previous in records):
+                name = record[0].removeprefix("test_cpu_").removesuffix("_benchmark")
+            grouped.setdefault(name, []).append(record)
+        for name, records in grouped.items():
+            _, benchmark = _make_benchmark(records)
+            benchmark.__name__ = f"time_{name}"
             setattr(cls, benchmark.__name__, benchmark)
 
 
