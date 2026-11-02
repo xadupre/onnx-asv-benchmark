@@ -1,5 +1,6 @@
 import importlib
 import inspect
+from itertools import product
 import subprocess
 import sys
 import unittest
@@ -58,6 +59,43 @@ class _Node:
 
 
 class TestCpuBackendCases(unittest.TestCase):
+    def test_generated_case_records_cover_installed_version(self):
+        self.assertCountEqual(
+            [
+                record
+                for records in CASE_RECORDS.values()
+                for record in records
+            ],
+            _all_case_records(),
+            "Regenerate CPU backend benchmarks after updating onnx-light-cpu: "
+            "python tools/generate_cpu_backend_case_manifest.py",
+        )
+
+    def test_asv_parameters_cover_all_generated_cases(self):
+        for (category, class_name), records in CASE_RECORDS.items():
+            with self.subTest(category=category, benchmark=class_name):
+                module = importlib.import_module(
+                    f"benchmarks.cpu_backend_cases.{category}.cases"
+                )
+                benchmark_type = getattr(module, class_name)
+                covered = [
+                    (name.removeprefix("time_"), *parameters)
+                    for name, method in inspect.getmembers(
+                        benchmark_type, inspect.isfunction
+                    )
+                    if name.startswith("time_")
+                    for parameters in product(*method.params)
+                    if parameters not in method.skip_params
+                ]
+                self.assertCountEqual(
+                    covered,
+                    [
+                        (simplified, *dtypes, shapes, backend)
+                        for _, simplified, dtypes, shapes in records
+                        for backend in ("onnx-light-cpu", "onnxruntime")
+                    ],
+                )
+
     def test_manifest_classes_cover_distinct_cases(self):
         benchmark_types = {}
         for category, class_name, _, _, _ in CASE_SHARDS:
