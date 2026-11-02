@@ -1,3 +1,4 @@
+import hashlib
 import json
 import shutil
 import tempfile
@@ -223,12 +224,13 @@ def _merge_machine_params(path, current, incoming):
     return merged
 
 
-def _merge_result_file(path, incoming):
+def _merge_result_file(path, incoming, history_directory=None):
     if not path.is_file():
         _save(path, incoming)
         return
 
     current = _load(path)
+    previous = path.read_bytes()
     for key in (
         "commit_hash",
         "env_name",
@@ -246,13 +248,26 @@ def _merge_result_file(path, incoming):
         incoming.get("params"),
     )
 
+    if history_directory is not None and any(
+        current.get(field, {}).get(name) != value
+        for field in ("results", "durations")
+        for name, value in incoming.get(field, {}).items()
+        if name in current.get(field, {})
+    ):
+        archive = history_directory / (hashlib.sha256(previous).hexdigest() + ".json")
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        archive.write_bytes(previous)
+        print(f"Preserved differing results from {path} in {archive}.")
+
     current["date"] = max(current.get("date", 0), incoming.get("date", 0))
     current.setdefault("results", {}).update(incoming.get("results", {}))
     current.setdefault("durations", {}).update(incoming.get("durations", {}))
     _save(path, current)
 
 
-def write_shards(source, shard_root, selected_shards=None, machine=None):
+def write_shards(
+    source, shard_root, selected_shards=None, machine=None, history_root=None
+):
     source = Path(source)
     shard_root = Path(shard_root)
     benchmarks = _load(source / "benchmarks.json")
@@ -337,6 +352,11 @@ def write_shards(source, shard_root, selected_shards=None, machine=None):
             _merge_result_file(
                 destination / machine_id / result_path.name,
                 shard_result,
+                history_directory=(
+                    Path(history_root) / shard / machine_id / result_path.name
+                    if history_root is not None
+                    else None
+                ),
             )
             written.add(shard)
 
@@ -349,13 +369,15 @@ def write_shards(source, shard_root, selected_shards=None, machine=None):
     return written
 
 
-def migrate_legacy_results(results_root):
+def migrate_legacy_results(results_root, history_root=None):
     results_root = Path(results_root)
     benchmarks_path = results_root / "benchmarks.json"
     if not benchmarks_path.is_file():
         return set()
 
-    written = write_shards(results_root, results_root / "shards")
+    written = write_shards(
+        results_root, results_root / "shards", history_root=history_root
+    )
     machine_directories = [
         path
         for path in results_root.iterdir()

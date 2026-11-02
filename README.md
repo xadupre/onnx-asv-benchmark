@@ -276,8 +276,19 @@ the same hierarchy. The HTML navigation groups operator modules under
 recorded before the source tree was reorganized.
 
 The command clones `cache_data`, merges only the requested local results,
-rebases concurrent shard updates, commits any changes, and pushes them to its
-`main` branch. The `Publish benchmark data` workflow merges all shards after
+commits any changes, and pushes them to its `main` branch. Publication makes up
+to three push attempts, fetching the latest destination and rebuilding the merge
+from the unchanged local results each time instead of rebasing generated JSON.
+Disjoint benchmarks are combined and identical entries are deduplicated. If
+overlapping results or durations differ, incoming entries become the displayed
+values, while the complete previous result file is preserved under
+`onnx-asv-benchmark/publication-history/<shard>/<machine>/<result filename>/<SHA256>.json`.
+These content-addressed snapshots are not loaded into ASV graphs. Incompatible
+result metadata aborts reconciliation rather than overwriting either result.
+On failure, retain the local `.asv/results` (or workflow artifact), inspect the
+reported metadata conflict or repository permissions, and retry publication.
+
+The `Publish benchmark data` workflow merges all shards after
 each daily benchmark bucket and stores the generated ASV JSON under
 `onnx-asv-benchmark/site-data` in `cache_data`. The static HTML deployed to
 [xadupre.github.io/onnx-asv-benchmark](https://xadupre.github.io/onnx-asv-benchmark/)

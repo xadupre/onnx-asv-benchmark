@@ -3,11 +3,73 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from result_shards import migrate_legacy_results, write_shards
+if __package__:
+    from tools.result_shards import migrate_legacy_results, write_shards
+else:
+    from result_shards import migrate_legacy_results, write_shards
 
 
 def run(command, cwd):
     return subprocess.run(command, cwd=cwd, check=True)
+
+
+def publish_results(source, checkout, subdirectory, shards=None, machine=None):
+    destination = (checkout / subdirectory).resolve()
+    if checkout.resolve() not in destination.parents:
+        raise ValueError("--subdirectory must remain inside the cache_data checkout")
+
+    for attempt in range(3):
+        run(["git", "fetch", "origin", "main"], cwd=checkout)
+        run(["git", "reset", "--hard", "origin/main"], cwd=checkout)
+        destination.mkdir(parents=True, exist_ok=True)
+        history = destination / "publication-history"
+        try:
+            migrated = migrate_legacy_results(destination, history_root=history)
+            published = write_shards(
+                source,
+                destination / "shards",
+                selected_shards=shards,
+                machine=machine,
+                history_root=history,
+            )
+        except ValueError as exc:
+            raise RuntimeError(
+                f"Cannot reconcile benchmark results: {exc} "
+                f"Local results remain in {source}; inspect the destination metadata "
+                "before retrying publication."
+            ) from exc
+
+        run(["git", "add", "--all", "--", subdirectory], cwd=checkout)
+        status = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"], cwd=checkout
+        ).returncode
+        if status == 0:
+            print("No benchmark result changes to publish.")
+            return
+        if status != 1:
+            raise subprocess.CalledProcessError(
+                status, ["git", "diff", "--cached", "--quiet"]
+            )
+        run(
+            [
+                "git",
+                "commit",
+                "-m",
+                "Update onnx-asv-benchmark shards: "
+                + ", ".join(sorted(migrated | published)),
+            ],
+            cwd=checkout,
+        )
+        push = subprocess.run(["git", "push", "origin", "main"], cwd=checkout)
+        if push.returncode == 0:
+            return
+        print(f"Publication push failed (attempt {attempt + 1}/3); refreshing results.")
+
+    raise RuntimeError(
+        "Benchmark publication failed after 3 push attempts. "
+        f"Local results remain in {source}; check repository write access and "
+        "concurrent publishers, then rerun tools/publish_results.py."
+    )
 
 
 def main():
@@ -74,54 +136,13 @@ def main():
             ],
             cwd=Path.cwd(),
         )
-        destination = (checkout / args.subdirectory).resolve()
-        if checkout.resolve() not in destination.parents:
-            raise ValueError(
-                "--subdirectory must remain inside the cache_data checkout"
-            )
-        destination.mkdir(parents=True, exist_ok=True)
-        migrated = migrate_legacy_results(destination)
-        published = write_shards(
+        publish_results(
             source,
-            destination / "shards",
-            selected_shards=args.shard or None,
+            checkout,
+            args.subdirectory,
+            shards=args.shard or None,
             machine=args.machine,
         )
-
-        run(["git", "add", "--all", "--", args.subdirectory], cwd=checkout)
-        status = subprocess.run(
-            ["git", "diff", "--cached", "--quiet"], cwd=checkout
-        ).returncode
-        if status == 0:
-            print("No benchmark result changes to publish.")
-        elif status == 1:
-            labels = sorted(migrated | published)
-            run(
-                [
-                    "git",
-                    "commit",
-                    "-m",
-                    "Update onnx-asv-benchmark shards: " + ", ".join(labels),
-                ],
-                cwd=checkout,
-            )
-            for attempt in range(3):
-                run(["git", "pull", "--rebase", "origin", "main"], cwd=checkout)
-                push = subprocess.run(
-                    ["git", "push", "origin", "main"],
-                    cwd=checkout,
-                )
-                if push.returncode == 0:
-                    break
-                if attempt == 2:
-                    raise subprocess.CalledProcessError(
-                        push.returncode,
-                        ["git", "push", "origin", "main"],
-                    )
-        else:
-            raise subprocess.CalledProcessError(
-                status, ["git", "diff", "--cached", "--quiet"]
-            )
 
     if args.publish_pages:
         run(
