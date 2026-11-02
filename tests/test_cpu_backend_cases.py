@@ -61,11 +61,7 @@ class _Node:
 class TestCpuBackendCases(unittest.TestCase):
     def test_generated_case_records_cover_installed_version(self):
         self.assertCountEqual(
-            [
-                record
-                for records in CASE_RECORDS.values()
-                for record in records
-            ],
+            [record for records in CASE_RECORDS.values() for record in records],
             _all_case_records(),
             "Regenerate CPU backend benchmarks after updating onnx-light-cpu: "
             "python tools/generate_cpu_backend_case_manifest.py",
@@ -78,20 +74,23 @@ class TestCpuBackendCases(unittest.TestCase):
                     f"benchmarks.cpu_backend_cases.{category}.cases"
                 )
                 benchmark_type = getattr(module, class_name)
-                covered = [
-                    (name.removeprefix("time_"), *parameters)
-                    for name, method in inspect.getmembers(
-                        benchmark_type, inspect.isfunction
+                covered = []
+                for name, method in inspect.getmembers(
+                    benchmark_type, inspect.isfunction
+                ):
+                    if not name.startswith("time_"):
+                        continue
+                    lookup = inspect.getclosurevars(method.setup).nonlocals["lookup"]
+                    covered.extend(
+                        (lookup[parameters[:-1]], parameters[-1])
+                        for parameters in product(*method.params)
+                        if parameters not in method.skip_params
                     )
-                    if name.startswith("time_")
-                    for parameters in product(*method.params)
-                    if parameters not in method.skip_params
-                ]
                 self.assertCountEqual(
                     covered,
                     [
-                        (simplified, *dtypes, shapes, backend)
-                        for _, simplified, dtypes, shapes in records
+                        (record[0], backend)
+                        for record in records
                         for backend in ("onnx-light-cpu", "onnxruntime")
                     ],
                 )
