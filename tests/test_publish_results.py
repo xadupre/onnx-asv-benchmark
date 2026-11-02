@@ -69,9 +69,9 @@ class TestPublishResults(unittest.TestCase):
         )
         return source
 
-    def compete(self, first, second, expected_commits="3"):
+    def compete(self, first, second, expected_commits="3", shards=None):
         destination = self.competitor / "data"
-        write_shards(first, destination / "shards")
+        write_shards(first, destination / "shards", selected_shards=shards)
         self.git(self.competitor, "add", ".")
         self.git(self.competitor, "commit", "-m", "Competing publication")
         hook = self.publisher / ".git" / "hooks" / "pre-push"
@@ -82,7 +82,7 @@ class TestPublishResults(unittest.TestCase):
             encoding="utf-8",
         )
         hook.chmod(0o755)
-        publish_results(second, self.publisher, "data")
+        publish_results(second, self.publisher, "data", shards=shards)
         self.assertEqual(
             self.git(self.remote, "rev-parse", "main"),
             self.git(self.publisher, "rev-parse", "HEAD"),
@@ -109,6 +109,34 @@ class TestPublishResults(unittest.TestCase):
             self.load(result)["results"], {first_name: [1], second_name: [2]}
         )
         self.assertFalse((destination / "publication-history").exists())
+
+    def test_competing_cpu_div_batches_with_shard_selection(self):
+        shard = "cpu_backend_cases/math/cases/div"
+        first_name = "cpu_backend_cases.math.cases.DivFloat32Inputs2Shard1.time_div"
+        second_name = "cpu_backend_cases.math.cases.DivUint8Inputs2Shard4.time_div"
+        excluded_name = "ops.math.add.Add.time_run"
+        first = self.make_results("first", {first_name: [1]}, {first_name: 10})
+        second = self.make_results(
+            "second",
+            {second_name: [2], excluded_name: [3]},
+            {second_name: 20, excluded_name: 30},
+        )
+        original = (second / "worker/abc-env.json").read_bytes()
+        destination = self.compete(first, second, shards=[shard])
+        result = destination / "shards" / shard / "Example CPU (4 vCPU)/abc-env.json"
+        self.assertEqual(
+            self.load(result)["results"], {first_name: [1], second_name: [2]}
+        )
+        self.assertEqual(
+            self.load(result)["durations"], {first_name: 10, second_name: 20}
+        )
+        self.assertEqual(
+            self.load(destination / "shards" / shard / "benchmarks.json"),
+            {"version": 2, first_name: {"type": "time"}, second_name: {"type": "time"}},
+        )
+        self.assertFalse((destination / "shards/ops").exists())
+        self.assertFalse((destination / "publication-history").exists())
+        self.assertEqual((second / "worker/abc-env.json").read_bytes(), original)
 
     def test_competing_same_benchmark_preserves_previous_results(self):
         name = "ops.math.div.Div.time_run"
