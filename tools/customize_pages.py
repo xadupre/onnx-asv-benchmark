@@ -194,6 +194,10 @@ def customize_pages(html_dir):
         "    return 'hsl(' + ((hash >>> 0) % 360) + ', 65%, 48%)';\n"
         """}
 
+function configuration_line_width(parameters) {
+    return parameters.backend == 'onnxruntime' ? 3 : 1;
+}
+
 function configuration_segments(graphs, valid_point) {
     var groups = Object.create(null);
     graphs.forEach(function(graph) {
@@ -207,7 +211,10 @@ function configuration_segments(graphs, valid_point) {
         }
         graph.data.forEach(function(point) {
             if (typeof point[0] == 'number' && isFinite(point[0])) {
-                groups[key][version].push({point: point, version: version, color: graph.color});
+                groups[key][version].push({
+                    point: point, version: version, color: graph.color,
+                    lineWidth: configuration_line_width(graph.parameters)
+                });
             }
         });
     });
@@ -241,6 +248,7 @@ function configuration_segments(graphs, valid_point) {
                 group_segments.push({
                     data: [previous.point, current.point],
                     color: current.color,
+                    lineWidth: current.lineWidth,
                     dotted: previous.version != current.version
                 });
             }
@@ -306,7 +314,6 @@ function draw_configuration_lines(plot, context) {
     context.beginPath();
     context.rect(0, 0, plot.width(), plot.height());
     context.clip();
-    context.lineWidth = 1;
     configuration_segments(plot.getData(), function(point) {
         return [axes.xaxis, axes.yaxis].every(function(axis, index) {
             var transform = axis.options && axis.options.transform;
@@ -315,6 +322,7 @@ function draw_configuration_lines(plot, context) {
         });
     }).forEach(function(segment) {
         context.strokeStyle = segment.color;
+        context.lineWidth = segment.lineWidth;
         context.setLineDash(segment.dotted ? [2, 3] : []);
         context.beginPath();
         context.moveTo(axes.xaxis.p2c(segment.data[0][0]),
@@ -481,6 +489,7 @@ function draw_configuration_lines(plot, context) {
         "label: graph_content[1],\n"
         "                        parameters: graph_content[2],\n"
         "                        color: configuration_color(graph_content[2]),\n"
+        "                        lines: {lineWidth: configuration_line_width(graph_content[2])},\n"
         "                        bars: { order: count, },",
     )
     graph = _replace_once(
@@ -656,6 +665,7 @@ function draw_configuration_lines(plot, context) {
                     return {
                         data: curve.data,
                         parameters: parameters,
+                        lines: {lineWidth: configuration_line_width(parameters)},
                         color: configuration_color(parameters)
                     };
                 });
