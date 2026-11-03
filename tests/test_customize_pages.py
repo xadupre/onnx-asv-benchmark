@@ -27,6 +27,9 @@ class TestCustomizePages(unittest.TestCase):
                 shutil.copy2(source / name, html / name)
             customize_pages(html)
             grid = (html / "summarygrid.js").read_text(encoding="utf-8")
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+        width_start = graph.index("function configuration_line_width(")
+        width_end = graph.index("\nfunction configuration_segments", width_start)
         start = grid.index("                var series = data.series.map(")
         end = grid.index("                var options = ", start)
         script = (source / "asv.js").read_text(encoding="utf-8")
@@ -40,12 +43,12 @@ class TestCustomizePages(unittest.TestCase):
             "series": [
                 {
                     "graph": 0,
-                    "parameters": {"dtype": "'float32'", "size": "32"},
+                    "parameters": {"dtype": "'float32'", "size": "32", "backend": "'onnxruntime'"},
                     "data": [[1000, 10], [2000, None]],
                 },
                 {
                     "graph": 1,
-                    "parameters": {"dtype": "'float32'", "size": "32"},
+                    "parameters": {"dtype": "'float32'", "size": "32", "backend": "'onnx-light'"},
                     "data": [[1000, 1], [2000, 2]],
                 },
             ],
@@ -57,7 +60,8 @@ class TestCustomizePages(unittest.TestCase):
                 script[decode_start:decode_end]
                 + "\nvar $ = {extend: Object.assign, asv: {convert_benchmark_param_value: convert_benchmark_param_value}};\n"
                 + "function configuration_color(parameters) {return JSON.stringify(parameters);}\n"
-                + "var bm = {param_names: ['dtype', 'size']};\nvar data = "
+                + graph[width_start:width_end]
+                + "\nvar bm = {param_names: ['dtype', 'size', 'backend']};\nvar data = "
                 + json.dumps(data)
                 + ";\n"
                 + grid[start:end]
@@ -77,12 +81,15 @@ class TestCustomizePages(unittest.TestCase):
                 "python": "3.12",
                 "dtype": "float32",
                 "size": 32,
+                "backend": "onnxruntime",
             },
         )
         self.assertEqual(series[1]["parameters"]["onnx"], "1.23")
         self.assertEqual(series[0]["data"], data["series"][0]["data"])
         self.assertEqual(series[1]["data"], data["series"][1]["data"])
         self.assertNotEqual(series[0]["color"], series[1]["color"])
+        self.assertEqual(series[0]["lines"]["lineWidth"], 3)
+        self.assertEqual(series[1]["lines"]["lineWidth"], 1)
 
     @unittest.skipUnless(
         shutil.which("node"), "Node.js is required to execute summary JavaScript"
@@ -257,6 +264,10 @@ class TestCustomizePages(unittest.TestCase):
             self.assertIn("param_names[axis-1] == 'backend'", graph)
             self.assertNotIn("else if (params[axis-1].length > 1)", graph)
             self.assertIn("parameters: graph_content[2]", graph)
+            self.assertIn(
+                "lines: {lineWidth: configuration_line_width(graph_content[2])}",
+                graph,
+            )
             self.assertIn("function show_missing_backends()", graph)
             self.assertIn("benchmark.param_names.indexOf('backend')", graph)
             self.assertIn("graph.data.some(function(point)", graph)
@@ -541,6 +552,10 @@ assert.strictEqual(visible, false);
         result = subprocess.run(
             ["node", "-e", graph[start:end] + """
 const assert = require('node:assert/strict');
+assert.equal(configuration_line_width({backend: 'onnxruntime'}), 3);
+for (const backend of ['onnx-light', 'onnx-light-cpu', 'reference', undefined]) {
+    assert.equal(configuration_line_width({backend, onnxruntime: '1.0'}), 1);
+}
 const parameters = {
     machine: 'machine-a', cpu: 'processor', backend: 'onnxruntime', dtype: 'float32',
     python: '3.12', onnxruntime: '1.0', 'env-ONNX_LIGHT_VERSION': '1.0'
@@ -555,7 +570,7 @@ const graphs = [
     series([[60, 6]], {onnxruntime: '2.0', 'env-ONNX_LIGHT_VERSION': '2.0',
                           python: '3.13'}),
     series([[10, 10], [60, 60]], {machine: 'machine-b'}),
-    series([[10, 11]], {backend: 'onnx-light'}),
+    series([[10, 11], [60, 12]], {backend: 'onnx-light'}),
     series([[60, 12]], {dtype: 'float64'})
 ];
 const original = JSON.stringify(graphs);
@@ -566,7 +581,7 @@ assert.deepEqual(main.map(segment => segment.data), [
     [[40, 4], [50, 5]], [[50, 5], [60, 6]]
 ]);
 assert.deepEqual(main.map(segment => segment.dotted), [false, true, false, true, true]);
-assert.equal(segments.length, 6); // Different configurations never connect, even with equal colors.
+assert.equal(segments.length, 7); // Different configurations never connect, even with equal colors.
 assert.deepEqual(configuration_segments([...graphs].reverse()), segments);
 assert.equal(JSON.stringify(graphs), original);
 assert.deepEqual(configuration_segments([
@@ -605,7 +620,7 @@ const context = {
     moveTo(x, y) { this.from = [x, y]; },
     lineTo(x, y) { this.to = [x, y]; },
     stroke() { strokes.push({from: this.from, to: this.to, dash: this.dash,
-                            color: this.strokeStyle}); }
+                            color: this.strokeStyle, lineWidth: this.lineWidth}); }
 };
 draw_configuration_lines({
     getData: () => graphs,
@@ -615,8 +630,13 @@ draw_configuration_lines({
 }, context);
 assert.deepEqual(calls, ['save', ['translate', 7, 9], ['rect', 0, 0, 100, 80],
                          'clip', 'restore']);
-assert.deepEqual(strokes[0], {from: [20, 3], to: [40, 6], dash: [], color: '#123456'});
-assert.deepEqual(strokes[1].dash, [2, 3]);
+const boldStrokes = strokes.filter(stroke => stroke.lineWidth == 3);
+assert.deepEqual(boldStrokes[0], {
+    from: [20, 3], to: [40, 6], dash: [], color: '#123456', lineWidth: 3
+});
+assert.deepEqual(boldStrokes[1].dash, [2, 3]);
+assert.equal(boldStrokes.length, 6);
+assert.equal(strokes.filter(stroke => stroke.lineWidth == 1).length, 1);
 assert.equal(strokes.length, segments.length);
 assert.equal(JSON.stringify(graphs), original);
 const logGraphs = [series([[10, 1], [20, 0], [30, 3], [40, -1], [50, 5], [60, 6]])];
