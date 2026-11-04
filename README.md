@@ -300,7 +300,15 @@ configuration keep the same color across versions. Time-series points are linked
 with solid lines, or dotted lines when recorded versions change; missing
 measurements leave gaps.
 
-Homepage previews show one curve per complete recorded configuration, including
+Every benchmark page also shows speedup relative to ONNX Runtime, without
+replacing its timing plots. Speedup is ONNX Runtime time divided by backend time;
+values above 1 mean faster execution. Only measurements at the same timestamp
+with matching machine, package versions, and non-backend benchmark parameters
+are compared. Missing, non-positive, or non-finite timings leave gaps.
+The speedup plot follows the selected machines and benchmark parameters, and
+still uses ONNX Runtime as baseline when that backend is deselected.
+
+Homepage previews use these speedup curves, one per recorded configuration, including
 machine, package versions, backend, dtype, and input dimensions. They do not
 average results from different machines or interpolate missing measurements.
 Hover over a point to inspect its configuration. The data publication step
