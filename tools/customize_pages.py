@@ -127,6 +127,13 @@ def customize_pages(html_dir):
     )
     index = _replace_once(
         index,
+        '            <div id="main-graph" style="min-height: 100px; width: 100%; height: 100%"></div>',
+        '            <div id="main-graph" style="min-height: 100px; width: 100%; height: 100%"></div>\n'
+        '            <h2 id="speedup-title">Speedup vs ONNX Runtime (higher is better)</h2>\n'
+        '            <div id="speedup-graph" aria-labelledby="speedup-title"></div>',
+    )
+    index = _replace_once(
+        index,
         '          <div style="position: absolute; top: 48px; left: 0; right: 0; bottom: 100px;">',
         '          <div id="graph-body" style="position: absolute; top: 48px; '
         'left: 0; right: 0; bottom: 100px;">\n'
@@ -153,7 +160,8 @@ def customize_pages(html_dir):
         "        var plot = $.plot(graph_div, graphs, options);\n"
         "        plot.resize();\n"
         "        plot.setupGrid();\n"
-        "        plot.draw();",
+        "        plot.draw();\n"
+        "        resize_speedup_graph();",
     )
     graph = _replace_once(
         graph,
@@ -196,6 +204,61 @@ def customize_pages(html_dir):
 
 function configuration_line_width(parameters) {
     return parameters.backend == 'onnxruntime' ? 3 : 1;
+}
+
+function configuration_series(data, benchmark) {
+    return data.series.map(function(curve) {
+        var parameters = $.extend(
+            {}, data.graph_parameters[curve.graph], curve.parameters);
+        benchmark.param_names.forEach(function(key) {
+            parameters[key] = $.asv.convert_benchmark_param_value(parameters[key]);
+        });
+        return {
+            data: curve.data,
+            parameters: parameters,
+            lines: {lineWidth: configuration_line_width(parameters)},
+            color: configuration_color(parameters)
+        };
+    });
+}
+
+function configuration_speedups(graphs) {
+    function key(parameters) {
+        return JSON.stringify(Object.keys(parameters).sort().filter(function(name) {
+            return name != 'backend' && name != 'commit';
+        }).map(function(name) { return [name, parameters[name]]; }));
+    }
+    function positive(value) {
+        return typeof value == 'number' && isFinite(value) && value > 0;
+    }
+    var baselines = Object.create(null);
+    graphs.forEach(function(graph) {
+        if (graph.parameters.backend != 'onnxruntime') {
+            return;
+        }
+        var name = key(graph.parameters);
+        var values = baselines[name] || (baselines[name] = Object.create(null));
+        graph.data.forEach(function(point) {
+            var time = point[0];
+            if (Object.prototype.hasOwnProperty.call(values, time) &&
+                    values[time] !== point[1]) {
+                values[time] = null;
+            } else {
+                values[time] = point[1];
+            }
+        });
+    });
+    return graphs.map(function(graph) {
+        var values = baselines[key(graph.parameters)] || {};
+        return $.extend({}, graph, {
+            data: graph.data.map(function(point) {
+                var baseline = values[point[0]];
+                var ratio = positive(baseline) && positive(point[1])
+                    ? baseline / point[1] : null;
+                return [point[0], positive(ratio) ? ratio : null];
+            })
+        });
+    });
 }
 
 function configuration_segments(graphs, valid_point) {
@@ -406,7 +469,78 @@ function draw_configuration_lines(plot, context) {
     graph = _replace_once(
         graph,
         "    function replace_graphs() {\n",
-        """    function show_missing_backends() {
+        """    var speedup_plot = null;
+    var speedup_request = 0;
+
+    function resize_speedup_graph() {
+        if (speedup_plot) {
+            speedup_plot.resize();
+            speedup_plot.setupGrid();
+            speedup_plot.draw();
+        }
+    }
+
+    function load_speedup_graph() {
+        var request = ++speedup_request;
+        var benchmark = $.asv.main_json.benchmarks[current_benchmark];
+        var plot_div = $('#speedup-graph');
+        if (speedup_plot) {
+            speedup_plot.shutdown();
+            speedup_plot = null;
+        }
+        plot_div.empty();
+        $.asv.load_graph_data(
+            'graphs/configurations/' + current_benchmark + '.json'
+        ).done(function(data) {
+            if (request != speedup_request) {
+                return;
+            }
+            var series = configuration_speedups(
+                configuration_series(data, benchmark)).filter(function(curve) {
+                return Object.keys(state).every(function(key) {
+                    return state[key].indexOf(curve.parameters[key]) != -1;
+                }) && benchmark.param_names.every(function(key, axis) {
+                    return x_coordinate_axis == axis + 1 ||
+                        benchmark_param_selection[axis + 1].some(function(index) {
+                            return JSON.stringify(curve.parameters[key]) == JSON.stringify(
+                                $.asv.convert_benchmark_param_value(
+                                    benchmark.params[axis][index]));
+                        });
+                });
+            });
+            if (!series.some(function(curve) {
+                return curve.data.some(function(point) { return point[1] !== null; });
+            })) {
+                plot_div.text('Speedup unavailable: no matching ONNX Runtime measurements.');
+                return;
+            }
+            speedup_plot = $.plot(plot_div, series, {
+                series: {lines: {show: false}, points: {show: true, radius: 2},
+                         shadowSize: 0},
+                hooks: {draw: [draw_configuration_lines]},
+                xaxis: {mode: 'time'},
+                yaxis: {min: 0, axisLabel: 'Speedup (ONNX Runtime / backend)',
+                        axisLabelColour: system_dark_theme ? '#c9d1d9' : '#333333'},
+                grid: {hoverable: true},
+                legend: {show: false}
+            });
+            plot_div.off('plothover').on('plothover', function(event, pos, item) {
+                var details = item ? Object.keys(item.series.parameters).sort().map(
+                    function(key) { return key + ': ' + item.series.parameters[key]; }
+                ) : [];
+                if (item) {
+                    details.unshift(item.datapoint[1].toPrecision(4) + '× ONNX Runtime');
+                }
+                plot_div.attr('title', details.join('; '));
+            });
+        }).fail(function() {
+            if (request == speedup_request) {
+                plot_div.text('Speedup unavailable: configuration data could not be loaded.');
+            }
+        });
+    }
+
+    function show_missing_backends() {
         var benchmark = $.asv.main_json.benchmarks[current_benchmark];
         var backend_axis = benchmark.param_names.indexOf('backend');
         if (backend_axis < 0) {
@@ -450,6 +584,7 @@ function draw_configuration_lines(plot, context) {
         "        var to_load = collect_graphs(current_benchmark, state, benchmark_param_selection);\n"
         "        var requested_benchmark = current_benchmark;\n"
         "        var pending = to_load.length;\n"
+        "        load_speedup_graph();\n"
         "        $('#missing-backend-results').hide().empty();\n"
         "        var failures = 0;",
     )
@@ -642,7 +777,7 @@ function draw_configuration_lines(plot, context) {
         "            title: bm.code,\n"
         "            html: true,",
         "        plot_div.tooltip({\n"
-        "            title: 'View results for ' + bm.name,\n"
+        "            title: 'View results for ' + bm.name + ' (speedup vs ONNX Runtime)',\n"
         "            html: false,",
     )
     grid = _replace_once(
@@ -655,25 +790,20 @@ function draw_configuration_lines(plot, context) {
         "            ).done(function(data) {\n",
         """\
             ).done(function(data) {
-                var series = data.series.map(function(curve) {
-                    var parameters = $.extend(
-                        {}, data.graph_parameters[curve.graph], curve.parameters);
-                    bm.param_names.forEach(function(key) {
-                        parameters[key] = $.asv.convert_benchmark_param_value(
-                            parameters[key]);
-                    });
-                    return {
-                        data: curve.data,
-                        parameters: parameters,
-                        lines: {lineWidth: configuration_line_width(parameters)},
-                        color: configuration_color(parameters)
-                    };
-                });
+                var series = configuration_speedups(configuration_series(data, bm));
+                if (!series.some(function(curve) {
+                    return curve.data.some(function(point) { return point[1] !== null; });
+                })) {
+                    plot_div.text('Speedup unavailable');
+                    return;
+                }
 """,
     )
     grid = _replace_once(
         grid,
+        "                            show: true,\n"
         "                            lineWidth: 2",
+        "                            show: false,\n"
         "                            lineWidth: 1",
     )
     grid = _replace_once(
@@ -681,6 +811,12 @@ function draw_configuration_lines(plot, context) {
         "                        shadowSize: 0",
         "                        points: {show: true, radius: 1},\n"
         "                        shadowSize: 0",
+    )
+    grid = _replace_once(
+        grid,
+        "                    colors: $.asv.colors,",
+        "                    colors: $.asv.colors,\n"
+        "                    hooks: {draw: [draw_configuration_lines]},",
     )
     grid = _replace_once(
         grid,
@@ -709,7 +845,7 @@ function draw_configuration_lines(plot, context) {
                     }).map(function(key) {
                         return key + ': ' + parameters[key];
                     });
-                    details.unshift($.asv.pretty_unit(item.datapoint[1], bm.unit));
+                    details.unshift(item.datapoint[1].toPrecision(4) + '× ONNX Runtime');
                     plot_div.attr('data-original-title', details.join('; '));
                 });""",
     )

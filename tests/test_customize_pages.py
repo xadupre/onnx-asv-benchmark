@@ -11,6 +11,210 @@ from tools.customize_pages import customize_pages
 
 
 class TestCustomizePages(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
+    def test_speedups_require_matching_configuration_and_timestamp(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+        start = graph.index("function configuration_key(")
+        end = graph.index("function configuration_segments(", start)
+        subprocess.run(
+            ["node", "-e", "var $ = {extend: Object.assign};\n" + graph[start:end] + """
+const assert = require('node:assert/strict');
+function curve(backend, data, changes = {}) {
+    return {
+        parameters: {machine: 'a', cpu: 'processor', python: '3.12',
+                     onnxruntime: '1.0', backend, dtype: 'float32', size: 32, ...changes},
+        data, color: '#123456', lines: {lineWidth: backend == 'onnxruntime' ? 3 : 1}
+    };
+}
+const baseline = curve('onnxruntime', [
+    [10, 8], [20, 12], [30, null], [40, 0], [50, Infinity], [60, -3],
+    [70, 1e308], [80, 1e-308], [90, 8], [100, 8], [110, NaN], [120, 8]
+]);
+const light = curve('onnx-light', [
+    [10, 2], [20, 24], [25, 4], [30, 4], [40, 4], [50, 4], [60, 4],
+    [70, 1e-308], [80, 1e308], [90, 0], [100, -2], [110, 4], [120, NaN]
+]);
+const graphs = [light, baseline];
+const original = JSON.stringify(graphs);
+const speedups = configuration_speedups(graphs);
+assert.deepEqual(speedups[0].data.slice(0, 3), [[10, 4], [20, 0.5], [25, null]]);
+assert.ok(speedups[0].data.slice(3).every(point => point[1] === null));
+assert.deepEqual(speedups[1].data.slice(0, 2), [[10, 1], [20, 1]]);
+assert.equal(JSON.stringify(graphs), original);
+assert.equal(speedups[0].parameters, light.parameters);
+assert.equal(speedups[0].color, light.color);
+assert.equal(speedups[0].lines.lineWidth, 1);
+assert.equal(speedups[1].lines.lineWidth, 3);
+for (const changes of [
+    {machine: 'b'}, {cpu: 'other'}, {num_cpu: 8}, {python: '3.13'},
+    {onnxruntime: '2.0'}, {onnxruntime: null}, {dtype: 'float64'}, {size: 64},
+    {'env-ONNX_LIGHT_VERSION': '2.0'}
+]) {
+    assert.deepEqual(configuration_speedups([
+        baseline, curve('onnx-light', [[10, 2]], changes)
+    ])[1].data, [[10, null]], JSON.stringify(changes));
+}
+const otherMachine = curve('onnxruntime', [[10, 30]], {machine: 'b'});
+assert.deepEqual(configuration_speedups([
+    baseline, otherMachine, curve('onnx-light', [[10, 3]], {machine: 'b'})
+])[2].data, [[10, 10]]);
+assert.deepEqual(configuration_speedups([light])[0].data.map(point => point[1]),
+                 light.data.map(() => null));
+assert.deepEqual(configuration_speedups([
+    curve('onnxruntime', [[10, 8]]), curve('onnxruntime', [[10, 9]]),
+    curve('onnx-light', [[10, 2]])
+])[2].data, [[10, null]]);
+assert.deepEqual(configuration_speedups([
+    curve('onnxruntime', [[10, 8]], {commit: 'abc'}),
+    curve('onnx-light', [[10, 2]], {commit: 'last'})
+])[1].data, [[10, 4]]);
+assert.deepEqual(configuration_speedups([
+    curve(undefined, [[10, 2]])
+])[0].data, [[10, null]]);
+"""],
+            check=True, capture_output=True, text=True,
+        )
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
+    def test_speedup_plot_filters_and_stale_requests(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            page = (html / "index.html").read_text(encoding="utf-8")
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+            for name in ("graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                subprocess.run(
+                    ["node", "--check"], input=(html / name).read_text(encoding="utf-8"),
+                    check=True, capture_output=True, text=True,
+                )
+        self.assertIn('id="main-graph"', page)
+        self.assertIn('id="overview"', page)
+        self.assertIn('id="speedup-graph" aria-labelledby="speedup-title"', page)
+        self.assertIn("        load_speedup_graph();", graph)
+        start = graph.index("function configuration_key(")
+        end = graph.index("function configuration_segments(", start)
+        load_start = graph.index("    var speedup_plot = null;")
+        load_end = graph.index("    function show_missing_backends()", load_start)
+        subprocess.run(
+            ["node", "-e", """
+const assert = require('node:assert/strict');
+const requests = [], plots = [];
+var message = '', title = '', hover;
+const element = {
+    empty() { message = ''; return this; },
+    text(value) { message = value; return this; },
+    off() { return this; },
+    on(event, handler) { hover = handler; return this; },
+    attr(name, value) { title = value; return this; }
+};
+function $(selector) { assert.equal(selector, '#speedup-graph'); return element; }
+$.extend = Object.assign;
+const lifecycle = [];
+$.plot = (element, series, options) => {
+    plots.push({series, options});
+    return {
+        resize() { lifecycle.push('resize'); },
+        setupGrid() { lifecycle.push('grid'); },
+        draw() { lifecycle.push('draw'); },
+        shutdown() { lifecycle.push('shutdown'); }
+    };
+};
+const benchmark = {
+    param_names: ['backend', 'size'],
+    params: [["'onnxruntime'", "'onnx-light'"], ['32', '64']]
+};
+$.asv = {
+    main_json: {benchmarks: {test: benchmark}},
+    convert_benchmark_param_value: value => value[0] == "'" ? value.slice(1, -1) : Number(value),
+    load_graph_data(url) {
+        assert.equal(url, 'graphs/configurations/test.json');
+        const request = {
+            done(callback) { this.success = callback; return this; },
+            fail(callback) { this.failure = callback; return this; }
+        };
+        requests.push(request);
+        return request;
+    }
+};
+var current_benchmark = 'test', state = {machine: ['a']}, x_coordinate_axis = 0;
+var benchmark_param_selection = [[null], [1], [0]], system_dark_theme = false;
+function draw_configuration_lines() {}
+const data = {
+    graph_parameters: [{machine: 'a'}, {machine: 'b'}],
+    series: [
+        {graph: 0, parameters: {backend: "'onnxruntime'", size: '32'}, data: [[10, 8]]},
+        {graph: 0, parameters: {backend: "'onnx-light'", size: '32'}, data: [[10, 2]]},
+        {graph: 0, parameters: {backend: "'onnxruntime'", size: '64'}, data: [[10, 12]]},
+        {graph: 0, parameters: {backend: "'onnx-light'", size: '64'}, data: [[10, 6]]},
+        {graph: 1, parameters: {backend: "'onnxruntime'", size: '32'}, data: [[10, 30]]},
+        {graph: 1, parameters: {backend: "'onnx-light'", size: '32'}, data: [[10, 3]]}
+    ]
+};
+""" + graph[start:end] + graph[load_start:load_end] + """
+load_speedup_graph();
+requests[0].success(data);
+assert.equal(plots.length, 1);
+assert.equal(plots[0].series.length, 1); // Baseline works even when deselected.
+assert.deepEqual(plots[0].series[0].data, [[10, 4]]);
+assert.equal(plots[0].options.xaxis.mode, 'time');
+assert.equal(plots[0].options.hooks.draw[0], draw_configuration_lines);
+resize_speedup_graph();
+assert.deepEqual(lifecycle, ['resize', 'grid', 'draw']);
+hover(null, null, {series: plots[0].series[0], datapoint: [10, 4]});
+assert.ok(title.includes('4.000× ONNX Runtime'));
+assert.ok(title.includes('machine: a'));
+hover(null, null, null);
+assert.equal(title, '');
+
+state = {machine: ['b']};
+load_speedup_graph();
+assert.equal(lifecycle[lifecycle.length - 1], 'shutdown');
+requests[1].success(data);
+assert.deepEqual(plots[1].series[0].data, [[10, 10]]);
+
+state = {machine: ['a']};
+x_coordinate_axis = 1; // Backend on the timing plot x-axis does not discard it.
+load_speedup_graph();
+requests[2].success(data);
+assert.deepEqual(plots[2].series.map(curve => curve.data), [[[10, 1]], [[10, 4]]]);
+x_coordinate_axis = 2; // All sizes appear when size is the timing plot x-axis.
+load_speedup_graph();
+requests[3].success(data);
+assert.deepEqual(plots[3].series.map(curve => curve.data), [[[10, 4]], [[10, 2]]]);
+
+x_coordinate_axis = 0;
+benchmark_param_selection[2] = [];
+load_speedup_graph();
+requests[4].success(data);
+assert.ok(message.startsWith('Speedup unavailable:'));
+assert.equal(plots.length, 4);
+benchmark_param_selection[2] = [0];
+load_speedup_graph();
+load_speedup_graph();
+requests[5].success(data);
+requests[5].failure();
+assert.equal(message, ''); // Stale responses never overwrite a new selection.
+assert.equal(plots.length, 4);
+requests[6].failure();
+assert.ok(message.includes('could not be loaded'));
+load_speedup_graph();
+requests[7].success({...data, series: data.series.filter(
+    curve => curve.parameters.backend != "'onnxruntime'")});
+assert.ok(message.includes('no matching ONNX Runtime'));
+assert.equal(plots.length, 4);
+"""],
+            check=True, capture_output=True, text=True,
+        )
+
     @unittest.skipUnless(
         shutil.which("node"), "Node.js is required to execute summary JavaScript"
     )
@@ -30,7 +234,7 @@ class TestCustomizePages(unittest.TestCase):
             graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
         width_start = graph.index("function configuration_line_width(")
         width_end = graph.index("\nfunction configuration_segments", width_start)
-        start = grid.index("                var series = data.series.map(")
+        start = grid.index("                var series = configuration_speedups(")
         end = grid.index("                var options = ", start)
         script = (source / "asv.js").read_text(encoding="utf-8")
         decode_start = script.index("    function convert_benchmark_param_value(")
@@ -64,7 +268,7 @@ class TestCustomizePages(unittest.TestCase):
                 + "\nvar bm = {param_names: ['dtype', 'size', 'backend']};\nvar data = "
                 + json.dumps(data)
                 + ";\n"
-                + grid[start:end]
+                + "var series = configuration_series(data, bm);\n"
                 + "\nconsole.log(JSON.stringify(series));",
             ],
             check=True,
@@ -90,6 +294,9 @@ class TestCustomizePages(unittest.TestCase):
         self.assertNotEqual(series[0]["color"], series[1]["color"])
         self.assertEqual(series[0]["lines"]["lineWidth"], 3)
         self.assertEqual(series[1]["lines"]["lineWidth"], 1)
+        self.assertIn(
+            "configuration_speedups(configuration_series(data, bm))", grid[start:end]
+        )
 
     @unittest.skipUnless(
         shutil.which("node"), "Node.js is required to execute summary JavaScript"
@@ -236,7 +443,7 @@ class TestCustomizePages(unittest.TestCase):
             self.assertNotIn("'env-ol'", graph)
             self.assertNotIn('key + "-" + value', graph)
             self.assertIn("prefers-color-scheme: dark", graph)
-            self.assertEqual(graph.count("axisLabelColour"), 2)
+            self.assertEqual(graph.count("axisLabelColour"), 3)
             self.assertIn("var(--asv-background)", graph)
             self.assertIn(
                 "param != 'cpu' && param != 'num_cpu'",
