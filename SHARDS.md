@@ -313,7 +313,7 @@ cpu_backend_cases/traditionalml/cases/treeensemble
 
 ## Batched CPU backend cases
 
-The Add, Mul and GreaterOrEqual CPU backend shards are each split into batches
+The Add, Mul, GreaterOrEqual and Less CPU backend shards are each split into batches
 of at most six benchmark classes so that a job does not need to run the entire
 operator within the 60-minute limit. Both scheduled and manually requested
 matrices use these batches; their filters cover every class exactly once.
