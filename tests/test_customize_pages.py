@@ -45,12 +45,12 @@ const original = JSON.stringify(graphs);
 const speedups = configuration_speedups(graphs);
 assert.deepEqual(speedups[0].data.slice(0, 3), [[10, 4], [20, 0.5], [25, null]]);
 assert.ok(speedups[0].data.slice(3).every(point => point[1] === null));
-assert.deepEqual(speedups[1].data.slice(0, 2), [[10, 1], [20, 1]]);
+assert.equal(speedups.length, 1);
+assert.deepEqual(configuration_speedups([baseline]), []);
 assert.equal(JSON.stringify(graphs), original);
 assert.equal(speedups[0].parameters, light.parameters);
 assert.equal(speedups[0].color, light.color);
 assert.equal(speedups[0].lines.lineWidth, 1);
-assert.equal(speedups[1].lines.lineWidth, 3);
 for (const changes of [
     {machine: 'b'}, {cpu: 'other'}, {num_cpu: 8}, {python: '3.13'},
     {onnxruntime: '2.0'}, {onnxruntime: null}, {dtype: 'float64'}, {size: 64},
@@ -58,22 +58,22 @@ for (const changes of [
 ]) {
     assert.deepEqual(configuration_speedups([
         baseline, curve('onnx-light', [[10, 2]], changes)
-    ])[1].data, [[10, null]], JSON.stringify(changes));
+    ])[0].data, [[10, null]], JSON.stringify(changes));
 }
 const otherMachine = curve('onnxruntime', [[10, 30]], {machine: 'b'});
 assert.deepEqual(configuration_speedups([
     baseline, otherMachine, curve('onnx-light', [[10, 3]], {machine: 'b'})
-])[2].data, [[10, 10]]);
+])[0].data, [[10, 10]]);
 assert.deepEqual(configuration_speedups([light])[0].data.map(point => point[1]),
                  light.data.map(() => null));
 assert.deepEqual(configuration_speedups([
     curve('onnxruntime', [[10, 8]]), curve('onnxruntime', [[10, 9]]),
     curve('onnx-light', [[10, 2]])
-])[2].data, [[10, null]]);
+])[0].data, [[10, null]]);
 assert.deepEqual(configuration_speedups([
     curve('onnxruntime', [[10, 8]], {commit: 'abc'}),
     curve('onnx-light', [[10, 2]], {commit: 'last'})
-])[1].data, [[10, 4]]);
+])[0].data, [[10, 4]]);
 assert.deepEqual(configuration_speedups([
     curve(undefined, [[10, 2]])
 ])[0].data, [[10, null]]);
@@ -108,7 +108,7 @@ assert.deepEqual(configuration_speedups([
             ["node", "-e", """
 const assert = require('node:assert/strict');
 const requests = [], plots = [];
-var message = '', title = '', hover;
+var message = '', title = '', hover, speedupVisible;
 const element = {
     empty() { message = ''; return this; },
     text(value) { message = value; return this; },
@@ -116,7 +116,13 @@ const element = {
     on(event, handler) { hover = handler; return this; },
     attr(name, value) { title = value; return this; }
 };
-function $(selector) { assert.equal(selector, '#speedup-graph'); return element; }
+function $(selector) {
+    if (selector == '#speedup-title, #speedup-graph') {
+        return {toggle(value) { speedupVisible = value; }};
+    }
+    assert.equal(selector, '#speedup-graph');
+    return element;
+}
 $.extend = Object.assign;
 const lifecycle = [];
 $.plot = (element, series, options) => {
@@ -167,6 +173,9 @@ assert.equal(plots[0].series.length, 1); // Baseline works even when deselected.
 assert.deepEqual(plots[0].series[0].data, [[10, 4]]);
 assert.equal(plots[0].options.xaxis.mode, 'time');
 assert.equal(plots[0].options.hooks.draw[0], draw_configuration_lines);
+assert.equal(speedupVisible, true);
+assert.deepEqual(plots[0].options.grid.markings[0].yaxis, {from: 1, to: 1});
+assert.ok(plots[0].options.yaxis.max > 1);
 resize_speedup_graph();
 assert.deepEqual(lifecycle, ['resize', 'grid', 'draw']);
 hover(null, null, {series: plots[0].series[0], datapoint: [10, 4]});
@@ -185,7 +194,7 @@ state = {machine: ['a']};
 x_coordinate_axis = 1; // Backend on the timing plot x-axis does not discard it.
 load_speedup_graph();
 requests[2].success(data);
-assert.deepEqual(plots[2].series.map(curve => curve.data), [[[10, 1]], [[10, 4]]]);
+assert.deepEqual(plots[2].series.map(curve => curve.data), [[[10, 4]]]);
 x_coordinate_axis = 2; // All sizes appear when size is the timing plot x-axis.
 load_speedup_graph();
 requests[3].success(data);
@@ -211,6 +220,28 @@ requests[7].success({...data, series: data.series.filter(
     curve => curve.parameters.backend != "'onnxruntime'")});
 assert.ok(message.includes('no matching ONNX Runtime'));
 assert.equal(plots.length, 4);
+benchmark_param_selection[1] = [0]; // Selecting only the baseline never plots it.
+load_speedup_graph();
+requests[8].success(data);
+assert.ok(message.includes('no matching ONNX Runtime'));
+assert.equal(plots.length, 4);
+
+load_speedup_graph();
+current_benchmark = 'builder.load.onnx_io.OnnxLoad.time_run';
+load_speedup_graph();
+assert.equal(speedupVisible, false);
+assert.equal(requests.length, 10); // Builder graphs do not fetch speedup data.
+assert.equal(message, '');
+requests[9].success(data);
+requests[9].failure();
+assert.equal(message, '');
+assert.equal(plots.length, 4);
+current_benchmark = 'test';
+benchmark_param_selection[1] = [1];
+load_speedup_graph();
+requests[10].success(data);
+assert.equal(speedupVisible, true);
+assert.equal(plots.length, 5);
 """],
             check=True, capture_output=True, text=True,
         )
@@ -296,6 +327,80 @@ assert.equal(plots.length, 4);
         self.assertEqual(series[1]["lines"]["lineWidth"], 1)
         self.assertIn(
             "configuration_speedups(configuration_series(data, bm))", grid[start:end]
+        )
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute summary JavaScript")
+    def test_speedup_preview_reference_and_builder_exclusion(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            grid = (html / "summarygrid.js").read_text(encoding="utf-8")
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+        start = graph.index("function configuration_key(")
+        end = graph.index("function configuration_segments(", start)
+        preview_start = grid.index("    function benchmark_container(")
+        preview_end = grid.index("    function make_summary(", preview_start)
+        subprocess.run(
+            ["node", "-e", """
+const assert = require('node:assert/strict');
+const plots = [], requests = [];
+var system_dark_theme = false;
+function $(html) {
+    return {
+        html, children: [],
+        tooltip() { return this; },
+        attr() { return this; },
+        on() { return this; },
+        text() { return this; },
+        append(child) { this.children.push(child); return this; }
+    };
+}
+$.extend = Object.assign;
+$.asv = {
+    convert_benchmark_param_value: value => value.slice(1, -1),
+    load_graph_data(url) {
+        requests.push(url);
+        return {
+            done(callback) {
+                callback({
+                    graph_parameters: [{}],
+                    series: [
+                        {graph: 0, parameters: {backend: "'onnxruntime'"},
+                         data: [[10, 1], [20, 1]]},
+                        {graph: 0, parameters: {backend: "'onnx-light'"},
+                         data: [[10, 2], [20, 4]]}
+                    ]
+                });
+                return this;
+            },
+            fail() { return this; }
+        };
+    }
+};
+$.plot = (element, series, options) => { plots.push({series, options}); };
+function callback_in_view(element, callback) { callback(); }
+function draw_configuration_lines() {}
+""" + graph[start:end] + grid[preview_start:preview_end] + """
+const builder = benchmark_container({name: 'builder.save.onnx_io.OnnxSave.time_run'});
+assert.equal(builder.children.length, 1); // The benchmark link/name remains.
+assert.equal(requests.length, 0);
+assert.equal(plots.length, 0);
+const model = benchmark_container({name: 'models.dummies.mlp.MLP.time_run',
+                                   param_names: ['backend']});
+assert.equal(model.children.length, 2);
+assert.equal(requests.length, 1);
+assert.equal(plots[0].series.length, 1);
+assert.equal(plots[0].series[0].parameters.backend, 'onnx-light');
+assert.deepEqual(plots[0].series[0].data, [[10, 0.5], [20, 0.25]]);
+assert.deepEqual(plots[0].options.grid.markings[0].yaxis, {from: 1, to: 1});
+assert.ok(plots[0].options.yaxis.max > 1); // Reference stays visible below 1x.
+assert.equal(configuration_speedup_max(plots[0].series), 1.05);
+assert.equal(configuration_speedup_max([{data: [[10, 4], [20, null]]}]), 4.2);
+"""],
+            check=True, capture_output=True, text=True,
         )
 
     @unittest.skipUnless(
