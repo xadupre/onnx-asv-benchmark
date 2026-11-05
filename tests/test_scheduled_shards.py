@@ -87,6 +87,9 @@ class TestScheduledShards(unittest.TestCase):
                 self.assertEqual(len(batches), 8)
             if shard.endswith("/div"):
                 self.assertEqual(len(batches), 8)
+            if shard.endswith("/less"):
+                self.assertEqual(len(batches), 8)
+                self.assertEqual(BATCH_SIZES[shard], 6)
             if shard.endswith(("/bitwiseor", "/bitwisexor")):
                 self.assertEqual(len(batches), 4)
             if shard.endswith("/sub"):
