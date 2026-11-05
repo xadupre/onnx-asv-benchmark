@@ -248,7 +248,9 @@ function configuration_speedups(graphs) {
             }
         });
     });
-    return graphs.map(function(graph) {
+    return graphs.filter(function(graph) {
+        return graph.parameters.backend != 'onnxruntime';
+    }).map(function(graph) {
         var values = baselines[key(graph.parameters)] || {};
         return $.extend({}, graph, {
             data: graph.data.map(function(point) {
@@ -259,6 +261,14 @@ function configuration_speedups(graphs) {
             })
         });
     });
+}
+
+function configuration_speedup_max(graphs) {
+    return graphs.reduce(function(maximum, graph) {
+        return graph.data.reduce(function(value, point) {
+            return Math.max(value, point[1] || 0);
+        }, maximum);
+    }, 1) * 1.05;
 }
 
 function configuration_segments(graphs, valid_point) {
@@ -489,6 +499,11 @@ function draw_configuration_lines(plot, context) {
             speedup_plot = null;
         }
         plot_div.empty();
+        var show_speedup = current_benchmark.split('.')[0] != 'builder';
+        $('#speedup-title, #speedup-graph').toggle(show_speedup);
+        if (!show_speedup) {
+            return;
+        }
         $.asv.load_graph_data(
             'graphs/configurations/' + current_benchmark + '.json'
         ).done(function(data) {
@@ -519,9 +534,12 @@ function draw_configuration_lines(plot, context) {
                          shadowSize: 0},
                 hooks: {draw: [draw_configuration_lines]},
                 xaxis: {mode: 'time'},
-                yaxis: {min: 0, axisLabel: 'Speedup (ONNX Runtime / backend)',
+                yaxis: {min: 0, max: configuration_speedup_max(series),
+                        axisLabel: 'Speedup (ONNX Runtime / backend)',
                         axisLabelColour: system_dark_theme ? '#c9d1d9' : '#333333'},
-                grid: {hoverable: true},
+                grid: {hoverable: true, markings: [
+                    {yaxis: {from: 1, to: 1}, color: system_dark_theme ? '#c9d1d9' : '#333333'}
+                ]},
                 legend: {show: false}
             });
             plot_div.off('plothover').on('plothover', function(event, pos, item) {
@@ -822,7 +840,15 @@ function draw_configuration_lines(plot, context) {
         grid,
         "                        borderWidth: 1,",
         "                        hoverable: true,\n"
+        "                        markings: [{yaxis: {from: 1, to: 1},\n"
+        "                            color: system_dark_theme ? '#c9d1d9' : '#333333'}],\n"
         "                        borderWidth: 1,",
+    )
+    grid = _replace_once(
+        grid,
+        "                        min: 0\n",
+        "                        min: 0,\n"
+        "                        max: configuration_speedup_max(series)\n",
     )
     grid = _replace_once(
         grid,
@@ -985,7 +1011,10 @@ function draw_configuration_lines(plot, context) {
         grid,
         "        container.append(name);",
         "        container.attr('data-benchmark-name', bm.name);\n"
-        "        container.append(name);",
+        "        container.append(name);\n"
+        "        if (bm.name.split('.')[0] == 'builder') {\n"
+        "            return container;\n"
+        "        }",
     )
     grid = _replace_once(
         grid,
