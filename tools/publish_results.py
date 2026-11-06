@@ -1,6 +1,7 @@
 import argparse
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 if __package__:
@@ -13,12 +14,15 @@ def run(command, cwd):
     return subprocess.run(command, cwd=cwd, check=True)
 
 
-def publish_results(source, checkout, subdirectory, shards=None, machine=None):
+def publish_results(
+    source, checkout, subdirectory, shards=None, machine=None, *, retry_delay=5
+):
     destination = (checkout / subdirectory).resolve()
     if checkout.resolve() not in destination.parents:
         raise ValueError("--subdirectory must remain inside the cache_data checkout")
 
-    for attempt in range(3):
+    max_attempts = 5
+    for attempt in range(max_attempts):
         run(["git", "fetch", "origin", "main"], cwd=checkout)
         run(["git", "reset", "--hard", "origin/main"], cwd=checkout)
         destination.mkdir(parents=True, exist_ok=True)
@@ -63,10 +67,17 @@ def publish_results(source, checkout, subdirectory, shards=None, machine=None):
         push = subprocess.run(["git", "push", "origin", "main"], cwd=checkout)
         if push.returncode == 0:
             return
-        print(f"Publication push failed (attempt {attempt + 1}/3); refreshing results.")
+        if attempt + 1 < max_attempts:
+            delay = retry_delay * 2**attempt
+            print(
+                f"Publication push failed (attempt {attempt + 1}/{max_attempts}); "
+                f"retrying in {delay}s before refreshing results.",
+                flush=True,
+            )
+            time.sleep(delay)
 
     raise RuntimeError(
-        "Benchmark publication failed after 3 push attempts. "
+        f"Benchmark publication failed after {max_attempts} push attempts. "
         f"Local results remain in {source}; check repository write access and "
         "concurrent publishers, then rerun tools/publish_results.py."
     )

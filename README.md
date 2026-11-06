@@ -277,7 +277,9 @@ recorded before the source tree was reorganized.
 
 The command clones `cache_data`, merges only the requested local results,
 commits any changes, and pushes them to its `main` branch. Publication makes up
-to three push attempts, fetching the latest destination and rebuilding the merge
+to five push attempts, waiting 5, 10, 20, and 40 seconds between failed pushes to
+allow transient remote failures and concurrent publishers to settle. Each attempt
+fetches the latest destination and rebuilds the merge
 from the unchanged local results each time instead of rebasing generated JSON.
 Disjoint benchmarks are combined and identical entries are deduplicated. If
 overlapping results or durations differ, incoming entries become the displayed
