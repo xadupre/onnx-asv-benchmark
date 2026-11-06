@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 import shlex
 import subprocess
@@ -82,7 +84,7 @@ class TestPublishResults(unittest.TestCase):
             encoding="utf-8",
         )
         hook.chmod(0o755)
-        publish_results(second, self.publisher, "data", shards=shards)
+        publish_results(second, self.publisher, "data", shards=shards, retry_delay=0)
         self.assertEqual(
             self.git(self.remote, "rev-parse", "main"),
             self.git(self.publisher, "rev-parse", "HEAD"),
@@ -156,7 +158,7 @@ class TestPublishResults(unittest.TestCase):
         self.assertEqual(self.load(archives[0])["durations"], {name: 10})
         self.assertEqual((second / "worker/abc-env.json").read_bytes(), original)
         head = self.git(self.publisher, "rev-parse", "HEAD")
-        publish_results(second, self.publisher, "data")
+        publish_results(second, self.publisher, "data", retry_delay=0)
         self.assertEqual(self.git(self.publisher, "rev-parse", "HEAD"), head)
         merged = self.root / "merged"
         merge_shards(destination / "shards", merged)
@@ -206,11 +208,50 @@ class TestPublishResults(unittest.TestCase):
             encoding="utf-8",
         )
         hook.chmod(0o755)
-        with self.assertRaisesRegex(RuntimeError, "after 3 push attempts.*Local results"):
-            publish_results(source, self.publisher, "data")
-        self.assertEqual((self.root / "attempts").read_text().splitlines(), ["attempt"] * 3)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), self.assertRaisesRegex(
+            RuntimeError, "after 5 push attempts.*Local results"
+        ):
+            publish_results(source, self.publisher, "data", retry_delay=0)
+        self.assertEqual((self.root / "attempts").read_text().splitlines(), ["attempt"] * 5)
+        self.assertEqual(output.getvalue().count("retrying in"), 4)
         self.assertEqual(self.git(self.remote, "rev-list", "--count", "main"), "1")
         self.assertTrue((source / "worker/abc-env.json").is_file())
+
+    def test_transient_remote_rejections_are_retried_with_backoff(self):
+        source = self.make_results("source", {"ops.tensor.grid_sample.Grid.time_run": [1]})
+        original = (source / "worker/abc-env.json").read_bytes()
+        attempts = self.root / "attempts"
+        hook = self.remote / "hooks/update"
+        hook.write_text(
+            "#!/bin/sh\n"
+            f"echo attempt >> {shlex.quote(str(attempts))}\n"
+            f'if [ "$(wc -l < {shlex.quote(str(attempts))})" -le 3 ]; then\n'
+            "  echo 'fatal error in commit_refs' >&2\n"
+            "  exit 1\n"
+            "fi\n",
+            encoding="utf-8",
+        )
+        hook.chmod(0o755)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            publish_results(source, self.publisher, "data", retry_delay=0.01)
+        self.assertEqual(attempts.read_text().splitlines(), ["attempt"] * 4)
+        for delay in (0.01, 0.02, 0.04):
+            self.assertIn(f"retrying in {delay}s", output.getvalue())
+        self.assertEqual(
+            self.git(self.remote, "rev-parse", "main"),
+            self.git(self.publisher, "rev-parse", "HEAD"),
+        )
+        self.assertEqual(self.git(self.remote, "rev-list", "--count", "main"), "2")
+        result = (
+            self.publisher
+            / "data/shards/ops/tensor/grid_sample/Example CPU (4 vCPU)/abc-env.json"
+        )
+        self.assertEqual(
+            self.load(result)["results"], {"ops.tensor.grid_sample.Grid.time_run": [1]}
+        )
+        self.assertEqual((source / "worker/abc-env.json").read_bytes(), original)
 
     def test_incompatible_metadata_reports_result_path(self):
         name = "ops.math.div.Div.time_run"
@@ -227,7 +268,7 @@ class TestPublishResults(unittest.TestCase):
         with self.assertRaisesRegex(
             RuntimeError, "env_name.*abc-env.json.*Local results remain"
         ):
-            publish_results(second, self.publisher, "data")
+            publish_results(second, self.publisher, "data", retry_delay=0)
         self.assertEqual(self.git(self.remote, "rev-list", "--count", "main"), "2")
 
 
