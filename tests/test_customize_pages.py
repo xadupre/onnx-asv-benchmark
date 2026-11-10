@@ -265,7 +265,7 @@ assert.equal(plots.length, 5);
             graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
         width_start = graph.index("function configuration_line_width(")
         width_end = graph.index("\nfunction configuration_segments", width_start)
-        start = grid.index("                var series = configuration_speedups(")
+        start = grid.index("                var series = is_builder")
         end = grid.index("                var options = ", start)
         script = (source / "asv.js").read_text(encoding="utf-8")
         decode_start = script.index("    function convert_benchmark_param_value(")
@@ -330,7 +330,7 @@ assert.equal(plots.length, 5);
         )
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute summary JavaScript")
-    def test_speedup_preview_reference_and_builder_exclusion(self):
+    def test_speedup_preview_reference_and_builder_timings(self):
         source = Path(asv.__file__).parent / "www"
         with tempfile.TemporaryDirectory() as directory:
             html = Path(directory)
@@ -347,14 +347,25 @@ assert.equal(plots.length, 5);
             ["node", "-e", """
 const assert = require('node:assert/strict');
 const plots = [], requests = [];
+let previewData = {
+    graph_parameters: [{}],
+    series: [
+        {graph: 0, parameters: {backend: "'onnxruntime'"},
+         data: [[10, 1], [20, 1]]},
+        {graph: 0, parameters: {backend: "'onnx-light'"},
+         data: [[10, 0.002], [20, null], [30, 0.004]]},
+        {graph: 0, parameters: {backend: "'onnx-light-cpu'"},
+         data: [[10, 5], [20, 6]]}
+    ]
+};
 var system_dark_theme = false;
 function $(html) {
     return {
-        html, children: [],
-        tooltip() { return this; },
-        attr() { return this; },
-        on() { return this; },
-        text() { return this; },
+        html, children: [], attributes: {}, handlers: {},
+        tooltip(options) { this.tooltipOptions = options; return this; },
+        attr(key, value) { this.attributes[key] = value; return this; },
+        on(event, handler) { this.handlers[event] = handler; return this; },
+        text(value) { this.content = value; return this; },
         append(child) { this.children.push(child); return this; }
     };
 }
@@ -365,15 +376,7 @@ $.asv = {
         requests.push(url);
         return {
             done(callback) {
-                callback({
-                    graph_parameters: [{}],
-                    series: [
-                        {graph: 0, parameters: {backend: "'onnxruntime'"},
-                         data: [[10, 1], [20, 1]]},
-                        {graph: 0, parameters: {backend: "'onnx-light'"},
-                         data: [[10, 2], [20, 4]]}
-                    ]
-                });
+                callback(previewData);
                 return this;
             },
             fail() { return this; }
@@ -384,10 +387,27 @@ $.plot = (element, series, options) => { plots.push({series, options}); };
 function callback_in_view(element, callback) { callback(); }
 function draw_configuration_lines() {}
 """ + graph[start:end] + grid[preview_start:preview_end] + """
-const builder = benchmark_container({name: 'builder.save.onnx_io.OnnxSave.time_run'});
-assert.equal(builder.children.length, 1); // The benchmark link/name remains.
-assert.equal(requests.length, 0);
-assert.equal(plots.length, 0);
+const builder = benchmark_container({name: 'builder.save.onnx_io.OnnxSave.time_run',
+                                    param_names: ['backend'], unit: 'seconds'});
+assert.equal(builder.children.length, 2);
+assert.deepEqual(requests, ['graphs/configurations/builder.save.onnx_io.OnnxSave.time_run.json']);
+assert.equal(plots.length, 1);
+const timing = plots.shift();
+assert.equal(timing.series.length, 1);
+assert.equal(timing.series[0].parameters.backend, 'onnx-light');
+assert.deepEqual(timing.series[0].data, [[10, 0.002], [20, null], [30, 0.004]]);
+assert.deepEqual(timing.options.grid.markings, []);
+assert.equal(timing.options.yaxis.max, null);
+const builderPlot = builder.children[1];
+assert.match(builderPlot.tooltipOptions.title, /onnx-light timings/);
+builderPlot.handlers.plothover(null, null, {
+    series: timing.series[0], datapoint: [10, 0.002]
+});
+assert.match(builderPlot.attributes['data-original-title'], /^0.002000 seconds;/);
+assert.ok(!builderPlot.attributes['data-original-title'].includes('ONNX Runtime'));
+requests.length = 0;
+previewData.series = previewData.series.slice(0, 2);
+previewData.series[1].data = [[10, 2], [20, 4]];
 const model = benchmark_container({name: 'models.dummies.mlp.MLP.time_run',
                                    param_names: ['backend']});
 assert.equal(model.children.length, 2);
@@ -399,6 +419,21 @@ assert.deepEqual(plots[0].options.grid.markings[0].yaxis, {from: 1, to: 1});
 assert.ok(plots[0].options.yaxis.max > 1); // Reference stays visible below 1x.
 assert.equal(configuration_speedup_max(plots[0].series), 1.05);
 assert.equal(configuration_speedup_max([{data: [[10, 4], [20, null]]}]), 4.2);
+model.children[1].handlers.plothover(null, null, {
+    series: plots[0].series[0], datapoint: [10, 0.5]
+});
+assert.match(model.children[1].attributes['data-original-title'], /^0.5000× ONNX Runtime;/);
+for (const data of [[[10, null]], []]) {
+    previewData.series[1].data = data;
+    const unavailable = benchmark_container({name: 'builder.load.onnx_io.OnnxLoad.time_run',
+                                           param_names: ['backend'], unit: 'seconds'});
+    assert.equal(unavailable.children[1].content, 'onnx-light timings unavailable');
+}
+previewData.series = previewData.series.slice(0, 1);
+const missing = benchmark_container({name: 'builder.save.onnx_io.OnnxSave.time_run',
+                                   param_names: ['backend'], unit: 'seconds'});
+assert.equal(missing.children[1].content, 'onnx-light timings unavailable');
+assert.equal(plots.length, 1);
 """],
             check=True, capture_output=True, text=True,
         )
