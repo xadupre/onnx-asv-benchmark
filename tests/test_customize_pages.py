@@ -350,11 +350,11 @@ const plots = [], requests = [];
 let previewData = {
     graph_parameters: [{}],
     series: [
-        {graph: 0, parameters: {backend: "'onnxruntime'"},
+        {graph: 0, parameters: {library: "'onnx'"},
          data: [[10, 1], [20, 1]]},
-        {graph: 0, parameters: {backend: "'onnx-light'"},
+        {graph: 0, parameters: {library: "'onnxlight'"},
          data: [[10, 0.002], [20, null], [30, 0.004]]},
-        {graph: 0, parameters: {backend: "'onnx-light-cpu'"},
+        {graph: 0, parameters: {library: "'ir-py'"},
          data: [[10, 5], [20, 6]]}
     ]
 };
@@ -388,13 +388,13 @@ function callback_in_view(element, callback) { callback(); }
 function draw_configuration_lines() {}
 """ + graph[start:end] + grid[preview_start:preview_end] + """
 const builder = benchmark_container({name: 'builder.save.onnx_io.OnnxSave.time_run',
-                                    param_names: ['backend'], unit: 'seconds'});
+                                    param_names: ['library'], unit: 'seconds'});
 assert.equal(builder.children.length, 2);
 assert.deepEqual(requests, ['graphs/configurations/builder.save.onnx_io.OnnxSave.time_run.json']);
 assert.equal(plots.length, 1);
 const timing = plots.shift();
 assert.equal(timing.series.length, 1);
-assert.equal(timing.series[0].parameters.backend, 'onnx-light');
+assert.equal(timing.series[0].parameters.library, 'onnxlight');
 assert.deepEqual(timing.series[0].data, [[10, 0.002], [20, null], [30, 0.004]]);
 assert.deepEqual(timing.options.grid.markings, []);
 assert.equal(timing.options.yaxis.max, null);
@@ -405,9 +405,26 @@ builderPlot.handlers.plothover(null, null, {
 });
 assert.match(builderPlot.attributes['data-original-title'], /^0.002000 seconds;/);
 assert.ok(!builderPlot.attributes['data-original-title'].includes('ONNX Runtime'));
+for (const [key, values] of [
+    ['library', ['onnxlight', 'onnxlight-cpp', 'onnxlight-mmap', 'onnxlight-ifstream', 'onnxlight-nocopy']],
+    ['builder', ['onnx-light']],
+    ['implementation', ['onnx-light']]
+]) {
+    previewData.series = ['onnxscript', ...values].map(value => ({
+        graph: 0, parameters: {[key]: "'" + value + "'"}, data: [[10, 0.002]]
+    }));
+    benchmark_container({name: 'builder.example.time_run', param_names: [key], unit: 'seconds'});
+    assert.deepEqual(plots.pop().series.map(curve => curve.parameters[key]), values);
+}
+previewData.series = [{graph: 0, parameters: {dtype: "'float32'"}, data: [[10, 0.002]]}];
+benchmark_container({name: 'builder.load.onnx_io.OnnxReferenceEvaluator.time_run',
+                     param_names: ['dtype'], unit: 'seconds'});
+assert.deepEqual(plots.pop().series[0].data, [[10, 0.002]]);
 requests.length = 0;
-previewData.series = previewData.series.slice(0, 2);
-previewData.series[1].data = [[10, 2], [20, 4]];
+previewData.series = [
+    {graph: 0, parameters: {backend: "'onnxruntime'"}, data: [[10, 1], [20, 1]]},
+    {graph: 0, parameters: {backend: "'onnx-light'"}, data: [[10, 2], [20, 4]]}
+];
 const model = benchmark_container({name: 'models.dummies.mlp.MLP.time_run',
                                    param_names: ['backend']});
 assert.equal(model.children.length, 2);
@@ -423,15 +440,19 @@ model.children[1].handlers.plothover(null, null, {
     series: plots[0].series[0], datapoint: [10, 0.5]
 });
 assert.match(model.children[1].attributes['data-original-title'], /^0.5000× ONNX Runtime;/);
+previewData.series = [
+    {graph: 0, parameters: {library: "'onnx'"}, data: [[10, 1], [20, 1]]},
+    {graph: 0, parameters: {library: "'onnxlight'"}, data: []}
+];
 for (const data of [[[10, null]], []]) {
     previewData.series[1].data = data;
     const unavailable = benchmark_container({name: 'builder.load.onnx_io.OnnxLoad.time_run',
-                                           param_names: ['backend'], unit: 'seconds'});
+                                           param_names: ['library'], unit: 'seconds'});
     assert.equal(unavailable.children[1].content, 'onnx-light timings unavailable');
 }
 previewData.series = previewData.series.slice(0, 1);
 const missing = benchmark_container({name: 'builder.save.onnx_io.OnnxSave.time_run',
-                                   param_names: ['backend'], unit: 'seconds'});
+                                   param_names: ['library'], unit: 'seconds'});
 assert.equal(missing.children[1].content, 'onnx-light timings unavailable');
 assert.equal(plots.length, 1);
 """],

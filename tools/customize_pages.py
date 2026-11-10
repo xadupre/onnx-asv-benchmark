@@ -811,7 +811,10 @@ function draw_configuration_lines(plot, context) {
             ).done(function(data) {
                 var series = is_builder
                     ? configuration_series(data, bm).filter(function(curve) {
-                        return curve.parameters.backend == 'onnx-light';
+                        return ['library', 'builder', 'implementation'].every(function(key) {
+                            return curve.parameters[key] === undefined ||
+                                /^onnx-?light(?:-|$)/.test(curve.parameters[key]);
+                        });
                     })
                     : configuration_speedups(configuration_series(data, bm));
                 if (!series.some(function(curve) {
