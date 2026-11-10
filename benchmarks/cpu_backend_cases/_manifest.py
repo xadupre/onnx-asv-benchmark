@@ -3811,6 +3811,34 @@ CASE_SHARDS = (
     ),
     (
         "math",
+        "GeluBfloat16",
+        "microsoft_gelu",
+        ('bfloat16',),
+        0,
+    ),
+    (
+        "math",
+        "GeluFloat16",
+        "microsoft_gelu",
+        ('float16',),
+        0,
+    ),
+    (
+        "math",
+        "GeluFloat32",
+        "microsoft_gelu",
+        ('float32',),
+        0,
+    ),
+    (
+        "math",
+        "GeluFloat64",
+        "microsoft_gelu",
+        ('float64',),
+        0,
+    ),
+    (
+        "math",
         "MinFloat32Inputs3",
         "min",
         ('float32', 'float32', 'float32'),
@@ -6530,6 +6558,13 @@ CASE_SHARDS = (
         "MoEFloat32Inputs6",
         "moe",
         ('float32', 'float32', 'float32', 'float32', 'float32', 'float32'),
+        0,
+    ),
+    (
+        "nn",
+        "AttentionFloat32Inputs3Ms",
+        "ms",
+        ('float32', 'float32', 'float32'),
         0,
     ),
     (
