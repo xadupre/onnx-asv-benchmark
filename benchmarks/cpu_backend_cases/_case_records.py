@@ -6429,6 +6429,18 @@ CASE_RECORDS = {
     ('math', 'MeanFloat64Inputs3'): (
         ('test_cpu_mean_n4096_3inputs_float64_benchmark', 'mean_3inputs', ('float64', 'float64', 'float64'), '(1, 4096) x (1, 4096) x (1, 4096)'),
     ),
+    ('math', 'GeluBfloat16'): (
+        ('test_cpu_microsoft_gelu_4096_128_bfloat16_benchmark', 'microsoft_gelu_4096_128', ('bfloat16',), '(4096, 128)'),
+    ),
+    ('math', 'GeluFloat16'): (
+        ('test_cpu_microsoft_gelu_4096_128_float16_benchmark', 'microsoft_gelu_4096_128', ('float16',), '(4096, 128)'),
+    ),
+    ('math', 'GeluFloat32'): (
+        ('test_cpu_microsoft_gelu_4096_128_float32_benchmark', 'microsoft_gelu_4096_128', ('float32',), '(4096, 128)'),
+    ),
+    ('math', 'GeluFloat64'): (
+        ('test_cpu_microsoft_gelu_4096_128_float64_benchmark', 'microsoft_gelu_4096_128', ('float64',), '(4096, 128)'),
+    ),
     ('math', 'MinFloat32Inputs3'): (
         ('test_cpu_min_n4096_3inputs_float32_benchmark', 'min_3inputs', ('float32', 'float32', 'float32'), '(1, 4096) x (1, 4096) x (1, 4096)'),
     ),
@@ -10677,6 +10689,10 @@ CASE_RECORDS = {
         ('test_cpu_moe_relu_unnormalized_float32_benchmark', 'moe_relu_unnormalized', ('float32', 'float32', 'float32', 'float32', 'float32', 'float32'), '(8, 128) x (8, 8) x (8, 256, 128) x (8, 256) x (8, 128, 256) x (8, 128)'),
         ('test_cpu_moe_swiglu_normalized_float32_benchmark', 'moe_swiglu_normalized', ('float32', 'float32', 'float32', 'float32', 'float32', 'float32'), '(8, 128) x (8, 8) x (8, 512, 128) x (8, 512) x (8, 128, 256) x (8, 128)'),
         ('test_cpu_moe_swiglu_unnormalized_float32_benchmark', 'moe_swiglu_unnormalized', ('float32', 'float32', 'float32', 'float32', 'float32', 'float32'), '(8, 128) x (8, 8) x (8, 512, 128) x (8, 512) x (8, 128, 256) x (8, 128)'),
+    ),
+    ('nn', 'AttentionFloat32Inputs3Ms'): (
+        ('test_cpu_ms_attention_whisper_s128_float32_benchmark', 'ms_attention_whisper_s128', ('float32', 'float32', 'float32'), '(1, 128, 32) x (32, 96) x (96,)'),
+        ('test_cpu_ms_attention_whisper_s512_float32_benchmark', 'ms_attention_whisper_s512', ('float32', 'float32', 'float32'), '(1, 512, 32) x (32, 96) x (96,)'),
     ),
     ('nn', 'QMoEBfloat16Uint8Inputs11'): (
         ('test_cpu_qmoe_bits4_block0_gelu_normalized_bfloat16_benchmark', 'qmoe_bits4_block0_gelu_normalized', ('bfloat16', 'bfloat16', 'uint8', 'bfloat16', 'bfloat16', 'uint8', 'bfloat16', 'bfloat16', 'uint8', 'bfloat16', 'bfloat16'), '(8, 64) x (8, 3) x (3, 96, 32) x (3, 96) x (3, 96) x (3, 64, 48) x (3, 64) x (3, 64) x (3, 96, 32) x (3, 96) x (3, 96)'),

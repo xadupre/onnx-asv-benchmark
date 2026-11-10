@@ -269,6 +269,7 @@ cpu_backend_cases/math/cases/matmulinteger
 cpu_backend_cases/math/cases/matmulnbits
 cpu_backend_cases/math/cases/max
 cpu_backend_cases/math/cases/mean
+cpu_backend_cases/math/cases/microsoft_gelu
 cpu_backend_cases/math/cases/min
 cpu_backend_cases/math/cases/mod
 cpu_backend_cases/math/cases/mul
@@ -293,6 +294,7 @@ cpu_backend_cases/nn/cases/meanvariancenormalization
 cpu_backend_cases/nn/cases/microsoft_linear_attention
 cpu_backend_cases/nn/cases/microsoft_rotary_embedding
 cpu_backend_cases/nn/cases/moe
+cpu_backend_cases/nn/cases/ms
 cpu_backend_cases/nn/cases/qmoe
 cpu_backend_cases/nn/cases/rms
 cpu_backend_cases/nn/cases/rotary

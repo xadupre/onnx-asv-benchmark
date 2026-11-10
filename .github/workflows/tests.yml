@@ -34,8 +34,8 @@ jobs:
             transformers==5.15.0 \
             "scipy>=1.18.0" \
             "ml_dtypes>=0.6.0" \
-            https://github.com/xadupre/onnx-light/releases/download/0.2.6/onnx_light-0.2.6-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl \
-            https://github.com/xadupre/onnx-light-cpu/releases/download/0.2.6/onnx_light_cpu-0.2.6-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
+            https://github.com/xadupre/onnx-light/releases/download/0.2.7/onnx_light-0.2.7-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl \
+            https://github.com/xadupre/onnx-light-cpu/releases/download/0.2.7/onnx_light_cpu-0.2.7-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
           python -m pip install --no-deps \
             "modelbuilder @ git+https://github.com/xadupre/mbext.git@a1a23dc0166887f4bd2d48facf141110574fdb73"
       - name: Run unit tests
