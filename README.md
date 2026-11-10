@@ -311,7 +311,8 @@ The speedup plot follows the selected machines and benchmark parameters, and
 still uses ONNX Runtime as baseline when that backend is deselected.
 
 Homepage previews use these speedup curves, one per recorded configuration, including
-machine, package versions, backend, dtype, and input dimensions. They do not
+machine, package versions, backend, dtype, and input dimensions. Builder previews
+instead show raw onnx-light timings (lower is better). They do not
 average results from different machines or interpolate missing measurements.
 Hover over a point to inspect its configuration. The data publication step
 precomputes these curves under `graphs/configurations`, so each visible preview

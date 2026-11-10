@@ -795,7 +795,8 @@ function draw_configuration_lines(plot, context) {
         "            title: bm.code,\n"
         "            html: true,",
         "        plot_div.tooltip({\n"
-        "            title: 'View results for ' + bm.name + ' (speedup vs ONNX Runtime)',\n"
+        "            title: 'View results for ' + bm.name + (is_builder\n"
+        "                ? ' (onnx-light timings)' : ' (speedup vs ONNX Runtime)'),\n"
         "            html: false,",
     )
     grid = _replace_once(
@@ -808,11 +809,18 @@ function draw_configuration_lines(plot, context) {
         "            ).done(function(data) {\n",
         """\
             ).done(function(data) {
-                var series = configuration_speedups(configuration_series(data, bm));
+                var series = is_builder
+                    ? configuration_series(data, bm).filter(function(curve) {
+                        return ['library', 'builder', 'implementation'].every(function(key) {
+                            return curve.parameters[key] === undefined ||
+                                /^onnx-?light(?:-|$)/.test(curve.parameters[key]);
+                        });
+                    })
+                    : configuration_speedups(configuration_series(data, bm));
                 if (!series.some(function(curve) {
                     return curve.data.some(function(point) { return point[1] !== null; });
                 })) {
-                    plot_div.text('Speedup unavailable');
+                    plot_div.text(is_builder ? 'onnx-light timings unavailable' : 'Speedup unavailable');
                     return;
                 }
 """,
@@ -840,7 +848,7 @@ function draw_configuration_lines(plot, context) {
         grid,
         "                        borderWidth: 1,",
         "                        hoverable: true,\n"
-        "                        markings: [{yaxis: {from: 1, to: 1},\n"
+        "                        markings: is_builder ? [] : [{yaxis: {from: 1, to: 1},\n"
         "                            color: system_dark_theme ? '#c9d1d9' : '#333333'}],\n"
         "                        borderWidth: 1,",
     )
@@ -848,7 +856,7 @@ function draw_configuration_lines(plot, context) {
         grid,
         "                        min: 0\n",
         "                        min: 0,\n"
-        "                        max: configuration_speedup_max(series)\n",
+        "                        max: is_builder ? null : configuration_speedup_max(series)\n",
     )
     grid = _replace_once(
         grid,
@@ -871,7 +879,8 @@ function draw_configuration_lines(plot, context) {
                     }).map(function(key) {
                         return key + ': ' + parameters[key];
                     });
-                    details.unshift(item.datapoint[1].toPrecision(4) + '× ONNX Runtime');
+                    details.unshift(item.datapoint[1].toPrecision(4) +
+                        (is_builder ? ' ' + bm.unit : '× ONNX Runtime'));
                     plot_div.attr('data-original-title', details.join('; '));
                 });""",
     )
@@ -1005,16 +1014,14 @@ function draw_configuration_lines(plot, context) {
         });
     }
 
-    function benchmark_container(bm) {""",
+    function benchmark_container(bm) {
+        var is_builder = bm.name.split('.')[0] == 'builder';""",
     )
     grid = _replace_once(
         grid,
         "        container.append(name);",
         "        container.attr('data-benchmark-name', bm.name);\n"
-        "        container.append(name);\n"
-        "        if (bm.name.split('.')[0] == 'builder') {\n"
-        "            return container;\n"
-        "        }",
+        "        container.append(name);",
     )
     grid = _replace_once(
         grid,
