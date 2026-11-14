@@ -193,7 +193,10 @@ PYTHONPATH=../onnx-light python tools/generate_operator_benchmarks.py ../onnx-li
 
 Each generated benchmark uses the corresponding native `onnx-light` backend
 benchmark case and declares ONNX Runtime, ONNX Reference, onnx-light, and
-onnx-light-cpu unconditionally. Unsupported or numerically inconsistent
+onnx-light-cpu unconditionally. Operator and Performance result pages link to
+the test-case implementation in `onnx-light` or `onnx-light-cpu`, respectively
+(the locally defined QuantizePagedCache case links to this repository).
+Unsupported or numerically inconsistent
 backends remain visible as failed measurements instead of being excluded.
 Qwen2 BF16 ONNX Runtime CPU is intentionally unavailable; a missing BF16
 onnx-light-cpu prefill or decode measurement fails the Qwen2 shard before

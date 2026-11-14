@@ -2,6 +2,143 @@ import argparse
 import shutil
 from pathlib import Path
 
+BENCHMARK_SOURCE = """\
+function benchmark_source(name) {
+    var parts = name.split('.');
+    var repository, path;
+    if (parts[0] == 'ops' && parts.length == 5 &&
+            parts.every(function(part) { return /^[A-Za-z0-9_]+$/.test(part); })) {
+        repository = 'onnx-light';
+        var operator = parts[3].toLowerCase();
+        if (operator == 'quantizepagedcache') {
+            return {
+                label: 'Test case implementation (onnx-asv-benchmark)',
+                url: 'https://github.com/xadupre/onnx-asv-benchmark/blob/main/benchmarks/_operator.py'
+            };
+        }
+        var source = parts[1] + '/' + operator;
+        if (['sequence', 'text', 'traditionalml'].indexOf(parts[1]) >= 0) {
+            source = parts[1] + '/' + parts[2];
+        }
+        var exceptions = {
+            'generator/random': 'randomnormal randomnormallike randomuniform randomuniformlike',
+            'generator/delayed_initializer': 'delayedinitializer',
+            'image/image_decoder': 'imagedecoder',
+            'logical/bitwise': 'bitwiseand bitwisenot bitwiseor bitwisexor',
+            'logical/greater_or_equal': 'greaterorequal',
+            'logical/less_or_equal': 'lessorequal',
+            'math/matmul_integer': 'matmulinteger',
+            'math/negative_log_likelihood_loss': 'negativeloglikelihoodloss',
+            'math/softmax_cross_entropy_loss': 'softmaxcrossentropyloss',
+            'nn/causal_conv_with_state': 'causalconvwithstate',
+            'nn/conv_integer': 'convinteger',
+            'nn/conv_transpose': 'convtranspose',
+            'nn/deform_conv': 'deformconv',
+            'nn/globalpool': 'globalaveragepool globallppool globalmaxpool',
+            'nn/linear_attention': 'linearattention',
+            'nn/rotary_embedding': 'rotaryembedding',
+            'optional/optional_get_has_element': 'optionalgetelement optionalhaselement',
+            'preview/flex_attention': 'flexattention',
+            'quantization/quantized_values': 'dequantize quantize',
+            'reduction/argreduce': 'argmax argmin',
+            'reduction/reducel1l2': 'reducel1 reducel2',
+            'reduction/reducelogsum': 'reducelogsumexp',
+            'reduction/reduceminmax': 'reducemin reducemax',
+            'tensor/center_crop_pad': 'centercroppad',
+            'tensor/depth_to_space': 'depthtospace',
+            'tensor/gather_elements': 'gatherelements',
+            'tensor/gather_nd': 'gathernd',
+            'tensor/one_hot': 'onehot',
+            'tensor/reverse_sequence': 'reversesequence',
+            'tensor/scatter_elements': 'scatterelements',
+            'tensor/scatter_nd': 'scatternd',
+            'tensor/space_to_depth': 'spacetodepth',
+            'tensor/tensor_scatter': 'tensorscatter',
+            'traditionalml/dict_and_feature_vectorizer': 'dictvectorizer featurevectorizer'
+        };
+        Object.keys(exceptions).some(function(candidate) {
+            if (exceptions[candidate].split(' ').indexOf(operator) >= 0) {
+                source = candidate;
+                return true;
+            }
+            return false;
+        });
+        path = 'onnx_light/onnx_extensions/backend_test/cases/' +
+            source.replace(/([^/]+)$/, 'cases_$1.cc');
+    } else if (parts[0] == 'cpu_backend_cases') {
+        repository = 'onnx-light-cpu';
+        var method = parts[parts.length - 1].replace(/^time_/, '');
+        var sources = {
+            'elementwise/binary': 'add sub mul div mod pow prelu and or xor bitshift bitwiseand bitwiseor bitwisexor equal greater greaterorequal less lessorequal',
+            'elementwise/variadic': 'max min mean sum',
+            'logical/not': 'not',
+            'math/abs': 'abs',
+            'math/exp': 'exp',
+            'math/log': 'log',
+            'math/tanh': 'tanh',
+            'math/gemm': 'gemm',
+            'math/matmul': 'matmul',
+            'math/matmul_integer': 'matmulinteger',
+            'math/normalization': 'batchnormalization groupnormalization instancenormalization layernormalization lpnormalization meanvariancenormalization',
+            'math/rms_normalization': 'rms_normalization',
+            'math/simplified_layer_normalization': 'simplified_layer_normalization',
+            'math/sigmoid_softmax': 'sigmoid softmax',
+            'math/swiglu': 'swiglu',
+            'math/qlinear_matmul': 'qlinearmatmul',
+            'attention/attention': 'attention',
+            'attention/linear_attention': 'linear_attention',
+            'com_microsoft/attention': 'ms_attention',
+            'com_microsoft/bias_gelu': 'biasgelu',
+            'com_microsoft/causal_conv_with_state': 'causal',
+            'com_microsoft/cdist': 'cdist',
+            'com_microsoft/gather_block_quantized': 'gather_block_quantized',
+            'com_microsoft/gelu': 'microsoft_gelu',
+            'com_microsoft/group_query_attention': 'group_query_attention',
+            'com_microsoft/linear_attention': 'microsoft_linear_attention',
+            'com_microsoft/matmul_nbits': 'matmulnbits',
+            'com_microsoft/moe': 'moe',
+            'com_microsoft/qmoe': 'qmoe',
+            'com_microsoft/skip_simplified_layer_normalization': 'skip_simplified_layer_normalization',
+            'attention/rotary_embedding': 'rotary microsoft_rotary_embedding',
+            'tensor/cast': 'cast',
+            'tensor/concat': 'concat',
+            'tensor/gather': 'gather',
+            'tensor/nonzero': 'nonzero',
+            'tensor/scatter_nd': 'scatternd',
+            'tensor/slice': 'slice',
+            'tensor/split': 'split',
+            'traditionalml/tree_ensemble': 'treeensemble'
+        };
+        Object.keys(sources).some(function(source) {
+            if (sources[source].split(' ').some(function(prefix) {
+                return method == prefix || method.indexOf(prefix + '_') == 0;
+            })) {
+                path = 'onnx_light_cpu/backend_test/cases/' +
+                    source.replace(/([^/]+)$/, 'cases_$1.cc');
+                return true;
+            }
+            return false;
+        });
+    }
+    if (!path) {
+        return null;
+    }
+    return {
+        label: 'Test case implementation (' + repository + ')',
+        url: 'https://github.com/xadupre/' + repository + '/blob/main/' + path
+    };
+}
+
+function show_benchmark_source(name) {
+    var container = $('#benchmark-source').empty();
+    var source = benchmark_source(name);
+    container.toggle(source !== null);
+    if (source) {
+        container.append($('<a/>').attr('href', source.url).text(source.label));
+    }
+}
+"""
+
 RUNTIME_OVERVIEW = """\
       <section class="benchmark-home">
         <div class="benchmark-introduction">
@@ -137,11 +274,19 @@ def customize_pages(html_dir):
         '          <div style="position: absolute; top: 48px; left: 0; right: 0; bottom: 100px;">',
         '          <div id="graph-body" style="position: absolute; top: 48px; '
         'left: 0; right: 0; bottom: 100px;">\n'
+        '            <p id="benchmark-source" style="flex: 0 0 auto"></p>\n'
         '            <div id="graph-legend"></div>',
     )
 
     graph_path = html_dir / "graphdisplay.js"
     graph = graph_path.read_text(encoding="utf-8")
+    graph = _replace_once(
+        graph,
+        '        $("#title").text(bm_name);',
+        '        $("#title").text(bm_name);\n'
+        '        show_benchmark_source(bm_name);',
+    )
+    graph = _replace_once(graph, "'use strict';", "'use strict';\n\n" + BENCHMARK_SOURCE)
     graph = _replace_once(
         graph,
         '                position: "nw",',

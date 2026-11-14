@@ -12,6 +12,111 @@ from tools.customize_pages import customize_pages
 
 class TestCustomizePages(unittest.TestCase):
     @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
+    def test_case_implementation_links(self):
+        from benchmarks.cpu_backend_cases._case_records import CASE_RECORDS
+
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            page = (html / "index.html").read_text(encoding="utf-8")
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+        self.assertIn('id="benchmark-source"', page)
+        self.assertIn("        show_benchmark_source(bm_name);", graph)
+        start = graph.index("function benchmark_source(")
+        end = graph.index("\n}\n", graph.index("function show_benchmark_source(", start)) + 3
+        names = sorted({
+            f"cpu_backend_cases.{category}.cases.{cls}.time_{name}"
+            for (category, cls), records in CASE_RECORDS.items()
+            for record in records
+            for name in (
+                record[1],
+                record[0].removeprefix("test_cpu_").removesuffix("_benchmark"),
+            )
+        })
+        subprocess.run(
+            ["node"],
+            input=graph[start:end] + """
+const assert = require('node:assert/strict');
+for (const [name, path] of [
+    ['ops.math.add.Add.time_run', 'math/cases_add.cc'],
+    ['ops.logical.and_op.And.time_run', 'logical/cases_and.cc'],
+    ['ops.math.mat_mul_integer.MatMulInteger.time_run', 'math/cases_matmul_integer.cc'],
+    ['ops.logical.bitwise_and.BitwiseAnd.time_run', 'logical/cases_bitwise.cc'],
+    ['ops.generator.random_normal.RandomNormal.time_run', 'generator/cases_random.cc'],
+    ['ops.rt.delayed_initializer.DelayedInitializer.time_run', 'generator/cases_delayed_initializer.cc'],
+    ['ops.nn.global_average_pool.GlobalAveragePool.time_run', 'nn/cases_globalpool.cc'],
+    ['ops.reduction.reduce_max.ReduceMax.time_run', 'reduction/cases_reduceminmax.cc'],
+    ['ops.tensor.scatter_nd.ScatterND.time_run', 'tensor/cases_scatter_nd.cc'],
+    ['ops.sequence.sequence_at.SequenceAt.time_run', 'sequence/cases_sequence_at.cc'],
+    ['ops.text.string_concat.StringConcat.time_run', 'text/cases_string_concat.cc'],
+    ['ops.traditionalml.tree_ensemble.TreeEnsemble.time_run', 'traditionalml/cases_tree_ensemble.cc'],
+    ['ops.traditionalml.dict_vectorizer.DictVectorizer.time_run', 'traditionalml/cases_dict_and_feature_vectorizer.cc']
+]) {
+    assert.deepEqual(benchmark_source(name), {
+        label: 'Test case implementation (onnx-light)',
+        url: 'https://github.com/xadupre/onnx-light/blob/main/' +
+             'onnx_light/onnx_extensions/backend_test/cases/' + path
+    });
+}
+assert.equal(benchmark_source('ops.nn.quantize_paged_cache.QuantizePagedCache.time_run').url,
+    'https://github.com/xadupre/onnx-asv-benchmark/blob/main/benchmarks/_operator.py');
+function cpu(method, category = 'math') {
+    return 'cpu_backend_cases.' + category + '.cases.Case.time_' + method;
+}
+for (const [name, path] of [
+    [cpu('add_contiguous'), 'elementwise/cases_binary.cc'],
+    [cpu('and_v7_contiguous', 'logical'), 'elementwise/cases_binary.cc'],
+    [cpu('max_contiguous'), 'elementwise/cases_variadic.cc'],
+    [cpu('layernormalization_axis1', 'nn'), 'math/cases_normalization.cc'],
+    [cpu('matmulinteger_small'), 'math/cases_matmul_integer.cc'],
+    [cpu('gather_block_quantized_small', 'tensor'), 'com_microsoft/cases_gather_block_quantized.cc'],
+    [cpu('gather_small', 'tensor'), 'tensor/cases_gather.cc'],
+    [cpu('microsoft_rotary_embedding_small', 'nn'), 'attention/cases_rotary_embedding.cc']
+]) {
+    assert.deepEqual(benchmark_source(name), {
+        label: 'Test case implementation (onnx-light-cpu)',
+        url: 'https://github.com/xadupre/onnx-light-cpu/blob/main/' +
+             'onnx_light_cpu/backend_test/cases/' + path
+    });
+}
+for (const name of """ + json.dumps(names) + """) {
+    assert.ok(benchmark_source(name), name);
+}
+for (const name of ['models.mlp.MLP.time_run', 'builder.graph.Graph.time_run',
+                    cpu('unknown_case'), '<script>alert(1)</script>',
+                    'ops.math.add"><script>.Add.time_run', 'ops.math']) {
+    assert.equal(benchmark_source(name), null, name);
+}
+const link = {
+    attr(key, value) { assert.equal(key, 'href'); this.href = value; return this; },
+    text(value) { this.label = value; return this; }
+};
+const container = {
+    empty() { this.link = null; return this; },
+    toggle(value) { this.visible = value; return this; },
+    append(value) { this.link = value; return this; }
+};
+function $(selector) {
+    assert.ok(selector == '#benchmark-source' || selector == '<a/>');
+    return selector == '<a/>' ? link : container;
+}
+show_benchmark_source(cpu('add_contiguous'));
+assert.equal(container.visible, true);
+assert.equal(container.link.href, benchmark_source(cpu('add_contiguous')).url);
+show_benchmark_source('models.mlp.MLP.time_run');
+assert.equal(container.visible, false);
+assert.equal(container.link, null);
+show_benchmark_source(cpu('gather_small', 'tensor'));
+assert.equal(container.visible, true);
+assert.equal(container.link.href, benchmark_source(cpu('gather_small', 'tensor')).url);
+""",
+            check=True, capture_output=True, text=True,
+        )
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute graph JavaScript")
     def test_speedups_require_matching_configuration_and_timestamp(self):
         source = Path(asv.__file__).parent / "www"
         with tempfile.TemporaryDirectory() as directory:
