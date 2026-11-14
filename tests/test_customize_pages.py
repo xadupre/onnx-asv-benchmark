@@ -112,6 +112,7 @@ var message = '', title = '', hover, speedupVisible;
 const element = {
     empty() { message = ''; return this; },
     text(value) { message = value; return this; },
+    tooltip(value) { this.tooltipState = value; return this; },
     off() { return this; },
     on(event, handler) { hover = handler; return this; },
     attr(name, value) { title = value; return this; }
@@ -155,7 +156,11 @@ var current_benchmark = 'test', state = {machine: ['a']}, x_coordinate_axis = 0;
 var benchmark_param_selection = [[null], [1], [0]], system_dark_theme = false;
 function draw_configuration_lines() {}
 const data = {
-    graph_parameters: [{machine: 'a'}, {machine: 'b'}],
+    graph_parameters: [
+        {machine: 'a', 'env-ONNX_LIGHT_VERSION': '0.2.7',
+         'env-ONNX_LIGHT_CPU_VERSION': '0.2.8'},
+        {machine: 'b'}
+    ],
     series: [
         {graph: 0, parameters: {backend: "'onnxruntime'", size: '32'}, data: [[10, 8]]},
         {graph: 0, parameters: {backend: "'onnx-light'", size: '32'}, data: [[10, 2]]},
@@ -180,9 +185,13 @@ resize_speedup_graph();
 assert.deepEqual(lifecycle, ['resize', 'grid', 'draw']);
 hover(null, null, {series: plots[0].series[0], datapoint: [10, 4]});
 assert.ok(title.includes('4.000× ONNX Runtime'));
-assert.ok(title.includes('machine: a'));
+assert.ok(title.includes('<strong class="benchmark-version">onnx-light: 0.2.7</strong>'));
+assert.ok(title.includes('<strong class="benchmark-version">onnx-light-cpu: 0.2.8</strong>'));
+assert.ok(!title.includes('ONNX_LIGHT'));
+assert.equal(element.tooltipState, 'show');
 hover(null, null, null);
 assert.equal(title, '');
+assert.equal(element.tooltipState, 'hide');
 
 state = {machine: ['b']};
 load_speedup_graph();
@@ -403,7 +412,7 @@ assert.match(builderPlot.tooltipOptions.title, /onnx-light timings/);
 builderPlot.handlers.plothover(null, null, {
     series: timing.series[0], datapoint: [10, 0.002]
 });
-assert.match(builderPlot.attributes['data-original-title'], /^0.002000 seconds;/);
+assert.match(builderPlot.attributes['data-original-title'], /^0.002000 seconds<br>/);
 assert.ok(!builderPlot.attributes['data-original-title'].includes('ONNX Runtime'));
 for (const [key, values] of [
     ['library', ['onnxlight', 'onnxlight-cpp', 'onnxlight-mmap', 'onnxlight-ifstream', 'onnxlight-nocopy']],
@@ -422,8 +431,12 @@ benchmark_container({name: 'builder.load.onnx_io.OnnxReferenceEvaluator.time_run
 assert.deepEqual(plots.pop().series[0].data, [[10, 0.002]]);
 requests.length = 0;
 previewData.series = [
-    {graph: 0, parameters: {backend: "'onnxruntime'"}, data: [[10, 1], [20, 1]]},
-    {graph: 0, parameters: {backend: "'onnx-light'"}, data: [[10, 2], [20, 4]]}
+    {graph: 0, parameters: {backend: "'onnxruntime'",
+     'env-ONNX_LIGHT_VERSION': '0.2.7', 'env-ONNX_LIGHT_CPU_VERSION': '0.2.8'},
+     data: [[10, 1], [20, 1]]},
+    {graph: 0, parameters: {backend: "'onnx-light'",
+     'env-ONNX_LIGHT_VERSION': '0.2.7', 'env-ONNX_LIGHT_CPU_VERSION': '0.2.8'},
+     data: [[10, 2], [20, 4]]}
 ];
 const model = benchmark_container({name: 'models.dummies.mlp.MLP.time_run',
                                    param_names: ['backend']});
@@ -439,7 +452,12 @@ assert.equal(configuration_speedup_max([{data: [[10, 4], [20, null]]}]), 4.2);
 model.children[1].handlers.plothover(null, null, {
     series: plots[0].series[0], datapoint: [10, 0.5]
 });
-assert.match(model.children[1].attributes['data-original-title'], /^0.5000× ONNX Runtime;/);
+assert.match(model.children[1].attributes['data-original-title'], /^0.5000× ONNX Runtime<br>/);
+assert.equal(model.children[1].tooltipOptions.html, true);
+assert.ok(model.children[1].attributes['data-original-title'].includes(
+    '<strong class="benchmark-version">onnx-light: 0.2.7</strong>'));
+assert.ok(model.children[1].attributes['data-original-title'].includes(
+    '<strong class="benchmark-version">onnx-light-cpu: 0.2.8</strong>'));
 previewData.series = [
     {graph: 0, parameters: {library: "'onnx'"}, data: [[10, 1], [20, 1]]},
     {graph: 0, parameters: {library: "'onnxlight'"}, data: []}
@@ -548,7 +566,53 @@ assert.equal(plots.length, 1);
             "#graph-legend {\n    flex: 0 0 auto;\n    max-height: 30%;\n    overflow: auto;",
             stylesheet,
         )
-        self.assertIn("#main-graph {\n    flex: 1 1 auto;\n    height: auto !important;", stylesheet)
+        self.assertIn(
+            "#main-graph,\n#speedup-graph {\n    flex: 1 1 0;\n"
+            "    min-height: 100px;\n    width: 100%;\n    height: auto !important;",
+            stylesheet,
+        )
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is required to execute hover JavaScript")
+    def test_hover_package_versions_are_highlighted_and_escaped(self):
+        source = Path(asv.__file__).parent / "www"
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory)
+            for name in ("index.html", "graphdisplay.js", "summarygrid.js", "summarylist.js"):
+                shutil.copy2(source / name, html / name)
+            customize_pages(html)
+            graph = (html / "graphdisplay.js").read_text(encoding="utf-8")
+            stylesheet = (html / "system-theme.css").read_text(encoding="utf-8")
+        self.assertIn("contents.concat(configuration_details(item.series.parameters))", graph)
+        self.assertIn(".benchmark-version {\n    color: #79c0ff;", stylesheet)
+        start = graph.index("function configuration_escape_html(")
+        end = graph.index("function configuration_series(", start)
+        subprocess.run(
+            ["node", "-e", """
+const assert = require('node:assert/strict');
+""" + graph[start:end] + """
+const details = configuration_details({
+    'env-ONNX_LIGHT_VERSION': '0.2.7',
+    'env-ONNX_LIGHT_CPU_VERSION': '0.2.8',
+    cpu: 'processor <&>', num_cpu: 4, 'onnx-ir': '1.0',
+    commit: 'abc', machine: 'cpu', python: null, arch: 'anonymous',
+    backend: '<img src=x onerror=alert(1)>'
+});
+assert.ok(details.includes('<strong class="benchmark-version">onnx-light: 0.2.7</strong>'));
+assert.ok(details.includes('<strong class="benchmark-version">onnx-light-cpu: 0.2.8</strong>'));
+assert.ok(details.includes('processor: processor &lt;&amp;&gt;'));
+assert.ok(details.includes('logical cores: 4'));
+assert.ok(details.includes('ir-py: 1.0'));
+assert.ok(details.includes('backend: &lt;img src=x onerror=alert(1)&gt;'));
+assert.equal(details.length, 6);
+assert.deepEqual(configuration_details({'env-ONNX_LIGHT_VERSION_CPU': '1.0'}), [
+    '<strong class="benchmark-version">onnx-light-cpu: 1.0</strong>'
+]);
+assert.deepEqual(configuration_details({'ONNX_LIGHT_VERSION': '<b>"&\\''}), [
+    '<strong class="benchmark-version">onnx-light: &lt;b&gt;&quot;&amp;&#39;</strong>'
+]);
+"""],
+            check=True, capture_output=True, text=True,
+        )
 
     def test_asv_assets(self):
         source = Path(asv.__file__).parent / "www"
@@ -675,9 +739,10 @@ assert.equal(plots.length, 1);
                 grid,
             )
             self.assertIn("make_machine_summary()", grid)
-            self.assertIn("title: 'View results for ' + bm.name", grid)
+            self.assertIn("title: 'View results for ' + configuration_escape_html(bm.name)", grid)
             self.assertNotIn("title: bm.code", grid)
-            self.assertIn("html: false,", grid)
+            self.assertIn("html: true,", grid)
+            self.assertIn("configuration_escape_html(bm.name)", grid)
             self.assertIn("params.instruction_sets", grid)
             self.assertIn("variant.split(',').join(', ')", grid)
             self.assertIn("params.num_cpu", grid)
