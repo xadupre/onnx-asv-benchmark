@@ -206,6 +206,35 @@ function configuration_line_width(parameters) {
     return parameters.backend == 'onnxruntime' ? 3 : 1;
 }
 
+function configuration_escape_html(value) {
+    return String(value).replace(/[&<>"']/g, function(character) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;',
+                '"': '&quot;', "'": '&#39;'}[character];
+    });
+}
+
+function configuration_details(parameters) {
+    var names = {
+        cpu: 'processor',
+        'onnx-ir': 'ir-py',
+        num_cpu: 'logical cores',
+        instruction_sets: 'instruction sets',
+        ONNX_LIGHT_VERSION: 'onnx-light',
+        ONNX_LIGHT_CPU_VERSION: 'onnx-light-cpu',
+        ONNX_LIGHT_VERSION_CPU: 'onnx-light-cpu'
+    };
+    return Object.keys(parameters).sort().filter(function(key) {
+        return key != 'commit' && key != 'machine' &&
+            parameters[key] !== null && parameters[key] != 'anonymous';
+    }).map(function(key) {
+        var name = key.replace(/^env-/, '');
+        name = names[name] || name;
+        var text = configuration_escape_html(name + ': ' + parameters[key]);
+        return name == 'onnx-light' || name == 'onnx-light-cpu'
+            ? '<strong class="benchmark-version">' + text + '</strong>' : text;
+    });
+}
+
 function configuration_series(data, benchmark) {
     return data.series.map(function(curve) {
         var parameters = $.extend(
@@ -499,6 +528,7 @@ function draw_configuration_lines(plot, context) {
             speedup_plot = null;
         }
         plot_div.empty();
+        plot_div.tooltip({html: true, container: 'body', trigger: 'manual'}).tooltip('hide');
         var show_speedup = current_benchmark.split('.')[0] != 'builder';
         $('#speedup-title, #speedup-graph').toggle(show_speedup);
         if (!show_speedup) {
@@ -543,13 +573,12 @@ function draw_configuration_lines(plot, context) {
                 legend: {show: false}
             });
             plot_div.off('plothover').on('plothover', function(event, pos, item) {
-                var details = item ? Object.keys(item.series.parameters).sort().map(
-                    function(key) { return key + ': ' + item.series.parameters[key]; }
-                ) : [];
+                var details = item ? configuration_details(item.series.parameters) : [];
                 if (item) {
                     details.unshift(item.datapoint[1].toPrecision(4) + '× ONNX Runtime');
                 }
-                plot_div.attr('title', details.join('; '));
+                plot_div.attr('data-original-title', details.join('<br>'));
+                plot_div.tooltip(item ? 'show' : 'hide');
             });
         }).fail(function() {
             if (request == speedup_request) {
@@ -692,21 +721,7 @@ function draw_configuration_lines(plot, context) {
         '                        "<b>" + $.asv.pretty_unit(y, unit) + "</b>",\n'
         "                        new Date(item.datapoint[0]).toLocaleString()\n"
         "                    ];\n"
-        "                    $.each(item.series.parameters, function(key, value) {\n"
-        "                        if (key != 'commit' && key != 'machine' &&\n"
-        "                                value !== null && value != 'anonymous') {\n"
-        "                            var parameter_names = {\n"
-        "                                cpu: 'processor',\n"
-        "                                'onnx-ir': 'ir-py',\n"
-        "                                num_cpu: 'logical cores',\n"
-        "                                instruction_sets: 'instruction sets'\n"
-        "                            };\n"
-        "                            var name = parameter_names[key] ||\n"
-        "                                key.replace(/^env-/, '');\n"
-        "                            var text = name + ': ' + value;\n"
-        '                            contents.push($("<span>").text(text).html());\n'
-        "                        }\n"
-        "                    });\n"
+        "                    contents = contents.concat(configuration_details(item.series.parameters));\n"
         "                    showTooltip(item.pageX, item.pageY, contents.join('<br>'));",
     )
     axis_font = "axisLabelFontSizePixels: 12"
@@ -795,9 +810,9 @@ function draw_configuration_lines(plot, context) {
         "            title: bm.code,\n"
         "            html: true,",
         "        plot_div.tooltip({\n"
-        "            title: 'View results for ' + bm.name + (is_builder\n"
+        "            title: 'View results for ' + configuration_escape_html(bm.name) + (is_builder\n"
         "                ? ' (onnx-light timings)' : ' (speedup vs ONNX Runtime)'),\n"
-        "            html: false,",
+        "            html: true,",
     )
     grid = _replace_once(
         grid,
@@ -873,15 +888,10 @@ function draw_configuration_lines(plot, context) {
                     if (!item || !item.series.parameters) {
                         return;
                     }
-                    var parameters = item.series.parameters;
-                    var details = Object.keys(parameters).sort().filter(function(key) {
-                        return parameters[key] !== null && parameters[key] != 'anonymous';
-                    }).map(function(key) {
-                        return key + ': ' + parameters[key];
-                    });
+                    var details = configuration_details(item.series.parameters);
                     details.unshift(item.datapoint[1].toPrecision(4) +
-                        (is_builder ? ' ' + bm.unit : '× ONNX Runtime'));
-                    plot_div.attr('data-original-title', details.join('; '));
+                        (is_builder ? ' ' + configuration_escape_html(bm.unit) : '× ONNX Runtime'));
+                    plot_div.attr('data-original-title', details.join('<br>'));
                 });""",
     )
     grid = _replace_once(
@@ -889,7 +899,7 @@ function draw_configuration_lines(plot, context) {
         "                // TODO: Handle failure",
         "                plot_div.text('Preview unavailable');\n"
         "                plot_div.attr('data-original-title',\n"
-        "                    'Could not load configuration previews for ' + bm.name);\n"
+        "                    'Could not load configuration previews for ' + configuration_escape_html(bm.name));\n"
         "                console.error('Could not load benchmark preview: ' + bm.name);",
     )
     grid = _replace_once(
